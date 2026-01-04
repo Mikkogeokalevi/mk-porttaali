@@ -55,9 +55,8 @@ window.app = {
         `;
         break;
 
-      // --- UUDET TILASTOREITIT (Kutsuu stats.js) ---
+      // --- TILASTOREITIT (Kutsuu stats.js) ---
       case 'stats':
-        // Avaa tilastojen päävalikon (laatikot)
         Stats.renderStatsDashboard(content, window.app);
         break;
 
@@ -69,6 +68,11 @@ window.app = {
       case 'stats_all':
         if (!window.app.currentUser) { app.router('login_view'); return; }
         Stats.loadAllStats(db, window.app.currentUser, content);
+        break;
+
+      case 'stats_top':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
+        Stats.loadTopStats(db, window.app.currentUser, content);
         break;
 
       // --- KUVAGENERATTORI ---
@@ -148,11 +152,10 @@ window.app = {
   generateStatImage: Gen.generateStatImage
 };
 
-// Generaattorin HTML (siirretty tänne selkeyden vuoksi)
+// Generaattorin HTML
 function renderGeneratorView(content) {
     let defaultUser = '';
     if (window.app.currentUser) {
-        // Jos tarvitset kovia koodauksia tietyille sähköposteille, ne voi tehdä tässä
         defaultUser = (window.app.currentUser.email === 'toni@kauppinen.info') ? 'mikkokalevi' : (window.app.currentUser.displayName || '');
     }
 
