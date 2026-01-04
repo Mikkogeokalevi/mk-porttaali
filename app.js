@@ -4,7 +4,6 @@ function showPage(pageId) {
     if (activePage) activePage.classList.remove('hidden');
 }
 
-// Alkuperäinen logiikka suoraan MKkuvakeneraattori.html-tiedostosta
 function generoiKuvat() {
     var nimi = document.getElementById('nimimerkki').value;
     var alue = document.getElementById('kuva-alue');
@@ -50,10 +49,12 @@ function luoKuvaBlock(otsikko, imgUrl, nimi) {
     
     return '<div class="card" style="margin-top:20px;">' +
            '<h4>' + otsikko + '</h4>' +
-           '<img src="' + imgUrl + '" style="max-width:100%; border-radius:5px;"><br><br>' +
+           '<img src="' + imgUrl + '" style="max-width:100%;"><br><br>' +
            '<label>BBCode:</label><input type="text" value=\'' + bbCode + '\' readonly style="width:100%; font-size:11px; margin-bottom:5px;">' +
            '<label>HTML-koodi:</label><input type="text" value=\'' + htmlCode + '\' readonly style="width:100%; font-size:11px;">' +
            '</div>';
 }
 
-document.addEventListener('DOMContentLoaded', () => { showPage('home'); });
+document.addEventListener('DOMContentLoaded', () => {
+    showPage('home');
+});
