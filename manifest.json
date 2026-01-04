@@ -1,0 +1,20 @@
+{
+  "name": "MK Porttaali V2",
+  "short_name": "MK Porttaali",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#313244",
+  "icons": [
+    {
+      "src": "mikkokalevi.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "mikkokalevi.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
