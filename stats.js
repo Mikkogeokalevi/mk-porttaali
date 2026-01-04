@@ -38,28 +38,45 @@ export const renderStatsDashboard = (content, app) => {
     </div>`;
 };
 
-// --- DATA FETCH ---
-async function fetchData(db, uid) {
+// --- APUFUNKTIOT ---
+
+// Hakee koko dokumentin (myös aikaleiman)
+async function fetchFullDoc(db, uid) {
     const s = await getDoc(doc(db, "stats", uid));
-    return (s.exists() && s.data().municipalities) ? s.data().municipalities : null;
+    return s.exists() ? s.data() : null;
 }
 
-// --- 1. TOP-LISTAT (UUSI OMINAISUUS) ---
+// Muotoilee aikaleiman tekstiksi
+function formatUpdateDate(timestamp) {
+    if (!timestamp) return 'Ei tietoa';
+    const d = timestamp.toDate();
+    return d.toLocaleString('fi-FI', { 
+        day: 'numeric', month: 'numeric', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit' 
+    });
+}
+
+// --- 1. TOP-LISTAT ---
 export const loadTopStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Top-listat</h1><p>Ladataan...</p></div>`;
 
     try {
-        const fullData = await fetchData(db, user.uid);
-        if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa.</p></div>`; return; }
+        const docData = await fetchFullDoc(db, user.uid);
+        if (!docData || !docData.municipalities) { content.innerHTML = `<div class="card"><p>Ei dataa.</p></div>`; return; }
+        
+        const fullData = docData.municipalities;
+        const updateTime = formatUpdateDate(docData.updatedAt);
 
-        // Renderöidään valintapaneeli
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <h2 style="margin:0;">Ranking</h2>
                 <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
             </div>
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
+                📅 Data päivitetty: <b>${updateTime}</b>
+            </p>
             
             <label>Järjestä:</label>
             <select id="sortCriteria">
@@ -79,7 +96,7 @@ export const loadTopStats = async (db, user, content) => {
                     <label>Suunta:</label>
                     <select id="sortOrder">
                         <option value="desc">Eniten ensin</option>
-                        <option value="asc">Vähiten ensin (esim. nollat)</option>
+                        <option value="asc">Vähiten ensin</option>
                     </select>
                 </div>
                 <div style="flex:1;">
@@ -95,58 +112,42 @@ export const loadTopStats = async (db, user, content) => {
             <div id="topListResult"></div>
         </div>`;
 
-        // Logiikka listan piirtämiseen
         const updateList = () => {
             const criteria = document.getElementById('sortCriteria').value;
-            const order = document.getElementById('sortOrder').value; // 'desc' or 'asc'
+            const order = document.getElementById('sortOrder').value;
             const limit = parseInt(document.getElementById('limitCount').value);
             const container = document.getElementById('topListResult');
 
-            // Muutetaan data taulukoksi käsittelyä varten
             let list = Object.keys(fullData).map(kunta => {
                 const s = fullData[kunta].s || [];
-                // Laske yhteensä
                 const total = s.reduce((a, b) => a + b, 0);
-                // Laske montako eri tyyppiä löydetty (arvo > 0)
                 const variety = s.filter(v => v > 0).length;
-                
-                // Haetaan tietty tyyppi jos valittu
                 let specificVal = 0;
-                if (!isNaN(criteria)) {
-                    specificVal = s[parseInt(criteria)] || 0;
-                }
-
+                if (!isNaN(criteria)) specificVal = s[parseInt(criteria)] || 0;
                 return { name: kunta, total, variety, specificVal, stats: s };
             });
 
-            // Lajittelu
             list.sort((a, b) => {
                 let valA, valB;
-                
                 if (criteria === 'total') { valA = a.total; valB = b.total; }
                 else if (criteria === 'variety') { valA = a.variety; valB = b.variety; }
                 else { valA = a.specificVal; valB = b.specificVal; }
 
-                if (valA === valB) return a.name.localeCompare(b.name); // Tasatilanteessa aakkoset
+                if (valA === valB) return a.name.localeCompare(b.name);
                 return order === 'desc' ? valB - valA : valA - valB;
             });
 
-            // Rajaus
             const slicedList = list.slice(0, limit);
-
-            // HTML Generointi
             let html = '<ol style="padding-left:20px; margin-top:10px;">';
+            
             slicedList.forEach(item => {
                 let detailText = "";
                 if (criteria === 'total') detailText = `<b>${item.total}</b> löytöä`;
                 else if (criteria === 'variety') detailText = `<b>${item.variety}</b> eri tyyppiä`;
                 else {
-                    // Haetaan tyypin nimi
                     const typeName = CACHE_TYPES.find(t => t.index == criteria)?.name || 'Löytöä';
                     detailText = `<b>${item.specificVal}</b> ${typeName}`;
                 }
-
-                // Lisätään pieni yhteenveto perään (esim. nollakerholaisille)
                 if (item.total === 0) detailText = `<span style="color:var(--subtext-color)">Ei löytöjä</span>`;
 
                 html += `
@@ -158,17 +159,13 @@ export const loadTopStats = async (db, user, content) => {
                 </li>`;
             });
             html += '</ol>';
-
             if (slicedList.length === 0) html = '<p>Ei tuloksia.</p>';
             container.innerHTML = html;
         };
 
-        // Kuuntelijat
         document.getElementById('sortCriteria').addEventListener('change', updateList);
         document.getElementById('sortOrder').addEventListener('change', updateList);
         document.getElementById('limitCount').addEventListener('change', updateList);
-
-        // Alustus
         updateList();
 
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
@@ -180,15 +177,21 @@ export const loadAllStats = async (db, user, content) => {
     content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
     
     try {
-        const fullData = await fetchData(db, user.uid);
-        if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa. Käytä Admin-työkalua.</p></div>`; return; }
+        const docData = await fetchFullDoc(db, user.uid);
+        if (!docData || !docData.municipalities) { content.innerHTML = `<div class="card"><p>Ei dataa. Käytä Admin-työkalua.</p></div>`; return; }
+        
+        const fullData = docData.municipalities;
+        const updateTime = formatUpdateDate(docData.updatedAt);
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <h2 style="margin:0;">Löydöt maakunnittain</h2>
                 <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
             </div>
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
+                📅 Data päivitetty: <b>${updateTime}</b>
+            </p>
             <input type="text" id="regionSearch" placeholder="Hae kuntaa (esim. Lahti)..." style="margin-bottom:15px;">
             <div id="regionList"></div>
         </div>`;
@@ -264,15 +267,21 @@ export const loadTripletData = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Triplettitarkistus</h1><p>Ladataan...</p></div>`;
     try {
-        const fullData = await fetchData(db, user.uid);
-        if (!fullData) { content.innerHTML += `<p>Ei dataa.</p>`; return; }
+        const docData = await fetchFullDoc(db, user.uid);
+        if (!docData || !docData.municipalities) { content.innerHTML += `<p>Ei dataa.</p>`; return; }
+        
+        const fullData = docData.municipalities;
+        const updateTime = formatUpdateDate(docData.updatedAt);
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                 <h1 style="margin:0;">Triplettitarkistus</h1>
                 <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
             </div>
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
+                📅 Data päivitetty: <b>${updateTime}</b>
+            </p>
             <input type="text" id="tripletSearch" placeholder="Hae kuntaa...">
             <div id="tripletStatsSummary" style="display:flex; gap:10px; margin:15px 0;"></div>
             <div id="tripletResults"></div>
