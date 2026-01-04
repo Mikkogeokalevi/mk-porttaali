@@ -4,21 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Porttaali V2</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LSBHRFCKEP"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-LSBHRFCKEP');
-    </script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1e1e2e; color: #cdd6f4; margin: 0; padding: 0; }
+        header { background: #313244; padding: 10px; border-bottom: 2px solid #45475a; text-align: center; }
+        nav { background: #181825; padding: 10px; text-align: center; }
+        .nav-btn { padding: 8px 15px; margin: 5px; cursor: pointer; background: #45475a; color: white; border: none; border-radius: 4px; }
+        
+        /* Alkuperäisen generaattorin tyylit */
+        .generator-container { background-color: white; color: black; padding: 20px; max-width: 1000px; margin: 20px auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .result-card { background-color: #f9f9f9; border: 1px solid #ccc; padding: 15px; margin-top: 20px; border-radius: 4px; }
+        input[type="text"] { padding: 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
 
 <header>
-    <div><strong>MK Porttaali V2</strong></div>
-    <div id="auth-status">Kirjaudu sisään</div>
+    <h1>MK Porttaali V2</h1>
 </header>
 
 <nav>
@@ -28,80 +33,115 @@
 </nav>
 
 <main id="main-content">
-    <section id="home">
-        <div class="card">
-            <h2>Tervetuloa!</h2>
-            <p>Valitse työkalu ylävalikosta.</p>
-        </div>
+    <section id="home" style="text-align:center; padding: 50px;">
+        <h2>Tervetuloa!</h2>
+        <p>Valitse Kuvageneraattori ylhäältä.</p>
     </section>
 
     <section id="generator" class="hidden">
-        <div class="card">
+        <div class="generator-container">
             <h1>MK Kuvageneraattori</h1>
             <p>Syötä kätköilijän nimimerkki ja valitse haluamasi kuvat.</p>
-            
-            <div style="margin-bottom: 20px;">
-                <label for="nimimerkki"><strong>Kätköilijän nimi:</strong></label><br>
+
+            <div>
+                <label for="nimimerkki"><strong>Kätköilijän nimi:</strong></label>
                 <input type="text" id="nimimerkki" placeholder="Syötä nimimerkki">
-                <button class="nav-btn" onclick="generoiKuvat()" style="background: var(--accent); color: #000; font-weight: bold;">Generoi kuvat</button>
+                <button onclick="generoiKuvat()" style="padding: 10px 20px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold;">Generoi kuvat</button>
             </div>
 
-            <div style="display: flex; flex-wrap: wrap; gap: 30px;">
-                <div>
-                    <h3>Perustilastot</h3>
-                    <input type="checkbox" name="kuva" value="1"> Löydetyt kuukausittain<br>
-                    <input type="checkbox" name="kuva" value="2"> Löydetyt vuosittain<br>
-                    <input type="checkbox" name="kuva" value="3"> Löydetyt tänään<br>
-                    <input type="checkbox" name="kuva" value="4"> Löytöjen määrä kätkötyypeittäin<br>
-                    <input type="checkbox" name="kuva" value="5"> Päivälöydöt<br>
-                    <input type="checkbox" name="kuva" value="6"> Löytyneet kätköt (viimeiset 30 vrk)<br>
-                    <input type="checkbox" name="kuva" value="7"> FTF-kuva
-                </div>
-
-                <div>
-                    <h3>Tarkistimet</h3>
-                    <input type="checkbox" name="tarkistin" value="1"> Kuntatarkistin<br>
-                    <input type="checkbox" name="tarkistin" value="2"> Maakuntatarkistin<br>
-                    <input type="checkbox" name="tarkistin" value="3"> Mitalitaulukko<br>
-                    <input type="checkbox" name="tarkistin" value="4"> Löytöputki<br>
-                    <input type="checkbox" name="tarkistin" value="5"> Kuntatarkistin (pieni)
-                </div>
-
-                <div>
-                    <h3>Maakunnat</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 15px;">
-                        <span><input type="checkbox" name="maakunta" value="1"> Ahvenanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="2"> Etelä-Karjala</span>
-                        <span><input type="checkbox" name="maakunta" value="3"> Etelä-Pohjanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="4"> Etelä-Savo</span>
-                        <span><input type="checkbox" name="maakunta" value="5"> Kainuu</span>
-                        <span><input type="checkbox" name="maakunta" value="6"> Kanta-Häme</span>
-                        <span><input type="checkbox" name="maakunta" value="7"> Keski-Pohjanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="8"> Keski-Suomi</span>
-                        <span><input type="checkbox" name="maakunta" value="9"> Kymenlaakso</span>
-                        <span><input type="checkbox" name="maakunta" value="10"> Lappi</span>
-                        <span><input type="checkbox" name="maakunta" value="11"> Pirkanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="12"> Pohjanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="13"> Pohjois-Karjala</span>
-                        <span><input type="checkbox" name="maakunta" value="14"> Pohjois-Pohjanmaa</span>
-                        <span><input type="checkbox" name="maakunta" value="15"> Pohjois-Savo</span>
-                        <span><input type="checkbox" name="maakunta" value="16"> Päijät-Häme</span>
-                        <span><input type="checkbox" name="maakunta" value="17"> Satakunta</span>
-                        <span><input type="checkbox" name="maakunta" value="18"> Uusimaa</span>
-                        <span><input type="checkbox" name="maakunta" value="19"> Varsinais-Suomi</span>
-                    </div>
-                </div>
-            </div>
+            <table>
+                <tr>
+                    <th>Perustilastot</th>
+                    <th>Tarkistimet</th>
+                    <th>Maakunnat</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="checkbox" name="kuva" value="1"> Löydetyt kuukausittain<br>
+                        <input type="checkbox" name="kuva" value="2"> Löydetyt vuosittain<br>
+                        <input type="checkbox" name="kuva" value="3"> Löydetyt tänään<br>
+                        <input type="checkbox" name="kuva" value="4"> Löytöjen määrä kätkötyypeittäin<br>
+                        <input type="checkbox" name="kuva" value="5"> Päivälöydöt<br>
+                        <input type="checkbox" name="kuva" value="6"> Löytyneet kätköt (viimeiset 30 vrk)<br>
+                        <input type="checkbox" name="kuva" value="7"> FTF-kuva
+                    </td>
+                    <td>
+                        <input type="checkbox" name="tarkistin" value="1"> Kuntatarkistin<br>
+                        <input type="checkbox" name="tarkistin" value="2"> Maakuntatarkistin<br>
+                        <input type="checkbox" name="tarkistin" value="3"> Mitalitaulukko<br>
+                        <input type="checkbox" name="tarkistin" value="4"> Löytöputki<br>
+                        <input type="checkbox" name="tarkistin" value="5"> Kuntatarkistin (pieni)
+                    </td>
+                    <td>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px;">
+                            <span><input type="checkbox" name="maakunta" value="1"> Ahvenanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="2"> E-Karjala</span>
+                            <span><input type="checkbox" name="maakunta" value="3"> E-Pohjanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="4"> E-Savo</span>
+                            <span><input type="checkbox" name="maakunta" value="5"> Kainuu</span>
+                            <span><input type="checkbox" name="maakunta" value="6"> K-Häme</span>
+                            <span><input type="checkbox" name="maakunta" value="7"> K-Pohjanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="8"> K-Suomi</span>
+                            <span><input type="checkbox" name="maakunta" value="9"> Kymenlaakso</span>
+                            <span><input type="checkbox" name="maakunta" value="10"> Lappi</span>
+                            <span><input type="checkbox" name="maakunta" value="11"> Pirkanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="12"> Pohjanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="13"> P-Karjala</span>
+                            <span><input type="checkbox" name="maakunta" value="14"> P-Pohjanmaa</span>
+                            <span><input type="checkbox" name="maakunta" value="15"> P-Savo</span>
+                            <span><input type="checkbox" name="maakunta" value="16"> Päijät-Häme</span>
+                            <span><input type="checkbox" name="maakunta" value="17"> Satakunta</span>
+                            <span><input type="checkbox" name="maakunta" value="18"> Uusimaa</span>
+                            <span><input type="checkbox" name="maakunta" value="19"> V-Suomi</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div id="kuva-alue"></div>
         </div>
-
-        <div id="kuva-alue" style="margin-top: 20px;"></div>
     </section>
 
-    <section id="tripletti" class="hidden">
-        <div class="card"><h2>Triplettiseuranta</h2><p>Tulossa myöhemmin...</p></div>
+    <section id="tripletti" class="hidden" style="text-align:center; padding: 50px;">
+        <h2>Tripletti</h2>
+        <p>Tämä osio työstetään myöhemmin.</p>
     </section>
 </main>
 
-<script src="app.js"></script>
+<script>
+    function showPage(pageId) {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+    }
+
+    function generoiKuvat() {
+        var nimi = document.getElementById('nimimerkki').value;
+        var alue = document.getElementById('kuva-alue');
+        var valitut = document.querySelectorAll('input[name="kuva"]:checked');
+        var maakunnat = document.querySelectorAll('input[name="maakunta"]:checked');
+        var tarkistimet = document.querySelectorAll('input[name="tarkistin"]:checked');
+
+        if (nimi === "") { alert("Syötä kätköilijän nimi!"); return; }
+
+        var html = '<div class="result-card"><h3>Linkit kätköilijälle: ' + nimi + '</h3>';
+        html += '<p><a href="https://www.geocaching.com/profile/?u=' + nimi + '" target="_blank">GC.com profiili</a> | ';
+        html += '<a href="https://www.geocache.fi/stat/tilastot.php?n=' + nimi + '" target="_blank">Geocache.fi tilastot</a> | ';
+        html += '<a href="https://project-gc.com/Statistics/ProfileStats?profile_name=' + nimi + '" target="_blank">Project-GC</a></p></div>';
+
+        function luoBlock(otsikko, imgUrl) {
+            var linkUrl = "https://www.geocache.fi/stat/tilastot.php?n=" + nimi;
+            return '<div class="result-card"><h4>' + otsikko + '</h4>' +
+                   '<img src="' + imgUrl + '" style="max-width:100%; border: 1px solid #ccc;"><br><br>' +
+                   '<strong>BBCode:</strong><br><input type="text" value="[URL=' + linkUrl + '][IMG]' + imgUrl + '[/IMG][/URL]" readonly style="width:100%; font-size:11px;"><br>' +
+                   '<strong>HTML-koodi:</strong><br><input type="text" value=\'<a href="' + linkUrl + '"><img src="' + imgUrl + '" border="0"></a>\' readonly style="width:100%; font-size:11px;"></div>';
+        }
+
+        valitut.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&s=" + cb.value); });
+        maakunnat.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&m=" + cb.value); });
+        tarkistimet.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&t=" + cb.value); });
+
+        alue.innerHTML = html;
+    }
+</script>
+
 </body>
 </html>
