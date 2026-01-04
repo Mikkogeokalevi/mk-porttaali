@@ -1,7 +1,7 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
 
-/* KONFIGURAATIO: Kätkötyyppien indeksit ja ikonit */
+/* KONFIGURAATIO */
 const CACHE_TYPES = [
     { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
     { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
@@ -18,7 +18,7 @@ const CACHE_TYPES = [
     { index: 13, name: 'No Location', icon: 'kuvat/noloc.gif' }
 ];
 
-// Päävalikko
+// --- PÄÄVALIKKO ---
 export const renderStatsDashboard = (content, app) => {
     content.innerHTML = `
     <div class="card">
@@ -31,14 +31,150 @@ export const renderStatsDashboard = (content, app) => {
             <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_all')">
                 <span style="font-size:2em;">🗺️</span><br>Maakunnat & Löydöt
             </button>
-            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px; opacity:0.6; cursor:default;" title="Tulossa myöhemmin">
-                <span style="font-size:2em;">📊</span><br>Top-listat (Tulossa)
+            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_top')">
+                <span style="font-size:2em;">📊</span><br>Top-listat
             </button>
         </div>
     </div>`;
 };
 
-// UUSI: Maakuntanäkymä (Accordion)
+// --- DATA FETCH ---
+async function fetchData(db, uid) {
+    const s = await getDoc(doc(db, "stats", uid));
+    return (s.exists() && s.data().municipalities) ? s.data().municipalities : null;
+}
+
+// --- 1. TOP-LISTAT (UUSI OMINAISUUS) ---
+export const loadTopStats = async (db, user, content) => {
+    if (!user) return;
+    content.innerHTML = `<div class="card"><h1>Top-listat</h1><p>Ladataan...</p></div>`;
+
+    try {
+        const fullData = await fetchData(db, user.uid);
+        if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa.</p></div>`; return; }
+
+        // Renderöidään valintapaneeli
+        content.innerHTML = `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0;">Ranking</h2>
+                <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
+            </div>
+            
+            <label>Järjestä:</label>
+            <select id="sortCriteria">
+                <option value="total">Löydöt yhteensä</option>
+                <option value="variety">Kätkötyyppien määrä (max 13)</option>
+                <option value="0">Tradi</option>
+                <option value="3">Mysse</option>
+                <option value="1">Multi</option>
+                <option value="5">Earth (Öörtti)</option>
+                <option value="7">Virtuaali</option>
+                <option value="4">Letterbox</option>
+                <option value="6">Miitti</option>
+            </select>
+
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>Suunta:</label>
+                    <select id="sortOrder">
+                        <option value="desc">Eniten ensin</option>
+                        <option value="asc">Vähiten ensin (esim. nollat)</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label>Näytä:</label>
+                    <select id="limitCount">
+                        <option value="10">Top 10</option>
+                        <option value="50">Top 50</option>
+                        <option value="1000">Kaikki</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="topListResult"></div>
+        </div>`;
+
+        // Logiikka listan piirtämiseen
+        const updateList = () => {
+            const criteria = document.getElementById('sortCriteria').value;
+            const order = document.getElementById('sortOrder').value; // 'desc' or 'asc'
+            const limit = parseInt(document.getElementById('limitCount').value);
+            const container = document.getElementById('topListResult');
+
+            // Muutetaan data taulukoksi käsittelyä varten
+            let list = Object.keys(fullData).map(kunta => {
+                const s = fullData[kunta].s || [];
+                // Laske yhteensä
+                const total = s.reduce((a, b) => a + b, 0);
+                // Laske montako eri tyyppiä löydetty (arvo > 0)
+                const variety = s.filter(v => v > 0).length;
+                
+                // Haetaan tietty tyyppi jos valittu
+                let specificVal = 0;
+                if (!isNaN(criteria)) {
+                    specificVal = s[parseInt(criteria)] || 0;
+                }
+
+                return { name: kunta, total, variety, specificVal, stats: s };
+            });
+
+            // Lajittelu
+            list.sort((a, b) => {
+                let valA, valB;
+                
+                if (criteria === 'total') { valA = a.total; valB = b.total; }
+                else if (criteria === 'variety') { valA = a.variety; valB = b.variety; }
+                else { valA = a.specificVal; valB = b.specificVal; }
+
+                if (valA === valB) return a.name.localeCompare(b.name); // Tasatilanteessa aakkoset
+                return order === 'desc' ? valB - valA : valA - valB;
+            });
+
+            // Rajaus
+            const slicedList = list.slice(0, limit);
+
+            // HTML Generointi
+            let html = '<ol style="padding-left:20px; margin-top:10px;">';
+            slicedList.forEach(item => {
+                let detailText = "";
+                if (criteria === 'total') detailText = `<b>${item.total}</b> löytöä`;
+                else if (criteria === 'variety') detailText = `<b>${item.variety}</b> eri tyyppiä`;
+                else {
+                    // Haetaan tyypin nimi
+                    const typeName = CACHE_TYPES.find(t => t.index == criteria)?.name || 'Löytöä';
+                    detailText = `<b>${item.specificVal}</b> ${typeName}`;
+                }
+
+                // Lisätään pieni yhteenveto perään (esim. nollakerholaisille)
+                if (item.total === 0) detailText = `<span style="color:var(--subtext-color)">Ei löytöjä</span>`;
+
+                html += `
+                <li style="margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-size:1.1em;">${item.name}</span>
+                        <span style="color:var(--accent-color);">${detailText}</span>
+                    </div>
+                </li>`;
+            });
+            html += '</ol>';
+
+            if (slicedList.length === 0) html = '<p>Ei tuloksia.</p>';
+            container.innerHTML = html;
+        };
+
+        // Kuuntelijat
+        document.getElementById('sortCriteria').addEventListener('change', updateList);
+        document.getElementById('sortOrder').addEventListener('change', updateList);
+        document.getElementById('limitCount').addEventListener('change', updateList);
+
+        // Alustus
+        updateList();
+
+    } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
+};
+
+// --- 2. MAAKUNNAT & LÖYDÖT (ACCORDION) ---
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
@@ -47,7 +183,6 @@ export const loadAllStats = async (db, user, content) => {
         const fullData = await fetchData(db, user.uid);
         if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa. Käytä Admin-työkalua.</p></div>`; return; }
 
-        // Renderöidään runko
         content.innerHTML = `
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -64,24 +199,17 @@ export const loadAllStats = async (db, user, content) => {
             const term = filter.toLowerCase();
             let totalRegionsShown = 0;
 
-            // Käydään läpi maakunnat aakkosjärjestyksessä
             Object.keys(maakuntienKunnat).sort().forEach(maakunta => {
                 const kunnatMaakunnassa = maakuntienKunnat[maakunta];
-                
-                // Etsitään mitkä tämän maakunnan kunnista löytyvät käyttäjän datasta (fullData)
-                // JA vastaavat hakusanaa
                 const matchingMunicipalities = kunnatMaakunnassa.filter(kunta => {
-                    const hasData = fullData[kunta]; // Onko löytöjä?
-                    const matchesSearch = kunta.toLowerCase().includes(term); // Osuuko haku?
+                    const hasData = fullData[kunta]; 
+                    const matchesSearch = kunta.toLowerCase().includes(term); 
                     return hasData && matchesSearch;
                 });
 
-                // Jos ei yhtään osumaa tässä maakunnassa, ei näytetä maakuntaa ollenkaan
                 if (matchingMunicipalities.length === 0) return;
-
                 totalRegionsShown++;
 
-                // Rakennetaan HTML kunnille
                 let municipalitiesHtml = "";
                 matchingMunicipalities.forEach(kunta => {
                     const stats = fullData[kunta].s || [];
@@ -112,34 +240,26 @@ export const loadAllStats = async (db, user, content) => {
                     </div>`;
                 });
 
-                // Avataanko haitari? Kyllä, jos on haku päällä. Muuten kiinni.
                 const isOpen = term.length > 0 ? "open" : "";
-                
-                // Maakunnan otsikko (Haitari)
                 container.innerHTML += `
                 <details ${isOpen} class="region-accordion">
                     <summary>
                         <span style="font-size:1.1em;">${maakunta}</span>
                         <span style="float:right; font-weight:normal; opacity:0.7; font-size:0.9em;">${matchingMunicipalities.length} kuntaa</span>
                     </summary>
-                    <div class="region-content">
-                        ${municipalitiesHtml}
-                    </div>
+                    <div class="region-content">${municipalitiesHtml}</div>
                 </details>`;
             });
 
-            if (totalRegionsShown === 0) {
-                container.innerHTML = `<p style="text-align:center; margin-top:20px; opacity:0.6;">Ei osumia haulla "${filter}".</p>`;
-            }
+            if (totalRegionsShown === 0) container.innerHTML = `<p style="text-align:center; margin-top:20px; opacity:0.6;">Ei osumia haulla "${filter}".</p>`;
         };
-
         renderRegions();
         document.getElementById('regionSearch').addEventListener('input', (e) => renderRegions(e.target.value));
 
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// VANHA: Tripletti
+// --- 3. TRIPLETTITARKISTUS ---
 export const loadTripletData = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Triplettitarkistus</h1><p>Ladataan...</p></div>`;
@@ -160,11 +280,6 @@ export const loadTripletData = async (db, user, content) => {
         initTripletLogic(fullData);
     } catch (e) { content.innerHTML = `<div class="card"><h1 style="color:var(--error-color)">Virhe</h1><p>${e.message}</p></div>`; }
 };
-
-async function fetchData(db, uid) {
-    const s = await getDoc(doc(db, "stats", uid));
-    return (s.exists() && s.data().municipalities) ? s.data().municipalities : null;
-}
 
 function initTripletLogic(fullData) {
     const renderLists = (filterText) => {
