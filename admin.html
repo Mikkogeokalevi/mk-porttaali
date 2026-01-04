@@ -24,21 +24,33 @@
         .btn-login { background-color: #db4437; color: white; }
         .btn-process { background-color: #89b4fa; color: #1e1e2e; }
         .btn-save { background-color: #a6e3a1; color: #1e1e2e; }
+        .btn-settings { background-color: #585b70; color: #fff; padding: 5px 10px; font-size: 0.9em; margin-bottom: 10px; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .hidden { display: none !important; }
         .status { margin-top: 10px; font-weight: bold; min-height: 24px; }
-        .preview { margin-top: 20px; background: #313244; padding: 20px; border-radius: 8px; }
         
-        /* Taulukon tyyli esikatseluun */
-        .stat-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; }
+        /* Esikatselulaatikot */
+        .preview { margin-top: 20px; background: #313244; padding: 20px; border-radius: 8px; }
+        .stat-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid #45475a; }
+        
+        /* Yksityiskohtainen lista */
+        .detail-list { max-height: 300px; overflow-y: auto; font-size: 0.9em; border-top: 1px solid #45475a; padding-top: 10px; }
+        .detail-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .detail-vals { color: #a6adc8; }
+
+        /* Asetuspaneeli */
+        #settingsPanel { background: #252535; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #45475a; }
+        .setting-row { display: flex; gap: 15px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+        .setting-row input { width: 50px; padding: 5px; background: #181825; color: #fff; border: 1px solid #45475a; border-radius: 4px; }
+        .instruction-text { color: #a6adc8; font-size: 0.9em; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Tilastojen Päivitystyökalu (Multi-User)</h1>
+    <h1>Tilastojen Päivitystyökalu</h1>
 
     <div id="authPanel" class="auth-panel">
         <span id="loginStatus">Odotetaan...</span>
@@ -47,8 +59,23 @@
     </div>
 
     <div id="toolArea" class="hidden">
+        
+        <button class="btn-settings" onclick="toggleSettings()">⚙️ Sarakkeiden asetukset (Klikkaa jos luvut väärin)</button>
+        
+        <div id="settingsPanel" class="hidden">
+            <p class="instruction-text">
+                Katso Geocache.fi taulukkoa. Laske monesko sarake (maakunnan jälkeen) on mikäkin.<br>
+                <em>Oletusasetus (kuvasi perusteella): 1=Tradi, 2=Multi, (3=Webcam), 4=Mysteeri.</em>
+            </p>
+            <div class="setting-row">
+                <label>Tradi sarake:</label> <input type="number" id="colTradi" value="1" min="1">
+                <label>Multi sarake:</label> <input type="number" id="colMulti" value="2" min="1">
+                <label>Mysteeri sarake:</label> <input type="number" id="colMysse" value="4" min="1">
+            </div>
+        </div>
+
         <p>Liitä tähän Geocache.fi:n "Kuntatilasto" -taulukon sisältö:</p>
-        <textarea id="rawInput" placeholder="Paikkakunta, Maakunta, Tradi, Multi..."></textarea>
+        <textarea id="rawInput" placeholder="Liitä tähän (Paikkakunta, Maakunta, Tradi, Multi, Webbikamera, Mysteeri...)"></textarea>
         
         <div style="margin-top:10px;">
             <button class="btn-process" onclick="processData()">1. Prosessoi data</button>
@@ -59,7 +86,16 @@
 
         <div id="previewArea" class="preview hidden">
             <h3>Analyysi datasta:</h3>
-            <div id="previewContent" class="stat-summary"></div>
+            <div class="stat-summary">
+                <div class="stat-box">Kunnat: <span id="countTotal">-</span></div>
+                <div class="stat-box" style="color:#a6e3a1; border-color:#a6e3a1;">Triplettikunnat: <span id="countTrip">-</span></div>
+                <div class="stat-box">Vain Tradi: <span id="countTradi">-</span></div>
+                <div class="stat-box">Ei löytöjä: <span id="countNone">-</span></div>
+            </div>
+            
+            <h4>Tarkistuslista (Ensimmäiset 10):</h4>
+            <p style="font-size:0.8em; color:#888;">Tarkista tästä, osuivatko luvut oikein. Esim. onko Alajärvellä oikea määrä mysteereitä?</p>
+            <div id="detailList" class="detail-list"></div>
         </div>
     </div>
 </div>
@@ -85,11 +121,11 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
-    let processedCategories = {}; // Tämä tallennetaan
+    let processedCategories = {};
 
-    // --- KIRJAUTUMINEN ---
     window.adminLogin = () => signInWithPopup(auth, provider);
     window.adminLogout = () => signOut(auth);
+    window.toggleSettings = () => document.getElementById('settingsPanel').classList.toggle('hidden');
 
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
@@ -111,25 +147,28 @@
         }
     });
 
-    // --- PROSESSOINTI ---
     window.processData = () => {
         const raw = document.getElementById('rawInput').value;
         if(!raw.trim()) return alert("Liitä ensin dataa!");
 
+        // Haetaan sarakkeet. Vähennetään 1, koska taulukko on 0-indeksoitu (0, 1, 2...)
+        const idxTradi = parseInt(document.getElementById('colTradi').value) - 1;
+        const idxMulti = parseInt(document.getElementById('colMulti').value) - 1;
+        const idxMysse = parseInt(document.getElementById('colMysse').value) - 1;
+
         const lines = raw.split('\n');
-        // Nyt emme tallenna enää pelkkiä kategorioita 1-8, vaan
-        // rakennamme täyden objektin, josta voimme myöhemmin laskea mitä vain.
-        // Formaatti: { "Akaa": { t:3, m:0, q:0, r:"Pirkanmaa" }, ... }
         const municipalityData = {};
-        
         let success = 0;
         const sortedRegions = [...suomenMaakunnat].sort((a, b) => b.length - a.length);
 
+        // Tyhjennetään esikatselu
+        const detailList = document.getElementById('detailList');
+        detailList.innerHTML = '';
+
         lines.forEach(line => {
             let clean = line.trim();
-            if(!clean || clean.startsWith("Paikkakunta")) return;
+            if(!clean || clean.startsWith("Paikkakunta") || clean.length < 5) return;
 
-            // Yritetään tunnistaa maakunta
             let kunta = "", region = "", numsPart = "";
             let found = false;
 
@@ -144,99 +183,92 @@
                 }
             }
 
-            // Fallback tab-erotteluun
             if(!found && clean.includes('\t')) {
                 const parts = clean.split('\t');
                 if(parts.length > 4) {
                     let offset = isNaN(parseInt(parts[0])) ? 0 : 1;
                     kunta = parts[offset];
-                    region = parts[offset+1]; // Oletus: kunta, maakunta...
-                    // Joskus maakunta puuttuu välistä joissain listauksissa, mutta oletetaan tämä
+                    region = parts[offset+1];
                     numsPart = parts.slice(offset+2).join(' ');
                     found = true;
                 }
             }
 
             if(found) {
-                // Poista järjestysnumerot kunnasta (esim "1 Akaa")
                 kunta = kunta.replace(/^\d+\s+/, '');
                 
-                // Parsitaan numerot
-                const nums = numsPart.replace(/\s+/g, ' ').split(' ');
-                const tradi = parseInt(nums[0]) || 0;
-                const multi = parseInt(nums[1]) || 0;
-                const mysse = parseInt(nums[2]) || 0;
-                // Voisi jatkaa: const earth = nums[3]... mutta otetaan nyt nämä päätyypit
+                // Korvataan kaikki "tyhjät" (välilyönnit ja tabit) yhdellä välilyönnillä ja pilkotaan
+                const nums = numsPart.replace(/\s+/g, ' ').trim().split(' ');
+                
+                // Turvatarkistus: onko meillä tarpeeksi numeroita?
+                if(nums.length > idxMysse) {
+                    const tradi = parseInt(nums[idxTradi]) || 0;
+                    const multi = parseInt(nums[idxMulti]) || 0;
+                    const mysse = parseInt(nums[idxMysse]) || 0;
 
-                municipalityData[kunta] = {
-                    r: region, // Region
-                    t: tradi,
-                    m: multi,
-                    q: mysse
-                };
-                success++;
+                    municipalityData[kunta] = { r: region, t: tradi, m: multi, q: mysse };
+                    success++;
+
+                    // Lisätään esikatseluun 10 ensimmäistä, jotta käyttäjä voi tarkistaa
+                    if (success <= 10) {
+                        detailList.innerHTML += `
+                            <div class="detail-item">
+                                <span>${kunta}</span>
+                                <span class="detail-vals">Tradi:${tradi} | Multi:${multi} | Mysteeri:<strong>${mysse}</strong></span>
+                            </div>
+                        `;
+                    }
+                }
             }
         });
 
-        // Lasketaan kategoriat esikatselua varten (Tripletti-logiikka)
-        const categories = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
+        // Laskenta
+        const cats = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
         for(const k in municipalityData) {
             const d = municipalityData[k];
             const t=d.t>0, m=d.m>0, q=d.q>0;
-            if(!t && !m && !q) categories[1]++;
-            else if(t && !m && !q) categories[2]++;
-            else if(!t && m && !q) categories[3]++;
-            else if(!t && !m && q) categories[4]++;
-            else if(t && m && !q) categories[5]++;
-            else if(!t && m && q) categories[6]++;
-            else if(t && !m && q) categories[7]++;
-            else if(t && m && q) categories[8]++;
+            if(!t && !m && !q) cats[1]++;
+            else if(t && !m && !q) cats[2]++;
+            else if(!t && m && !q) cats[3]++;
+            else if(!t && !m && q) cats[4]++;
+            else if(t && m && !q) cats[5]++;
+            else if(!t && m && q) cats[6]++;
+            else if(t && !m && q) cats[7]++;
+            else if(t && m && q) cats[8]++;
         }
 
-        processedCategories = municipalityData; // TÄMÄ TALLENNETAAN
+        processedCategories = municipalityData;
 
         // UI Update
-        const status = document.getElementById('statusMsg');
-        status.innerHTML = `Prosessoitu <span style="color:#a6e3a1">${success}</span> kuntaa.`;
-        
-        const preview = document.getElementById('previewContent');
-        preview.innerHTML = `
-            <div class="stat-box"><strong>Kuntia yht:</strong> ${success}</div>
-            <div class="stat-box" style="color:#a6e3a1"><strong>Triplettikuntia:</strong> ${categories[8]}</div>
-            <div class="stat-box"><strong>Vain Tradi:</strong> ${categories[2]}</div>
-            <div class="stat-box"><strong>Ei löytöjä:</strong> ${categories[1]}</div>
-        `;
+        document.getElementById('countTotal').textContent = success;
+        document.getElementById('countTrip').textContent = cats[8];
+        document.getElementById('countTradi').textContent = cats[2];
+        document.getElementById('countNone').textContent = cats[1];
         
         document.getElementById('previewArea').classList.remove('hidden');
         document.getElementById('saveBtn').style.display = 'inline-block';
+        document.getElementById('statusMsg').textContent = `Prosessoitu ${success} riviä.`;
     };
 
-    // --- TALLENNUS ---
     window.saveToFirebase = async () => {
         if(!currentUser) return alert("Kirjaudu ensin!");
-        
         const btn = document.getElementById('saveBtn');
         const status = document.getElementById('statusMsg');
-        btn.disabled = true;
-        btn.textContent = "Tallennetaan...";
+        btn.disabled = true; btn.textContent = "Tallennetaan...";
 
         try {
-            // TALLENNETAAN KÄYTTÄJÄKOHTAISEEN TIEDOSTOON: stats/{uid}
             await setDoc(doc(db, "stats", currentUser.uid), {
                 municipalities: processedCategories,
                 updatedAt: serverTimestamp(),
                 updatedBy: currentUser.email,
                 type: "full_municipality_stats"
             });
-
-            status.textContent = "✅ Tallennettu käyttäjälle " + currentUser.email;
+            status.textContent = "✅ Tallennettu!";
             status.style.color = "#a6e3a1";
             setTimeout(() => { btn.disabled = false; btn.textContent = "2. Tallenna uudelleen"; }, 3000);
-
         } catch (e) {
             console.error(e);
             status.textContent = "❌ Virhe: " + e.message;
-            status.style.color = "#f38ba8";
             btn.disabled = false;
         }
     };
