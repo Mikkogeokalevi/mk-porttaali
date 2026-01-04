@@ -18,9 +18,8 @@ import {
   arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// TUODAAN APUTIEDOSTOT
+// TUODAAN DATA ULKOISESTA TIEDOSTOSTA
 import { suomenMaakunnat, maakuntienKunnat } from "./data.js";
-import { CACHE_TYPES, isTriplet, countFoundTypes, calculateGlobalStats, calculateRegionStats } from "./statsHelper.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -50,33 +49,18 @@ window.app = {
     const nav = document.getElementById('mainNav');
     if(nav) nav.classList.remove('open');
 
-    // Suojatut sivut vaativat kirjautumisen
-    if (['triplet', 'allstats', 'summary'].includes(view) && !window.app.currentUser) {
-        app.router('login_view');
-        return;
-    }
-
     switch(view) {
       case 'home':
         content.innerHTML = `
           <div class="card">
             <h1>Tervetuloa MK Porttaaliin</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
-            
-            <div style="display:grid; gap:10px; margin-top:20px;">
+            <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
-                  🎨 Avaa Kuvageneraattori (Live)
+                  Avaa Kuvageneraattori (Live)
                 </button>
-                
-                <h3 style="margin-top:15px; border-bottom:1px solid #45475a; color:#a6adc8;">Omat Tilastot (Tietokanta)</h3>
-                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('allstats')">
-                  📋 Kaikki löydöt
-                </button>
-                <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('triplet')">
-                  🏆 Triplettilista
-                </button>
-                <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('summary')">
-                  📊 Yhteenveto & Kartat
+                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('triplet')">
+                  Omat Kuntatilastot
                 </button>
             </div>
           </div>
@@ -91,38 +75,16 @@ window.app = {
         break;
 
       case 'triplet':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
         content.innerHTML = `
             <div class="card">
-                <h1>Triplettilista</h1>
-                <p>Kunnat, joista löytyy Tradi, Multi ja Mysteeri.</p>
-                <div id="tripletContent">Ladataan...</div>
+                <h1>Kuntatilastot</h1>
+                <p>Ladataan tietoja...</p>
             </div>`;
-        app.loadStatsData('triplet');
-        break;
-
-      case 'allstats':
-        content.innerHTML = `
-            <div class="card">
-                <h1>Kaikki löydöt</h1>
-                <p>Kaikki kätkötyypit kunnittain.</p>
-                <input type="text" id="statSearch" placeholder="Hae kuntaa..." 
-                       style="width:100%; padding:10px; margin-bottom:15px; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:8px;">
-                <div id="allStatsContent">Ladataan...</div>
-            </div>`;
-        app.loadStatsData('allstats');
-        break;
-
-      case 'summary':
-        content.innerHTML = `
-            <div class="card">
-                <h1>Tilastoyhteenveto</h1>
-                <div id="summaryContent">Ladataan...</div>
-            </div>`;
-        app.loadStatsData('summary');
+        app.loadTripletData();
         break;
 
       case 'generator':
-        // --- TÄSSÄ ON NYT SE KOKO GENERAATTORIN KOODI KOKONAISUUDESSAAN ---
         let defaultUser = '';
         if (window.app.currentUser) {
             if (window.app.currentUser.email === 'toni@kauppinen.info') {
@@ -290,13 +252,163 @@ window.app = {
     }
   },
 
-  // --- UI LOGIIKKA: GENERAATTORI & KAVERILISTA & MODAALIT ---
+  // --- TRIPLETTI LOGIIKKA (UUSI HAKUTOIMINTO) ---
+  loadTripletData: async () => {
+      const content = document.getElementById('appContent');
+      if (!window.app.currentUser) return;
+
+      try {
+          const docRef = doc(db, "stats", window.app.currentUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (!docSnap.exists() || !docSnap.data().municipalities) {
+              content.innerHTML = `
+                <div class="card">
+                    <h1>Kuntatilastot</h1>
+                    <p>Ei tallennettuja tilastoja. Käytä tietokoneella <a href="admin.html" target="_blank" style="color:var(--accent-color)">Admin-työkalua</a> tietojen päivittämiseen.</p>
+                </div>`;
+              return;
+          }
+
+          const fullData = docSnap.data().municipalities;
+          
+          let updatedString = '-';
+          if (docSnap.data().updatedAt) {
+              const date = docSnap.data().updatedAt.toDate();
+              updatedString = date.toLocaleString('fi-FI', { 
+                  day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+              });
+          }
+
+          // Renderöidään pohja (otsikko, haku, containerit)
+          content.innerHTML = `
+            <div class="card">
+                <h1>Kuntatilastot</h1>
+                <p style="font-size:0.9em; color:var(--success-color); border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                   ✅ Data päivitetty: <b>${updatedString}</b>
+                </p>
+                
+                <input type="text" id="tripletSearch" placeholder="Hae kuntaa..." 
+                       style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:8px; font-size:16px;">
+
+                <div id="tripletStatsSummary" style="display:flex; gap:10px; margin-bottom:15px;">
+                    </div>
+
+                <div id="tripletResults">
+                    </div>
+            </div>`;
+
+          // Funktio listan piirtämiseen (kutsutaan alussa ja haun yhteydessä)
+          const renderLists = (filterText) => {
+              const filter = filterText.toLowerCase();
+              const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
+              const titles = {
+                  1: "1. Ei löytöjä (0/0/0)",
+                  2: "2. Vain Tradi",
+                  3: "3. Vain Multi",
+                  4: "4. Vain Mysteeri",
+                  5: "5. Tradi + Multi",
+                  6: "6. Multi + Mysteeri",
+                  7: "7. Tradi + Mysteeri",
+                  8: "8. Triplettikunnat (T+M+Q)"
+              };
+
+              // Suodatetaan ja lajitellaan data
+              Object.keys(fullData).sort().forEach(kunta => {
+                  if (kunta.toLowerCase().includes(filter)) {
+                      const d = fullData[kunta];
+                      const stats = d.s || [];
+                      
+                      const t = stats[0] || 0;
+                      const m = stats[1] || 0;
+                      const q = stats[3] || 0; // Mysteeri (4. sarake)
+
+                      const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
+
+                      if(!t && !m && !q) cats[1].push(itemHTML);
+                      else if(t && !m && !q) cats[2].push(itemHTML);
+                      else if(!t && m && !q) cats[3].push(itemHTML);
+                      else if(!t && !m && q) cats[4].push(itemHTML);
+                      else if(t && m && !q) cats[5].push(itemHTML);
+                      else if(!t && m && q) cats[6].push(itemHTML);
+                      else if(t && !m && q) cats[7].push(itemHTML);
+                      else if(t && m && q) cats[8].push(itemHTML);
+                  }
+              });
+
+              // Päivitetään yläosan laatikot
+              const summaryContainer = document.getElementById('tripletStatsSummary');
+              if(summaryContainer) {
+                  summaryContainer.innerHTML = `
+                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div>
+                        <div style="font-size:0.8em;">Triplettiä</div>
+                    </div>
+                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div>
+                        <div style="font-size:0.8em;">Ei löytöjä</div>
+                    </div>
+                  `;
+              }
+
+              // Rakennetaan HTML
+              let html = '';
+              let totalShown = 0;
+              for(let i=1; i<=8; i++) {
+                  const count = cats[i].length;
+                  totalShown += count;
+                  
+                  // Jos haku on päällä, avataan kaikki kategoriat joissa osumia. 
+                  // Jos ei hakua, avataan vain tripletit (8) ja nollat (1).
+                  // Piilotetaan tyhjät kategoriat vain jos haku on päällä.
+                  const isSearching = filter.length > 0;
+                  const isOpen = (isSearching && count > 0) || (!isSearching && (i === 8 || i === 1)) ? 'open' : ''; 
+                  const style = (i === 8) ? 'border-color:var(--success-color);' : '';
+                  const displayStyle = (isSearching && count === 0) ? 'display:none;' : ''; 
+
+                  html += `
+                    <details ${isOpen} style="margin-bottom:10px; background:rgba(0,0,0,0.1); border-radius:8px; border:1px solid var(--border-color); ${style} ${displayStyle}">
+                        <summary style="padding:10px; cursor:pointer; font-weight:bold; list-style:none;">
+                            ${titles[i]} <span style="float:right; opacity:0.7;">(${count})</span>
+                        </summary>
+                        <div style="padding:10px; border-top:1px solid var(--border-color);">
+                            <ul style="margin:0; padding-left:20px; font-size:0.9em;">
+                                ${count > 0 ? cats[i].join('') : '<li style="list-style:none; opacity:0.5;">Ei kuntia.</li>'}
+                            </ul>
+                        </div>
+                    </details>
+                  `;
+              }
+              
+              if(totalShown === 0) {
+                  html = '<p style="text-align:center; opacity:0.6; margin-top:20px;">Ei hakutuloksia.</p>';
+              }
+
+              document.getElementById('tripletResults').innerHTML = html;
+          };
+
+          // Kutsutaan renderöintiä aluksi tyhjällä haulla
+          renderLists('');
+
+          // Kuunnellaan kirjoitusta
+          document.getElementById('tripletSearch').addEventListener('input', (e) => {
+              renderLists(e.target.value);
+          });
+
+      } catch (e) {
+          console.error(e);
+          content.innerHTML = `<div class="card"><h1 style="color:var(--error-color)">Virhe</h1><p>${e.message}</p></div>`;
+      }
+  },
+
+  // --- UI LOGIIKKA (KUVAGENERATOR) ---
 
   handleTypeChange: () => {
       const type = document.getElementById('genType').value;
       const yearFilters = document.getElementById('yearSpecificFilters');
-      if (type === 'year') yearFilters.classList.remove('hidden');
-      else {
+      if (type === 'year') {
+          yearFilters.classList.remove('hidden');
+      } else {
           yearFilters.classList.add('hidden');
           document.getElementById('genLocType').value = 'none';
           app.handleLocTypeChange();
@@ -308,27 +420,41 @@ window.app = {
       const locInput = document.getElementById('genLocValue');
       const iconRegion = document.getElementById('regionInfoIcon');
       const iconMun = document.getElementById('munSelectIcon');
+
       locInput.disabled = true;
       iconRegion.classList.add('hidden');
       iconMun.classList.add('hidden');
       document.getElementById('regionListContainer').classList.add('hidden');
+
       if (locType === 'mkunta') {
-          locInput.disabled = false; locInput.placeholder = 'Valitse maakunta ⓘ'; iconRegion.classList.remove('hidden');
+          locInput.disabled = false;
+          locInput.placeholder = 'Valitse maakunta ⓘ';
+          iconRegion.classList.remove('hidden');
       } else if (locType === 'pkunta') {
-          locInput.disabled = false; locInput.placeholder = 'Valitse kunnat ⚙️'; iconMun.classList.remove('hidden');
-      } else { locInput.value = ''; locInput.placeholder = 'Valitse tyyppi ensin'; }
+          locInput.disabled = false;
+          locInput.placeholder = 'Valitse kunnat ⚙️';
+          iconMun.classList.remove('hidden');
+      } else {
+          locInput.value = '';
+          locInput.placeholder = 'Valitse tyyppi ensin';
+      }
   },
 
   toggleRegionList: () => {
       const container = document.getElementById('regionListContainer');
-      if (!container.classList.contains('hidden')) { container.classList.add('hidden'); return; }
+      if (!container.classList.contains('hidden')) {
+          container.classList.add('hidden');
+          return;
+      }
       container.innerHTML = '';
       suomenMaakunnat.forEach(maakunta => {
           const div = document.createElement('div');
-          div.textContent = maakunta; div.className = 'region-list-item';
+          div.textContent = maakunta;
+          div.className = 'region-list-item';
           div.onclick = () => {
               const input = document.getElementById('genLocValue');
-              if (input.value) input.value += `, ${maakunta}`; else input.value = maakunta;
+              if (input.value) input.value += `, ${maakunta}`;
+              else input.value = maakunta;
               container.classList.add('hidden');
           };
           container.appendChild(div);
@@ -336,20 +462,30 @@ window.app = {
       container.classList.remove('hidden');
   },
 
-  openPaikkakuntaModal: () => { document.getElementById('paikkakuntaModal').style.display = 'flex'; app.showModalRegionSelection(); },
-  closePaikkakuntaModal: () => { document.getElementById('paikkakuntaModal').style.display = 'none'; },
-  
+  openPaikkakuntaModal: () => {
+      document.getElementById('paikkakuntaModal').style.display = 'flex';
+      app.showModalRegionSelection();
+  },
+
+  closePaikkakuntaModal: () => {
+      document.getElementById('paikkakuntaModal').style.display = 'none';
+  },
+
   showModalRegionSelection: () => {
       document.getElementById('modalHeaderText').textContent = 'Valitse maakunta';
       document.getElementById('modalRegionList').classList.remove('hidden');
       document.getElementById('modalMunicipalityListContainer').classList.add('hidden');
       document.getElementById('modalBackButton').classList.add('hidden');
       document.getElementById('modalAddButton').classList.add('hidden');
-      const ul = document.getElementById('modalRegionList'); ul.innerHTML = '';
+
+      const ul = document.getElementById('modalRegionList');
+      ul.innerHTML = '';
       suomenMaakunnat.forEach(region => {
           if (maakuntienKunnat[region]) {
-              const li = document.createElement('li'); li.textContent = region;
-              li.onclick = () => app.showModalMunicipalitySelection(region); ul.appendChild(li);
+              const li = document.createElement('li');
+              li.textContent = region;
+              li.onclick = () => app.showModalMunicipalitySelection(region);
+              ul.appendChild(li);
           }
       });
   },
@@ -361,10 +497,13 @@ window.app = {
       document.getElementById('modalBackButton').classList.remove('hidden');
       document.getElementById('modalAddButton').classList.remove('hidden');
       document.getElementById('selectAllMunicipalities').checked = false;
-      const ul = document.getElementById('modalMunicipalityList'); ul.innerHTML = '';
+
+      const ul = document.getElementById('modalMunicipalityList');
+      ul.innerHTML = '';
       const kunnat = maakuntienKunnat[region] || [];
       kunnat.forEach(kunta => {
-          const li = document.createElement('li'); li.className = 'municipality-item';
+          const li = document.createElement('li');
+          li.className = 'municipality-item';
           li.innerHTML = `<label><input type="checkbox" value="${kunta}" name="mun_checkbox"> ${kunta}</label>`;
           ul.appendChild(li);
       });
@@ -372,15 +511,20 @@ window.app = {
 
   toggleSelectAll: (source) => {
       const checkboxes = document.getElementsByName('mun_checkbox');
-      for(let i=0; i<checkboxes.length; i++) checkboxes[i].checked = source.checked;
+      for(let i=0; i<checkboxes.length; i++) {
+          checkboxes[i].checked = source.checked;
+      }
   },
 
   confirmMunicipalities: () => {
       const checkboxes = document.querySelectorAll('input[name="mun_checkbox"]:checked');
       const input = document.getElementById('genLocValue');
       let currentVal = input.value.split(',').map(s => s.trim()).filter(s => s);
-      checkboxes.forEach(cb => { if (!currentVal.includes(cb.value)) currentVal.push(cb.value); });
-      input.value = currentVal.join(','); app.showModalRegionSelection();
+      checkboxes.forEach(cb => {
+          if (!currentVal.includes(cb.value)) currentVal.push(cb.value);
+      });
+      input.value = currentVal.join(',');
+      app.showModalRegionSelection();
   },
 
   toggleFriendManager: () => document.getElementById('friendManager').classList.toggle('hidden'),
@@ -398,7 +542,8 @@ window.app = {
   toggleTimeFields: () => {
       const val = document.getElementById('genTimeSelect').value;
       const fields = document.getElementById('timeFields');
-      if(val === 'kylla') fields.classList.remove('hidden'); else fields.classList.add('hidden');
+      if(val === 'kylla') fields.classList.remove('hidden');
+      else fields.classList.add('hidden');
   },
 
   loadFriends: async () => {
@@ -449,131 +594,35 @@ window.app = {
     const cacheType = document.getElementById("genCacheType").value;
     const locType = document.getElementById('genLocType').value;
     const locValue = document.getElementById('genLocValue').value.trim();
+
     if (!user) { alert("Syötä käyttäjätunnus!"); return; }
+
     let params = `?user=${encodeURIComponent(user)}`;
     if (type === "hiddenday") params += `&type=2`;
+
     if (timeMode === "kylla") {
         if (start && end) params += `&startdate=${formatDate(start)}&enddate=${formatDate(end)}`;
-        else { if (year && year !== "current") params += `&year=${year}`; if (month && month !== "current") params += `&month=${month}`; }
+        else {
+           if (year && year !== "current") params += `&year=${year}`;
+           if (month && month !== "current") params += `&month=${month}`;
+        }
     }
     if (cacheType) params += `&cachetype=${cacheType}`;
+    
     if (type === 'year' && locType !== 'none' && locValue) {
         if (locType === 'pkunta') params += `&pkunta=${encodeURIComponent(locValue)}`;
         if (locType === 'mkunta') params += `&mkunta=${encodeURIComponent(locValue)}`;
     }
+
     const finalUrl = `${baseUrl}${type}.php${params}`;
     const img = document.getElementById('generatedImg');
     const link = document.getElementById('openLink');
-    img.src = finalUrl; link.href = finalUrl;
+    img.src = finalUrl;
+    link.href = finalUrl;
     document.getElementById('resultArea').classList.remove('hidden');
   },
 
-  // --- UI LOGIIKKA: UUDET TILASTOT ---
-  
-  loadStatsData: async (viewType) => {
-      const uid = window.app.currentUser.uid;
-      try {
-          const docSnap = await getDoc(doc(db, "stats", uid));
-          if (!docSnap.exists() || !docSnap.data().municipalities) {
-              const el = document.getElementById('tripletContent') || document.getElementById('allStatsContent') || document.getElementById('summaryContent');
-              if(el) el.innerHTML = '<p class="error-msg" style="display:block">Ei dataa. Käytä Admin-työkalua tiedon tallentamiseen.</p>';
-              return;
-          }
-          const data = docSnap.data().municipalities;
-          const date = docSnap.data().updatedAt ? new Date(docSnap.data().updatedAt.seconds * 1000).toLocaleDateString() : '-';
-
-          if (viewType === 'triplet') app.renderTripletView(data, date);
-          if (viewType === 'allstats') app.renderAllStatsView(data, date);
-          if (viewType === 'summary') app.renderSummaryView(data, date);
-      } catch (e) {
-          console.error(e);
-          alert("Virhe datan latauksessa: " + e.message);
-      }
-  },
-
-  // Näkymä: Triplettilista
-  renderTripletView: (data, date) => {
-      const triplets = Object.keys(data).filter(k => isTriplet(data[k].s)).sort();
-      const container = document.getElementById('tripletContent');
-      let html = `<p style="color:var(--success-color)">Löydetty: <b>${triplets.length}</b> kpl (Päivitetty: ${date})</p>`;
-      html += `<div style="display:flex; flex-wrap:wrap; gap:8px;">`;
-      triplets.forEach(kunta => {
-          html += `<span style="background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:6px; font-size:0.95em;">${kunta}</span>`;
-      });
-      html += `</div>`;
-      container.innerHTML = html;
-  },
-
-  // Näkymä: Kaikki löydöt
-  renderAllStatsView: (data, date) => {
-      const container = document.getElementById('allStatsContent');
-      const searchInput = document.getElementById('statSearch');
-
-      const render = (filter) => {
-          let html = `<p style="font-size:0.8em; opacity:0.7">Päivitetty: ${date}</p>`;
-          Object.keys(data).sort().forEach(kunta => {
-              if (filter && !kunta.toLowerCase().includes(filter.toLowerCase())) return;
-              const stats = data[kunta].s || [];
-              const found = CACHE_TYPES.filter(t => stats[t.index] > 0);
-              if (found.length === 0) return;
-
-              html += `
-                <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; padding:10px; margin-bottom:8px;">
-                    <div style="font-weight:bold; color:var(--accent-color); margin-bottom:5px;">${kunta}</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px;">`;
-              found.forEach(t => {
-                  html += `
-                    <div style="display:flex; align-items:center; background:rgba(0,0,0,0.2); padding:3px 8px; border-radius:4px; font-size:0.85em;">
-                        <img src="kuvat/${t.icon}" style="width:16px; height:16px; margin-right:5px;" onerror="this.style.display='none'">
-                        <span>${stats[t.index]}</span>
-                    </div>`;
-              });
-              html += `</div></div>`;
-          });
-          container.innerHTML = html;
-      };
-      render('');
-      searchInput.addEventListener('input', (e) => render(e.target.value));
-  },
-
-  // Näkymä: Yhteenveto
-  renderSummaryView: (data, date) => {
-      const global = calculateGlobalStats(data);
-      const regions = calculateRegionStats(data);
-      const container = document.getElementById('summaryContent');
-
-      let html = `
-        <div style="text-align:center; padding:15px; background:rgba(0,0,0,0.2); border-radius:8px; margin-bottom:20px;">
-            <h3>Suomen Valloitus</h3>
-            <div style="font-size:2.5em; font-weight:bold; color:var(--accent-color);">${global.percentage}%</div>
-            <div>${global.found} / ${global.total} kuntaa</div>
-        </div>
-        <h3>Värisuorat (Top 5)</h3>
-        <ul style="list-style:none; padding:0; margin-bottom:20px;">`;
-
-      let diversity = [];
-      Object.keys(data).forEach(k => diversity.push({ name: k, count: countFoundTypes(data[k].s) }));
-      diversity.sort((a, b) => b.count - a.count);
-
-      diversity.slice(0, 5).forEach((item, i) => {
-          html += `<li style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between;">
-            <span>${i+1}. ${item.name}</span>
-            <span style="font-weight:bold; color:var(--success-color);">${item.count} tyyppiä</span>
-          </li>`;
-      });
-
-      html += `</ul><h3>Maakuntien suosikit</h3><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">`;
-      Object.keys(regions).sort().forEach(r => {
-          html += `<div style="background:var(--input-bg); padding:8px; border-radius:4px; font-size:0.9em;">
-            <div style="font-weight:bold;">${r}</div>
-            <div style="color:var(--accent-color);">Eniten: ${regions[r].mostPopular}</div>
-          </div>`;
-      });
-      html += `</div>`;
-      container.innerHTML = html;
-  },
-
-  // AUTH
+  // Auth
   loginGoogle: () => signInWithPopup(auth, provider).then(() => app.router('home')).catch(e=>alert(e.message)),
   handleEmailLogin: () => {
       const e = document.getElementById('email').value, p = document.getElementById('password').value;
@@ -593,15 +642,6 @@ window.app = {
 
 onAuthStateChanged(auth, (user) => {
   window.app.currentUser = user;
-  const authBtn = document.getElementById('authButton');
-  const logoutBtn = document.getElementById('logoutButton');
-  const userDisplay = document.getElementById('userNameDisplay');
-  if(authBtn) {
-      if (user) {
-          authBtn.classList.add('hidden'); logoutBtn.classList.remove('hidden'); userDisplay.textContent = user.displayName || user.email; userDisplay.classList.remove('hidden');
-      } else {
-          authBtn.classList.remove('hidden'); logoutBtn.classList.add('hidden'); userDisplay.classList.add('hidden');
-      }
-  }
 });
+
 document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
