@@ -18,7 +18,9 @@ import {
   arrayRemove 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// Firebase Config
+// TUODAAN DATA ULKOISESTA TIEDOSTOSTA
+import { suomenMaakunnat, maakuntienKunnat } from "./data.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
   authDomain: "mk-porttaali.firebaseapp.com",
@@ -28,13 +30,11 @@ const firebaseConfig = {
   appId: "1:220899819334:web:6662b7b1519f4c89c32f47"
 };
 
-// Alustukset
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 const provider = new GoogleAuthProvider();
 
-// Apufunktio päivämäärien muotoiluun
 function formatDate(input) {
   const parts = input.split("-");
   if (!parts || parts.length !== 3) return "";
@@ -79,14 +79,12 @@ window.app = {
             }
         }
 
-        // Vuodet
         const currentYear = new Date().getFullYear();
         let yearOptions = '<option value="current">— Vuosi —</option>';
         for (let y = currentYear; y >= 2000; y--) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
 
-        // Kuukaudet
         const months = ["Tammi","Helmi","Maalis","Huhti","Touko","Kesä","Heinä","Elo","Syys","Loka","Marras","Joulu"];
         let monthOptions = '<option value="current">— Kk —</option>';
         months.forEach((m, i) => {
@@ -134,7 +132,15 @@ window.app = {
                     <option value="pkunta">Paikkakunta</option>
                     <option value="mkunta">Maakunta</option>
                 </select>
-                <input type="text" id="genLocValue" placeholder="Esim. Lahti tai Päijät-Häme" disabled>
+                
+                <div style="position:relative;">
+                    <div class="input-group" style="margin-top:5px;">
+                        <input type="text" id="genLocValue" placeholder="Valitse tyyppi ensin" disabled>
+                        <button id="regionInfoIcon" class="btn-icon hidden" onclick="app.toggleRegionList()" title="Valitse maakunta">ⓘ</button>
+                        <button id="munSelectIcon" class="btn-icon hidden" onclick="app.openPaikkakuntaModal()" title="Valitse kunnat">⚙️</button>
+                    </div>
+                    <div id="regionListContainer" class="hidden"></div>
+                </div>
             </div>
 
             <label>Aikarajaus:</label>
@@ -184,18 +190,41 @@ window.app = {
              <br>
              <a id="openLink" href="#" target="_blank" class="btn">Avaa isona</a>
           </div>
+
+          <div id="paikkakuntaModal" class="modal-overlay">
+            <div id="paikkakuntaSelectorModal">
+                <div class="modal-header" id="modalHeaderText">Valitse maakunta</div>
+                <div class="modal-content">
+                    <ul id="modalRegionList"></ul>
+                    <div id="modalMunicipalityListContainer" class="hidden">
+                        <div class="municipality-item" style="padding:10px; background:rgba(0,0,0,0.2); margin-bottom:10px;">
+                             <label><input type="checkbox" id="selectAllMunicipalities" onchange="app.toggleSelectAll(this)"> Valitse kaikki / Poista valinnat</label>
+                        </div>
+                        <ul id="modalMunicipalityList"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="modalBackButton" class="btn hidden" onclick="app.showModalRegionSelection()">Takaisin</button>
+                    <button id="modalAddButton" class="btn btn-primary hidden" onclick="app.confirmMunicipalities()">Lisää valitut</button>
+                    <button class="btn" onclick="app.closePaikkakuntaModal()">Sulje</button>
+                </div>
+            </div>
+          </div>
         `;
         
         app.loadFriends();
-        app.updateProfileLink(); // Päivitä linkki heti latauksessa
+        app.updateProfileLink();
         break;
 
-      case 'stats':
-        if (!window.app.currentUser) { app.router('login'); return; }
-        content.innerHTML = `<div class="card"><h1>Tilastot</h1><p>🚧 Tulossa.</p></div>`;
-        break;
+      default:
+        // Muut näkymät (stats, login) pysyvät samoina tai tyhjinä tässä esimerkissä
+        if(view === 'login') app.router('login_view'); // Ohjaus login näkymään (alempana)
+        else if(view === 'stats') content.innerHTML = '<div class="card"><h1>Tilastot</h1><p>🚧 Tulossa.</p></div>';
+        else content.innerHTML = '<div class="card"><h1>404</h1></div>';
+    }
 
-      case 'login':
+    // Login View (erillisenä jotta router switch ei kasva liikaa)
+    if(view === 'login_view') {
         content.innerHTML = `
           <div class="card" style="max-width: 400px; margin: 0 auto;">
             <h1>Kirjaudu</h1>
@@ -208,106 +237,18 @@ window.app = {
             <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
           </div>
         `;
-        break;
-
-      default:
-        content.innerHTML = '<div class="card"><h1>404</h1></div>';
     }
   },
 
-  // --- KAVERILISTA & PROFIILILINKKI ---
-  
-  toggleFriendManager: () => {
-      document.getElementById('friendManager').classList.toggle('hidden');
-  },
-
-  updateProfileLink: () => {
-      const user = document.getElementById('genUser').value;
-      const link = document.getElementById('gcProfileLink');
-      if(user) {
-          link.href = `https://www.geocaching.com/p/?u=${encodeURIComponent(user)}`;
-          link.textContent = `Avaa ${user} profiili Geocaching.comissa ↗`;
-          link.classList.remove('hidden');
-      } else {
-          link.classList.add('hidden');
-      }
-  },
-
-  loadFriends: async () => {
-    if (!window.app.currentUser) return;
-    const uid = window.app.currentUser.uid;
-    const docRef = doc(db, "users", uid);
-    try {
-        const docSnap = await getDoc(docRef);
-        const container = document.getElementById('friendListContainer');
-        const datalist = document.getElementById('friendListOptions');
-        if (!container || !datalist) return;
-        container.innerHTML = '';
-        datalist.innerHTML = '';
-        if (docSnap.exists() && docSnap.data().saved_usernames) {
-            const friends = docSnap.data().saved_usernames.sort();
-            friends.forEach(name => {
-                const div = document.createElement('div');
-                div.className = 'friend-item';
-                div.innerHTML = `<span>${name}</span><button class="btn-delete" onclick="app.removeFriend('${name}')">✕</button>`;
-                container.appendChild(div);
-                const option = document.createElement('option');
-                option.value = name;
-                datalist.appendChild(option);
-            });
-        } else {
-             container.innerHTML = '<p style="font-size:0.9em;">Ei nimiä.</p>';
-        }
-    } catch (e) { console.error(e); }
-  },
-
-  addFriend: async () => {
-      if (!window.app.currentUser) return;
-      const input = document.getElementById('newFriendName');
-      const newName = input.value.trim();
-      if (!newName) return;
-      const uid = window.app.currentUser.uid;
-      const docRef = doc(db, "users", uid);
-      try {
-          await setDoc(docRef, { saved_usernames: arrayUnion(newName) }, { merge: true });
-          input.value = ''; 
-          app.loadFriends(); 
-      } catch (e) { alert("Virhe: " + e.message); }
-  },
-
-  removeFriend: async (name) => {
-      if (!window.app.currentUser || !confirm(`Poistetaanko ${name}?`)) return;
-      const uid = window.app.currentUser.uid;
-      const docRef = doc(db, "users", uid);
-      try {
-          await updateDoc(docRef, { saved_usernames: arrayRemove(name) });
-          app.loadFriends(); 
-      } catch (e) { console.error(e); }
-  },
-
-  // --- KÄYTTÖLIITTYMÄLOGIIKKA ---
-  
-  toggleMenu: () => {
-    document.getElementById('mainNav').classList.toggle('open');
-  },
-
-  toggleTimeFields: () => {
-    const val = document.getElementById('genTimeSelect').value;
-    const fields = document.getElementById('timeFields');
-    if(val === 'kylla') fields.classList.remove('hidden');
-    else fields.classList.add('hidden');
-  },
+  // --- UI LOGIIKKA (MAAKUNTA & KUNTA) ---
 
   handleTypeChange: () => {
       const type = document.getElementById('genType').value;
       const yearFilters = document.getElementById('yearSpecificFilters');
-      
-      // Näytä lisäsuodatus vain jos "Vuosikalenteri" on valittu
       if (type === 'year') {
           yearFilters.classList.remove('hidden');
       } else {
           yearFilters.classList.add('hidden');
-          // Nollaa valinnat kun piilotetaan
           document.getElementById('genLocType').value = 'none';
           app.handleLocTypeChange();
       }
@@ -316,14 +257,179 @@ window.app = {
   handleLocTypeChange: () => {
       const locType = document.getElementById('genLocType').value;
       const locInput = document.getElementById('genLocValue');
-      
-      if (locType === 'none') {
-          locInput.disabled = true;
-          locInput.value = '';
-      } else {
+      const iconRegion = document.getElementById('regionInfoIcon');
+      const iconMun = document.getElementById('munSelectIcon');
+
+      // Nollaa tilat
+      locInput.disabled = true;
+      iconRegion.classList.add('hidden');
+      iconMun.classList.add('hidden');
+      document.getElementById('regionListContainer').classList.add('hidden');
+
+      if (locType === 'mkunta') {
           locInput.disabled = false;
-          locInput.placeholder = locType === 'pkunta' ? 'Esim. Lahti' : 'Esim. Päijät-Häme';
+          locInput.placeholder = 'Valitse maakunta ⓘ';
+          iconRegion.classList.remove('hidden');
+      } else if (locType === 'pkunta') {
+          locInput.disabled = false;
+          locInput.placeholder = 'Valitse kunnat ⚙️';
+          iconMun.classList.remove('hidden');
+      } else {
+          locInput.value = '';
+          locInput.placeholder = 'Valitse tyyppi ensin';
       }
+  },
+
+  // --- MAAKUNTALISTA (ⓘ) ---
+  toggleRegionList: () => {
+      const container = document.getElementById('regionListContainer');
+      if (!container.classList.contains('hidden')) {
+          container.classList.add('hidden');
+          return;
+      }
+      
+      container.innerHTML = '';
+      suomenMaakunnat.forEach(maakunta => {
+          const div = document.createElement('div');
+          div.textContent = maakunta;
+          div.className = 'region-list-item';
+          div.onclick = () => {
+              const input = document.getElementById('genLocValue');
+              // Lisää pilkulla erotettuna jos on jo tekstiä
+              if (input.value) input.value += `, ${maakunta}`;
+              else input.value = maakunta;
+              container.classList.add('hidden');
+          };
+          container.appendChild(div);
+      });
+      container.classList.remove('hidden');
+  },
+
+  // --- KUNTAMODAALI (⚙️) ---
+  openPaikkakuntaModal: () => {
+      document.getElementById('paikkakuntaModal').style.display = 'flex'; // Flex keskittämiseen
+      app.showModalRegionSelection();
+  },
+
+  closePaikkakuntaModal: () => {
+      document.getElementById('paikkakuntaModal').style.display = 'none';
+  },
+
+  showModalRegionSelection: () => {
+      document.getElementById('modalHeaderText').textContent = 'Valitse maakunta';
+      document.getElementById('modalRegionList').classList.remove('hidden');
+      document.getElementById('modalMunicipalityListContainer').classList.add('hidden');
+      document.getElementById('modalBackButton').classList.add('hidden');
+      document.getElementById('modalAddButton').classList.add('hidden');
+
+      const ul = document.getElementById('modalRegionList');
+      ul.innerHTML = '';
+      suomenMaakunnat.forEach(region => {
+          if (maakuntienKunnat[region]) {
+              const li = document.createElement('li');
+              li.textContent = region;
+              li.onclick = () => app.showModalMunicipalitySelection(region);
+              ul.appendChild(li);
+          }
+      });
+  },
+
+  showModalMunicipalitySelection: (region) => {
+      document.getElementById('modalHeaderText').textContent = `Valitse kunnat (${region})`;
+      document.getElementById('modalRegionList').classList.add('hidden');
+      document.getElementById('modalMunicipalityListContainer').classList.remove('hidden');
+      document.getElementById('modalBackButton').classList.remove('hidden');
+      document.getElementById('modalAddButton').classList.remove('hidden');
+      document.getElementById('selectAllMunicipalities').checked = false;
+
+      const ul = document.getElementById('modalMunicipalityList');
+      ul.innerHTML = '';
+      
+      const kunnat = maakuntienKunnat[region] || [];
+      kunnat.forEach(kunta => {
+          const li = document.createElement('li');
+          li.className = 'municipality-item';
+          li.innerHTML = `<label><input type="checkbox" value="${kunta}" name="mun_checkbox"> ${kunta}</label>`;
+          ul.appendChild(li);
+      });
+  },
+
+  toggleSelectAll: (source) => {
+      const checkboxes = document.getElementsByName('mun_checkbox');
+      for(let i=0; i<checkboxes.length; i++) {
+          checkboxes[i].checked = source.checked;
+      }
+  },
+
+  confirmMunicipalities: () => {
+      const checkboxes = document.querySelectorAll('input[name="mun_checkbox"]:checked');
+      const input = document.getElementById('genLocValue');
+      let currentVal = input.value.split(',').map(s => s.trim()).filter(s => s);
+      
+      checkboxes.forEach(cb => {
+          if (!currentVal.includes(cb.value)) {
+              currentVal.push(cb.value);
+          }
+      });
+
+      input.value = currentVal.join(',');
+      app.showModalRegionSelection(); // Palaa maakuntavalintaan jotta voi lisätä lisää
+  },
+
+  // --- MUUT APUFUNKTIOT ---
+  toggleFriendManager: () => document.getElementById('friendManager').classList.toggle('hidden'),
+  
+  updateProfileLink: () => {
+      const user = document.getElementById('genUser').value;
+      const link = document.getElementById('gcProfileLink');
+      if(user) {
+          link.href = `https://www.geocaching.com/p/?u=${encodeURIComponent(user)}`;
+          link.textContent = `Avaa ${user} profiili Geocaching.comissa ↗`;
+          link.classList.remove('hidden');
+      } else { link.classList.add('hidden'); }
+  },
+
+  toggleTimeFields: () => {
+      const val = document.getElementById('genTimeSelect').value;
+      const fields = document.getElementById('timeFields');
+      if(val === 'kylla') fields.classList.remove('hidden');
+      else fields.classList.add('hidden');
+  },
+
+  loadFriends: async () => {
+    if (!window.app.currentUser) return;
+    const uid = window.app.currentUser.uid;
+    try {
+        const docSnap = await getDoc(doc(db, "users", uid));
+        const container = document.getElementById('friendListContainer');
+        const datalist = document.getElementById('friendListOptions');
+        if (!container) return;
+        container.innerHTML = ''; datalist.innerHTML = '';
+        if (docSnap.exists() && docSnap.data().saved_usernames) {
+            docSnap.data().saved_usernames.sort().forEach(name => {
+                container.innerHTML += `<div class="friend-item"><span>${name}</span><button class="btn-delete" onclick="app.removeFriend('${name}')">✕</button></div>`;
+                datalist.innerHTML += `<option value="${name}"></option>`;
+            });
+        } else { container.innerHTML = '<p style="font-size:0.9em;">Ei nimiä.</p>'; }
+    } catch (e) { console.error(e); }
+  },
+
+  addFriend: async () => {
+      if (!window.app.currentUser) return;
+      const name = document.getElementById('newFriendName').value.trim();
+      if (!name) return;
+      try {
+          await setDoc(doc(db, "users", window.app.currentUser.uid), { saved_usernames: arrayUnion(name) }, { merge: true });
+          document.getElementById('newFriendName').value = ''; app.loadFriends();
+      } catch (e) { alert(e.message); }
+  },
+
+  removeFriend: async (name) => {
+      if (!window.app.currentUser || !confirm(`Poista ${name}?`)) return;
+      try {
+          await updateDoc(doc(db, "users", window.app.currentUser.uid), { saved_usernames: arrayRemove(name) });
+          app.loadFriends();
+      } catch (e) { console.error(e); }
   },
 
   generateStatImage: () => {
@@ -336,91 +442,57 @@ window.app = {
     const start = document.getElementById("genStart").value;
     const end = document.getElementById("genEnd").value;
     const cacheType = document.getElementById("genCacheType").value;
-
-    // Vuosikalenterin spesifit
     const locType = document.getElementById('genLocType').value;
     const locValue = document.getElementById('genLocValue').value.trim();
 
     if (!user) { alert("Syötä käyttäjätunnus!"); return; }
 
     let params = `?user=${encodeURIComponent(user)}`;
-    
     if (type === "hiddenday") params += `&type=2`;
 
-    // Aikavalinnat
     if (timeMode === "kylla") {
-        if (start && end) {
-           params += `&startdate=${formatDate(start)}&enddate=${formatDate(end)}`;
-        } else {
+        if (start && end) params += `&startdate=${formatDate(start)}&enddate=${formatDate(end)}`;
+        else {
            if (year && year !== "current") params += `&year=${year}`;
            if (month && month !== "current") params += `&month=${month}`;
         }
     }
-
-    // Kätkötyyppi
     if (cacheType) params += `&cachetype=${cacheType}`;
-
-    // Vuosikalenterin lisäsuodatus
+    
     if (type === 'year' && locType !== 'none' && locValue) {
         if (locType === 'pkunta') params += `&pkunta=${encodeURIComponent(locValue)}`;
         if (locType === 'mkunta') params += `&mkunta=${encodeURIComponent(locValue)}`;
     }
 
     const finalUrl = `${baseUrl}${type}.php${params}`;
-    const resultArea = document.getElementById('resultArea');
     const img = document.getElementById('generatedImg');
     const link = document.getElementById('openLink');
-
     img.src = finalUrl;
     link.href = finalUrl;
-    resultArea.classList.remove('hidden');
+    document.getElementById('resultArea').classList.remove('hidden');
   },
 
-  // --- AUTH ---
-  loginGoogle: () => {
-    signInWithPopup(auth, provider).then(() => app.router('home')).catch(e => alert(e.message));
-  },
+  // Auth
+  loginGoogle: () => signInWithPopup(auth, provider).then(() => app.router('home')).catch(e=>alert(e.message)),
   handleEmailLogin: () => {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    signInWithEmailAndPassword(auth, email, pass).then(() => app.router('home')).catch(e => {
-        document.getElementById('loginError').textContent = e.message;
-        document.getElementById('loginError').style.display = 'block';
-    });
+      const e = document.getElementById('email').value, p = document.getElementById('password').value;
+      signInWithEmailAndPassword(auth, e, p).then(() => app.router('home')).catch(err => {
+          document.getElementById('loginError').style.display='block'; document.getElementById('loginError').textContent=err.message;
+      });
   },
   handleRegister: () => {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    if(pass.length < 6) { alert("Salasana liian lyhyt"); return; }
-    createUserWithEmailAndPassword(auth, email, pass).then(() => {
-         alert("Tunnus luotu!"); app.router('home');
-    }).catch(e => {
-        document.getElementById('loginError').textContent = e.message;
-        document.getElementById('loginError').style.display = 'block';
-    });
+      const e = document.getElementById('email').value, p = document.getElementById('password').value;
+      if(p.length<6) return alert("Salasana liian lyhyt");
+      createUserWithEmailAndPassword(auth, e, p).then(() => { alert("Luotu!"); app.router('home'); }).catch(err => {
+          document.getElementById('loginError').style.display='block'; document.getElementById('loginError').textContent=err.message;
+      });
   },
-  logout: () => {
-    signOut(auth).then(() => app.router('home'));
-  }
+  logout: () => signOut(auth).then(() => app.router('home'))
 };
 
 onAuthStateChanged(auth, (user) => {
   window.app.currentUser = user;
-  const authBtn = document.getElementById('authButton');
-  const logoutBtn = document.getElementById('logoutButton');
-  const userDisplay = document.getElementById('userNameDisplay');
-  if(authBtn) {
-      if (user) {
-        authBtn.classList.add('hidden');
-        logoutBtn.classList.remove('hidden');
-        userDisplay.textContent = user.displayName || user.email;
-        userDisplay.classList.remove('hidden');
-      } else {
-        authBtn.classList.remove('hidden');
-        logoutBtn.classList.add('hidden');
-        userDisplay.classList.add('hidden');
-      }
-  }
+  // Auth listener päivittää UI:ta tarvittaessa
 });
 
 document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
