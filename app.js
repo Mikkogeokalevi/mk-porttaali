@@ -49,6 +49,8 @@ window.app = {
   router: (view) => {
     const content = document.getElementById('appContent');
     const nav = document.getElementById('mainNav');
+    
+    // Sulje mobiilivalikko jos se on auki
     if(nav) nav.classList.remove('open');
 
     switch(view) {
@@ -69,23 +71,26 @@ window.app = {
         break;
 
       case 'generator':
-        // Logiikka oletuskäyttäjälle
+        // 1. Määritetään oletuskäyttäjänimi
         let defaultUser = '';
         if (window.app.currentUser) {
             // ADMIN-SÄÄNTÖ: Jos toni@kauppinen.info -> mikkokalevi
             if (window.app.currentUser.email === 'toni@kauppinen.info') {
                 defaultUser = 'mikkokalevi';
             } else {
+                // Muuten käytetään DisplayNamea tai sähköpostin alkuosaa
                 defaultUser = window.app.currentUser.displayName || window.app.currentUser.email.split('@')[0];
             }
         }
 
+        // 2. Luodaan vuosilista
         const currentYear = new Date().getFullYear();
         let yearOptions = '<option value="current">—</option>';
         for (let y = currentYear; y >= 2000; y--) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
 
+        // 3. Generoidaan HTML
         content.innerHTML = `
           <div class="card">
             <h1>Kuvageneraattori</h1>
@@ -151,8 +156,22 @@ window.app = {
           </div>
         `;
         
-        // Lataa kaverilista heti kun sivu aukeaa
+        // Lataa kaverilista tietokannasta heti
         app.loadFriends();
+        break;
+
+      case 'stats':
+        if (!window.app.currentUser) {
+          app.router('login'); 
+          return;
+        }
+        content.innerHTML = `
+          <div class="card">
+            <h1>Tilastot</h1>
+            <p>Kirjautunut: <b>${window.app.currentUser.email}</b></p>
+            <p>🚧 Tilastot tulevat tähän myöhemmin.</p>
+          </div>
+        `;
         break;
 
       case 'login':
@@ -161,21 +180,25 @@ window.app = {
             <h1>Kirjaudu sisään</h1>
             <input type="email" id="email" placeholder="Sähköposti">
             <input type="password" id="password" placeholder="Salasana">
+            
             <button class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
             <button class="btn" style="width:100%" onclick="app.handleRegister()">Luo uusi tunnus</button>
+            
             <div id="loginError" class="error-msg"></div>
+
             <div class="divider"><span>TAI</span></div>
+
             <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
           </div>
         `;
         break;
 
       default:
-        content.innerHTML = '<div class="card"><h1>404</h1></div>';
+        content.innerHTML = '<div class="card"><h1>404</h1><p>Sivua ei löytynyt.</p></div>';
     }
   },
 
-  // --- KAVERILISTA TOIMINNOT ---
+  // --- KAVERILISTA TOIMINNOT (Firestore) ---
 
   toggleFriendManager: () => {
       const el = document.getElementById('friendManager');
@@ -205,7 +228,7 @@ window.app = {
             }
 
             friends.forEach(name => {
-                // Lisää hallintalistaan
+                // 1. Lisää hallintalistaan (poistonapilla)
                 const div = document.createElement('div');
                 div.className = 'friend-item';
                 div.innerHTML = `
@@ -214,7 +237,7 @@ window.app = {
                 `;
                 container.appendChild(div);
 
-                // Lisää dropdown-ehdotuksiin
+                // 2. Lisää datalist-ehdotuksiin (hakukenttää varten)
                 const option = document.createElement('option');
                 option.value = name;
                 datalist.appendChild(option);
@@ -224,33 +247,40 @@ window.app = {
         }
     } catch (e) {
         console.error("Virhe kaverilistan haussa:", e);
+        const c = document.getElementById('friendListContainer');
+        if(c) c.innerHTML = '<p class="error-msg" style="display:block">Virhe listan latauksessa.</p>';
     }
   },
 
   addFriend: async () => {
       if (!window.app.currentUser) return;
-      const newName = document.getElementById('newFriendName').value.trim();
+      const input = document.getElementById('newFriendName');
+      const newName = input.value.trim();
+      
       if (!newName) return;
 
       const uid = window.app.currentUser.uid;
       const docRef = doc(db, "users", uid);
 
       try {
-          // Luodaan dokumentti jos ei ole, tai päivitetään
+          // Luodaan dokumentti jos ei ole, tai päivitetään olemassa olevaa
+          // arrayUnion varmistaa, ettei tule tuplia
           await setDoc(docRef, { 
               saved_usernames: arrayUnion(newName) 
           }, { merge: true });
           
-          document.getElementById('newFriendName').value = '';
-          app.loadFriends(); // Päivitä lista
+          input.value = ''; // Tyhjennä kenttä
+          app.loadFriends(); // Päivitä lista näkyviin
       } catch (e) {
           console.error("Virhe lisäyksessä:", e);
-          alert("Virhe tallennuksessa.");
+          alert("Virhe tallennuksessa: " + e.message);
       }
   },
 
   removeFriend: async (nameToRemove) => {
       if (!window.app.currentUser) return;
+      if (!confirm(`Poistetaanko ${nameToRemove} listalta?`)) return;
+
       const uid = window.app.currentUser.uid;
       const docRef = doc(db, "users", uid);
 
@@ -290,7 +320,9 @@ window.app = {
     if (!user) { alert("Syötä käyttäjätunnus!"); return; }
 
     let params = `?user=${encodeURIComponent(user)}`;
+    
     if (type === "hiddenday") params += `&type=2`;
+
     if (timeMode === "kylla") {
         if (start && end) {
            params += `&startdate=${formatDate(start)}&enddate=${formatDate(end)}`;
@@ -298,9 +330,11 @@ window.app = {
            params += `&year=${year}`;
         }
     }
+
     if (cacheType) params += `&cachetype=${cacheType}`;
 
     const finalUrl = `${baseUrl}${type}.php${params}`;
+    
     const resultArea = document.getElementById('resultArea');
     const img = document.getElementById('generatedImg');
     const link = document.getElementById('openLink');
@@ -316,10 +350,12 @@ window.app = {
       .then(() => app.router('home'))
       .catch((error) => alert(error.message));
   },
+
   handleEmailLogin: () => {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
+    
     signInWithEmailAndPassword(auth, email, pass)
       .then(() => app.router('home'))
       .catch((error) => {
@@ -327,15 +363,18 @@ window.app = {
         errorDiv.style.display = 'block';
       });
   },
+
   handleRegister: () => {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
+
     if(pass.length < 6) {
        errorDiv.textContent = "Salasanan pitää olla vähintään 6 merkkiä.";
        errorDiv.style.display = 'block';
        return;
     }
+
     createUserWithEmailAndPassword(auth, email, pass)
       .then(() => {
          alert("Tunnus luotu onnistuneesti!");
@@ -346,6 +385,7 @@ window.app = {
         errorDiv.style.display = 'block';
       });
   },
+
   logout: () => {
     signOut(auth).then(() => {
       app.router('home');
@@ -353,12 +393,14 @@ window.app = {
   }
 };
 
+// Auth State Listener
 onAuthStateChanged(auth, (user) => {
   window.app.currentUser = user;
   const authBtn = document.getElementById('authButton');
   const logoutBtn = document.getElementById('logoutButton');
   const userDisplay = document.getElementById('userNameDisplay');
 
+  // Varmistetaan, että DOM on latautunut
   if(authBtn && logoutBtn && userDisplay) {
       if (user) {
         authBtn.classList.add('hidden');
