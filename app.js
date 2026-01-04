@@ -57,10 +57,10 @@ window.app = {
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
-                  Avaa Kuvageneraattori
+                  Avaa Kuvageneraattori (Live)
                 </button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('triplet')">
-                  Kuntatilastot (Tripletti)
+                  Omat Kuntatilastot
                 </button>
             </div>
           </div>
@@ -75,6 +75,7 @@ window.app = {
         break;
 
       case 'triplet':
+        // TÄMÄ ON SE UUSI OSIO, JOKA LUKEE TIETOKANTAA
         if (!window.app.currentUser) { app.router('login_view'); return; }
         content.innerHTML = `
             <div class="card">
@@ -85,6 +86,7 @@ window.app = {
         break;
 
       case 'generator':
+        // TÄMÄ ON SE VANHA "LIVE" GENERATOR - TÄHÄN EI OLE KOSKETTU
         let defaultUser = '';
         if (window.app.currentUser) {
             if (window.app.currentUser.email === 'toni@kauppinen.info') {
@@ -109,6 +111,7 @@ window.app = {
         content.innerHTML = `
           <div class="card">
             <h1>Kuvageneraattori</h1>
+            <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
             
             <label>Käyttäjätunnus:</label>
             <div class="input-group">
@@ -251,7 +254,7 @@ window.app = {
     }
   },
 
-  // --- TRIPLETTI LOGIIKKA ---
+  // --- TRIPLETTI LOGIIKKA (LUKEE DATABASEA) ---
   loadTripletData: async () => {
       const content = document.getElementById('appContent');
       if (!window.app.currentUser) return;
@@ -270,9 +273,16 @@ window.app = {
           }
 
           const data = docSnap.data().municipalities;
-          const updated = docSnap.data().updatedAt ? new Date(docSnap.data().updatedAt.seconds * 1000).toLocaleDateString() : '-';
           
-          // Alustetaan kategoriat
+          // AIKALEIMAN HAKU JA MUOTOILU
+          let updatedString = '-';
+          if (docSnap.data().updatedAt) {
+              const date = docSnap.data().updatedAt.toDate(); // Muunna Firestore Timestamp JS Dateksi
+              updatedString = date.toLocaleString('fi-FI', { 
+                  day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+              });
+          }
+          
           const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
           const titles = {
               1: "1. Ei löytöjä (0/0/0)",
@@ -285,16 +295,13 @@ window.app = {
               8: "8. Triplettikunnat (T+M+Q)"
           };
 
-          // Käydään kunnat läpi ja luokitellaan
-          // OLETUS: Admin-työkalu tallensi datan niin että sarakkeet ovat [Tradi, Multi, Web, Mysse...]
-          // Joten: Tradi=index 0, Multi=index 1, Mysse=index 3
           Object.keys(data).sort().forEach(kunta => {
               const d = data[kunta];
-              const stats = d.s || []; // Taulukko numeroita
+              const stats = d.s || []; 
               
               const t = stats[0] || 0;
               const m = stats[1] || 0;
-              const q = stats[3] || 0; // HUOM: Indeksi 3 on Mysteeri (4. sarake)
+              const q = stats[3] || 0; // Mysteeri on 4. sarake (index 3)
 
               const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
 
@@ -308,11 +315,13 @@ window.app = {
               else if(t && m && q) cats[8].push(itemHTML);
           });
 
-          // Rakennetaan HTML
           let html = `
             <div class="card">
                 <h1>Kuntatilastot</h1>
-                <p style="font-size:0.9em; color:var(--subtext-color);">Päivitetty: ${updated}</p>
+                <p style="font-size:0.9em; color:var(--success-color); border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                   ✅ Data päivitetty: <b>${updatedString}</b>
+                </p>
+                
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
                     <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
                         <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div>
@@ -325,10 +334,9 @@ window.app = {
                 </div>
             `;
 
-          // Luodaan haitarit (Details) jokaiselle kategorialle
           for(let i=1; i<=8; i++) {
               const count = cats[i].length;
-              const isOpen = (i === 8 || i === 1) ? 'open' : ''; // Avaa tripletit ja nollat oletuksena
+              const isOpen = (i === 8 || i === 1) ? 'open' : ''; 
               const style = (i === 8) ? 'border-color:var(--success-color);' : '';
               
               html += `
@@ -353,7 +361,7 @@ window.app = {
       }
   },
 
-  // --- UI LOGIIKKA (MAAKUNTA & KUNTA) ---
+  // --- UI LOGIIKKA (KUVAGENERATOR - EI MUUTOKSIA TOIMINNASSA) ---
 
   handleTypeChange: () => {
       const type = document.getElementById('genType').value;
@@ -373,7 +381,6 @@ window.app = {
       const iconRegion = document.getElementById('regionInfoIcon');
       const iconMun = document.getElementById('munSelectIcon');
 
-      // Nollaa tilat
       locInput.disabled = true;
       iconRegion.classList.add('hidden');
       iconMun.classList.add('hidden');
@@ -393,14 +400,12 @@ window.app = {
       }
   },
 
-  // --- MAAKUNTALISTA (ⓘ) ---
   toggleRegionList: () => {
       const container = document.getElementById('regionListContainer');
       if (!container.classList.contains('hidden')) {
           container.classList.add('hidden');
           return;
       }
-      
       container.innerHTML = '';
       suomenMaakunnat.forEach(maakunta => {
           const div = document.createElement('div');
@@ -408,7 +413,6 @@ window.app = {
           div.className = 'region-list-item';
           div.onclick = () => {
               const input = document.getElementById('genLocValue');
-              // Lisää pilkulla erotettuna jos on jo tekstiä
               if (input.value) input.value += `, ${maakunta}`;
               else input.value = maakunta;
               container.classList.add('hidden');
@@ -418,9 +422,8 @@ window.app = {
       container.classList.remove('hidden');
   },
 
-  // --- KUNTAMODAALI (⚙️) ---
   openPaikkakuntaModal: () => {
-      document.getElementById('paikkakuntaModal').style.display = 'flex'; // Flex keskittämiseen
+      document.getElementById('paikkakuntaModal').style.display = 'flex';
       app.showModalRegionSelection();
   },
 
@@ -457,7 +460,6 @@ window.app = {
 
       const ul = document.getElementById('modalMunicipalityList');
       ul.innerHTML = '';
-      
       const kunnat = maakuntienKunnat[region] || [];
       kunnat.forEach(kunta => {
           const li = document.createElement('li');
@@ -478,18 +480,13 @@ window.app = {
       const checkboxes = document.querySelectorAll('input[name="mun_checkbox"]:checked');
       const input = document.getElementById('genLocValue');
       let currentVal = input.value.split(',').map(s => s.trim()).filter(s => s);
-      
       checkboxes.forEach(cb => {
-          if (!currentVal.includes(cb.value)) {
-              currentVal.push(cb.value);
-          }
+          if (!currentVal.includes(cb.value)) currentVal.push(cb.value);
       });
-
       input.value = currentVal.join(',');
-      app.showModalRegionSelection(); // Palaa maakuntavalintaan jotta voi lisätä lisää
+      app.showModalRegionSelection();
   },
 
-  // --- MUUT APUFUNKTIOT ---
   toggleFriendManager: () => document.getElementById('friendManager').classList.toggle('hidden'),
   
   updateProfileLink: () => {
@@ -605,7 +602,6 @@ window.app = {
 
 onAuthStateChanged(auth, (user) => {
   window.app.currentUser = user;
-  // Auth listener päivittää UI:ta tarvittaessa
 });
 
 document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
