@@ -1,60 +1,187 @@
-function showPage(pageId) {
-    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-    const activePage = document.getElementById(pageId);
-    if (activePage) activePage.classList.remove('hidden');
-}
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-function generoiKuvat() {
-    var nimi = document.getElementById('nimimerkki').value;
-    var alue = document.getElementById('kuva-alue');
-    var valitut = document.querySelectorAll('input[name="kuva"]:checked');
-    var maakunnat = document.querySelectorAll('input[name="maakunta"]:checked');
-    var tarkistimet = document.querySelectorAll('input[name="tarkistin"]:checked');
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
+  authDomain: "mk-porttaali.firebaseapp.com",
+  projectId: "mk-porttaali",
+  storageBucket: "mk-porttaali.firebasestorage.app",
+  messagingSenderId: "220899819334",
+  appId: "1:220899819334:web:6662b7b1519f4c89c32f47"
+};
 
-    if (nimi === "") {
-        alert("Syötä kätköilijän nimi!");
-        return;
+// Alustukset
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const provider = new GoogleAuthProvider();
+
+// Pääsovellusolio
+window.app = {
+  currentUser: null,
+
+  // Reititin
+  router: (view) => {
+    const content = document.getElementById('appContent');
+    const nav = document.getElementById('mainNav');
+    
+    // Sulje mobiilivalikko jos se on auki
+    if(nav) nav.classList.remove('open');
+
+    switch(view) {
+      case 'home':
+        content.innerHTML = `
+          <div class="card">
+            <h1>Tervetuloa MK Porttaaliin</h1>
+            <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
+          </div>
+          <div class="card">
+            <h2>Linkit</h2>
+            <ul>
+              <li><a href="https://www.geocache.fi/" target="_blank">Geocache.fi</a></li>
+              <li><a href="https://project-gc.com/" target="_blank">Project-GC</a></li>
+            </ul>
+          </div>
+        `;
+        break;
+
+      case 'generator':
+        content.innerHTML = `
+          <div class="card">
+            <h1>Kuvageneraattori</h1>
+            <p>🚧 Siirretään seuraavaksi.</p>
+          </div>
+        `;
+        break;
+
+      case 'stats':
+        if (!window.app.currentUser) {
+          app.router('login'); 
+          return;
+        }
+        content.innerHTML = `
+          <div class="card">
+            <h1>Tilastot</h1>
+            <p>Kirjautunut: <b>${window.app.currentUser.email}</b></p>
+            <p>🚧 Tilastot tulevat tähän.</p>
+          </div>
+        `;
+        break;
+
+      case 'login':
+        content.innerHTML = `
+          <div class="card" style="max-width: 400px; margin: 0 auto;">
+            <h1>Kirjaudu sisään</h1>
+            <p>Pääsy omiin työkaluihin ja tilastoihin.</p>
+            
+            <input type="email" id="email" placeholder="Sähköposti">
+            <input type="password" id="password" placeholder="Salasana">
+            
+            <button class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
+            <button class="btn" style="width:100%" onclick="app.handleRegister()">Luo uusi tunnus</button>
+            
+            <div id="loginError" class="error-msg"></div>
+
+            <div class="divider"><span>TAI</span></div>
+
+            <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
+          </div>
+        `;
+        break;
+
+      default:
+        content.innerHTML = '<div class="card"><h1>404</h1><p>Sivua ei löytynyt.</p></div>';
+    }
+  },
+
+  // UI Toiminnot
+  toggleMenu: () => {
+    const nav = document.getElementById('mainNav');
+    nav.classList.toggle('open');
+  },
+
+  // Auth Toiminnot
+  loginGoogle: () => {
+    signInWithPopup(auth, provider)
+      .then(() => app.router('home'))
+      .catch((error) => alert(error.message));
+  },
+
+  handleEmailLogin: () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    
+    signInWithEmailAndPassword(auth, email, pass)
+      .then(() => app.router('home'))
+      .catch((error) => {
+        errorDiv.textContent = "Virhe: " + error.message;
+        errorDiv.style.display = 'block';
+      });
+  },
+
+  handleRegister: () => {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+
+    if(pass.length < 6) {
+       errorDiv.textContent = "Salasanan pitää olla vähintään 6 merkkiä.";
+       errorDiv.style.display = 'block';
+       return;
     }
 
-    var html = '<div class="card"><h3>Linkit kätköilijälle: ' + nimi + '</h3>';
-    html += '<p><a href="https://www.geocaching.com/profile/?u=' + nimi + '" target="_blank">Geocaching.com profiili</a> | ';
-    html += '<a href="https://www.geocache.fi/stat/tilastot.php?n=' + nimi + '" target="_blank">Geocache.fi tilastot</a> | ';
-    html += '<a href="https://project-gc.com/Statistics/ProfileStats?profile_name=' + nimi + '" target="_blank">Project-GC</a></p></div>';
+    createUserWithEmailAndPassword(auth, email, pass)
+      .then(() => {
+         alert("Tunnus luotu onnistuneesti!");
+         app.router('home');
+      })
+      .catch((error) => {
+        errorDiv.textContent = "Virhe luonnissa: " + error.message;
+        errorDiv.style.display = 'block';
+      });
+  },
 
-    // Perustilastot
-    valitut.forEach(function(cb) {
-        var imgUrl = "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&s=" + cb.value;
-        html += luoKuvaBlock(cb.nextSibling.textContent.trim(), imgUrl, nimi);
+  logout: () => {
+    signOut(auth).then(() => {
+      app.router('home');
     });
+  }
+};
 
-    // Maakunnat
-    maakunnat.forEach(function(cb) {
-        var imgUrl = "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&m=" + cb.value;
-        html += luoKuvaBlock(cb.nextSibling.textContent.trim(), imgUrl, nimi);
-    });
+// Auth State Listener
+onAuthStateChanged(auth, (user) => {
+  window.app.currentUser = user;
+  const authBtn = document.getElementById('authButton');
+  const logoutBtn = document.getElementById('logoutButton');
+  const userDisplay = document.getElementById('userNameDisplay');
 
-    // Tarkistimet
-    tarkistimet.forEach(function(cb) {
-        var imgUrl = "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&t=" + cb.value;
-        html += luoKuvaBlock(cb.nextSibling.textContent.trim(), imgUrl, nimi);
-    });
+  // Varmistetaan että elementit ovat olemassa ennen muokkausta (ettei tule virheitä latauksessa)
+  if(authBtn && logoutBtn && userDisplay) {
+      if (user) {
+        authBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        userDisplay.textContent = user.displayName || user.email;
+        userDisplay.classList.remove('hidden');
+      } else {
+        authBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        userDisplay.classList.add('hidden');
+      }
+  }
+});
 
-    alue.innerHTML = html;
-}
-
-function luoKuvaBlock(otsikko, imgUrl, nimi) {
-    var linkUrl = "https://www.geocache.fi/stat/tilastot.php?n=" + nimi;
-    var bbCode = "[URL=" + linkUrl + "][IMG]" + imgUrl + "[/IMG][/URL]";
-    var htmlCode = '<a href="' + linkUrl + '"><img src="' + imgUrl + '" border="0"></a>';
-    
-    return '<div class="card" style="margin-top:20px;">' +
-           '<h4>' + otsikko + '</h4>' +
-           '<img src="' + imgUrl + '" style="max-width:100%;"><br><br>' +
-           '<label>BBCode:</label><input type="text" value=\'' + bbCode + '\' readonly style="width:100%; font-size:11px; margin-bottom:5px;">' +
-           '<label>HTML-koodi:</label><input type="text" value=\'' + htmlCode + '\' readonly style="width:100%; font-size:11px;">' +
-           '</div>';
-}
-
+// Käynnistys: odotetaan että DOM on valmis
 document.addEventListener('DOMContentLoaded', () => {
-    showPage('home');
+    app.router('home');
 });
