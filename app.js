@@ -59,6 +59,9 @@ window.app = {
           <div class="card">
             <h1>Tervetuloa MK Porttaaliin</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
+            <button class="btn btn-primary" onclick="app.router('generator')" style="width:100%; margin-top:15px;">
+              Avaa Kuvageneraattori
+            </button>
           </div>
           <div class="card">
             <h2>Linkit</h2>
@@ -263,14 +266,12 @@ window.app = {
       const docRef = doc(db, "users", uid);
 
       try {
-          // Luodaan dokumentti jos ei ole, tai päivitetään olemassa olevaa
-          // arrayUnion varmistaa, ettei tule tuplia
           await setDoc(docRef, { 
               saved_usernames: arrayUnion(newName) 
           }, { merge: true });
           
-          input.value = ''; // Tyhjennä kenttä
-          app.loadFriends(); // Päivitä lista näkyviin
+          input.value = ''; 
+          app.loadFriends(); 
       } catch (e) {
           console.error("Virhe lisäyksessä:", e);
           alert("Virhe tallennuksessa: " + e.message);
@@ -288,7 +289,7 @@ window.app = {
           await updateDoc(docRef, {
               saved_usernames: arrayRemove(nameToRemove)
           });
-          app.loadFriends(); // Päivitä lista
+          app.loadFriends(); 
       } catch (e) {
           console.error("Virhe poistossa:", e);
       }
