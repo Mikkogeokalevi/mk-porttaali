@@ -6,6 +6,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase
 import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
+import { renderHelp } from "./help.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -23,6 +24,7 @@ const db = getFirestore(firebaseApp);
 // Alustetaan sovellus
 window.app = {
   currentUser: null,
+  savedNickname: null, // Tähän tallentuu käyttäjän asetettu nimimerkki
 
   // --- NAVIGOINTI JA ROUTER ---
   router: (view) => {
@@ -34,7 +36,7 @@ window.app = {
       case 'home':
         content.innerHTML = `
           <div class="card">
-            <h1>Tervetuloa MK Porttaaliin</h1>
+            <h1>MK Porttaali v2.4</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
@@ -42,6 +44,9 @@ window.app = {
                 </button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">
                   Tilastot
+                </button>
+                <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">
+                  Ohjeet & Admin
                 </button>
             </div>
           </div>
@@ -55,7 +60,7 @@ window.app = {
         `;
         break;
 
-      // --- TILASTOREITIT (Kutsuu stats.js) ---
+      // --- TILASTOREITIT ---
       case 'stats':
         Stats.renderStatsDashboard(content, window.app);
         break;
@@ -78,6 +83,11 @@ window.app = {
       // --- KUVAGENERATTORI ---
       case 'generator':
         renderGeneratorView(content);
+        break;
+
+      // --- OHJEET & ADMIN LINKIT ---
+      case 'help':
+        renderHelp(content, window.app);
         break;
 
       // --- KIRJAUTUMINEN ---
@@ -125,6 +135,12 @@ window.app = {
       );
   },
 
+  // Nimimerkin tallennus
+  saveNickname: () => {
+      const name = document.getElementById('genUser').value.trim();
+      Auth.saveGCNickname(db, window.app.currentUser?.uid, name);
+  },
+
   // Kaverilistan toiminnot
   loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', 'friendListOptions'),
   addFriend: () => {
@@ -155,8 +171,16 @@ window.app = {
 // Generaattorin HTML
 function renderGeneratorView(content) {
     let defaultUser = '';
+    
+    // Logiikka: 1. Tallennettu nimi, 2. Erikoistapaus (admin), 3. Google-nimi
     if (window.app.currentUser) {
-        defaultUser = (window.app.currentUser.email === 'toni@kauppinen.info') ? 'mikkokalevi' : (window.app.currentUser.displayName || '');
+        if (window.app.savedNickname) {
+            defaultUser = window.app.savedNickname;
+        } else if (window.app.currentUser.email === 'toni@kauppinen.info') {
+            defaultUser = 'mikkokalevi';
+        } else {
+            defaultUser = window.app.currentUser.displayName || '';
+        }
     }
 
     const currentYear = new Date().getFullYear();
@@ -176,6 +200,7 @@ function renderGeneratorView(content) {
         <div class="input-group">
             <input type="text" id="genUser" list="friendListOptions" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()">
             <datalist id="friendListOptions"></datalist>
+            <button class="btn-icon" onclick="app.saveNickname()" title="Tallenna oletukseksi">💾</button>
             <button class="btn-icon" onclick="app.toggleFriendManager()" title="Hallitse kavereita">⚙️</button>
         </div>
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
