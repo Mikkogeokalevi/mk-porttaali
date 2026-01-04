@@ -1,147 +1,355 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MK Porttaali V2</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #1e1e2e; color: #cdd6f4; margin: 0; padding: 0; }
-        header { background: #313244; padding: 10px; border-bottom: 2px solid #45475a; text-align: center; }
-        nav { background: #181825; padding: 10px; text-align: center; }
-        .nav-btn { padding: 8px 15px; margin: 5px; cursor: pointer; background: #45475a; color: white; border: none; border-radius: 4px; }
-        
-        /* Alkuperäisen generaattorin tyylit */
-        .generator-container { background-color: white; color: black; padding: 20px; max-width: 1000px; margin: 20px auto; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top; }
-        th { background-color: #f2f2f2; font-weight: bold; }
-        .result-card { background-color: #f9f9f9; border: 1px solid #ccc; padding: 15px; margin-top: 20px; border-radius: 4px; }
-        input[type="text"] { padding: 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px; }
-        .hidden { display: none; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MK Porttaali v2.0</title>
+  <link rel="icon" type="image/png" href="mikkokalevi.png">
+  
+  <style>
+    :root {
+      --bg-color: #1e1e2e;
+      --text-color: #cdd6f4;
+      --card-bg: #313244;
+      --border-color: #45475a;
+      --accent-color: #89b4fa;
+      --button-bg: #585b70;
+      --button-hover-bg: #6c7086;
+      --success-color: #a6e3a1;
+      --error-color: #f38ba8;
+      --border-radius: 8px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* HEADER & NAVIGAATIO */
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-color);
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .brand img {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+
+    /* Työpöytävalikko */
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 5px;
+    }
+
+    nav a, nav button.nav-btn {
+      text-decoration: none;
+      color: var(--text-color);
+      padding: 8px 12px;
+      border-radius: var(--border-radius);
+      transition: background 0.2s;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    nav a:hover, nav button.nav-btn:hover {
+      background-color: var(--button-bg);
+    }
+
+    nav a.active {
+      background-color: var(--button-bg);
+      color: var(--accent-color);
+    }
+
+    /* Kirjautumispainike */
+    #authButton {
+      background-color: var(--accent-color);
+      color: #1e1e2e;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+    #authButton:hover {
+      background-color: #b4befe;
+    }
+
+    /* Hampurilaisvalikko (Mobiili) */
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-color);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* SISÄLTÖALUE */
+    main {
+      flex: 1;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Kortit ja sisältötyylit */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    h1, h2, h3 { color: var(--accent-color); margin-top: 0; }
+    
+    .btn {
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background-color: var(--button-hover-bg); }
+
+    .user-info {
+      font-size: 0.9em;
+      color: var(--success-color);
+      margin-right: 10px;
+    }
+
+    /* Mobiiliresponsiivisuus */
+    @media (max-width: 768px) {
+      .mobile-toggle { display: block; }
+      nav {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        display: none;
+        flex-direction: column;
+        padding: 10px;
+      }
+      nav.open { display: flex; }
+      nav ul { flex-direction: column; width: 100%; }
+      nav li { width: 100%; }
+      nav a, nav button.nav-btn { display: block; width: 100%; text-align: left; box-sizing: border-box; }
+      #authButton { margin-left: 0; margin-top: 10px; width: 100%; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
 </head>
 <body>
 
-<header>
-    <h1>MK Porttaali V2</h1>
-</header>
+  <header>
+    <a href="#" class="brand" onclick="app.router('home'); return false;">
+      <img src="mikkokalevi.png" alt="MK Logo">
+      <span>MK Porttaali</span>
+    </a>
+    <button class="mobile-toggle" onclick="app.toggleMenu()">☰</button>
+    <nav id="mainNav">
+      <ul>
+        <li><button class="nav-btn" onclick="app.router('home')">Etusivu</button></li>
+        <li><button class="nav-btn" onclick="app.router('generator')">Kuvageneraattori</button></li>
+        <li><button class="nav-btn" onclick="app.router('stats')">Tilastot</button></li>
+        <li><a href="https://mikkogeokalevi.github.io/kuntatarkistin/" target="_blank">Kuntatarkistin ↗</a></li>
+      </ul>
+      <div id="authContainer">
+        <span id="userNameDisplay" class="user-info hidden"></span>
+        <button id="authButton" class="nav-btn" onclick="app.login()">Kirjaudu (Google)</button>
+        <button id="logoutButton" class="nav-btn hidden" onclick="app.logout()">Kirjaudu ulos</button>
+      </div>
+    </nav>
+  </header>
 
-<nav>
-    <button class="nav-btn" onclick="showPage('home')">Etusivu</button>
-    <button class="nav-btn" onclick="showPage('generator')">Kuvageneraattori</button>
-    <button class="nav-btn" onclick="showPage('tripletti')">Tripletti</button>
-</nav>
+  <main id="appContent">
+    <div style="text-align: center; margin-top: 50px;">Ladataan sovellusta...</div>
+  </main>
 
-<main id="main-content">
-    <section id="home" style="text-align:center; padding: 50px;">
-        <h2>Tervetuloa!</h2>
-        <p>Valitse Kuvageneraattori ylhäältä.</p>
-    </section>
+  <script type="module">
+    // Tuodaan tarvittavat Firebase-kirjastot suoraan verkosta
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } 
+      from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-    <section id="generator" class="hidden">
-        <div class="generator-container">
-            <h1>MK Kuvageneraattori</h1>
-            <p>Syötä kätköilijän nimimerkki ja valitse haluamasi kuvat.</p>
+    // SINUN CONFIG-TIEDOT
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
+      authDomain: "mk-porttaali.firebaseapp.com",
+      projectId: "mk-porttaali",
+      storageBucket: "mk-porttaali.firebasestorage.app",
+      messagingSenderId: "220899819334",
+      appId: "1:220899819334:web:6662b7b1519f4c89c32f47"
+    };
 
-            <div>
-                <label for="nimimerkki"><strong>Kätköilijän nimi:</strong></label>
-                <input type="text" id="nimimerkki" placeholder="Syötä nimimerkki">
-                <button onclick="generoiKuvat()" style="padding: 10px 20px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold;">Generoi kuvat</button>
-            </div>
+    // Alustetaan Firebase
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
+    const provider = new GoogleAuthProvider();
 
-            <table>
-                <tr>
-                    <th>Perustilastot</th>
-                    <th>Tarkistimet</th>
-                    <th>Maakunnat</th>
-                </tr>
-                <tr>
-                    <td>
-                        <input type="checkbox" name="kuva" value="1"> Löydetyt kuukausittain<br>
-                        <input type="checkbox" name="kuva" value="2"> Löydetyt vuosittain<br>
-                        <input type="checkbox" name="kuva" value="3"> Löydetyt tänään<br>
-                        <input type="checkbox" name="kuva" value="4"> Löytöjen määrä kätkötyypeittäin<br>
-                        <input type="checkbox" name="kuva" value="5"> Päivälöydöt<br>
-                        <input type="checkbox" name="kuva" value="6"> Löytyneet kätköt (viimeiset 30 vrk)<br>
-                        <input type="checkbox" name="kuva" value="7"> FTF-kuva
-                    </td>
-                    <td>
-                        <input type="checkbox" name="tarkistin" value="1"> Kuntatarkistin<br>
-                        <input type="checkbox" name="tarkistin" value="2"> Maakuntatarkistin<br>
-                        <input type="checkbox" name="tarkistin" value="3"> Mitalitaulukko<br>
-                        <input type="checkbox" name="tarkistin" value="4"> Löytöputki<br>
-                        <input type="checkbox" name="tarkistin" value="5"> Kuntatarkistin (pieni)
-                    </td>
-                    <td>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px;">
-                            <span><input type="checkbox" name="maakunta" value="1"> Ahvenanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="2"> E-Karjala</span>
-                            <span><input type="checkbox" name="maakunta" value="3"> E-Pohjanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="4"> E-Savo</span>
-                            <span><input type="checkbox" name="maakunta" value="5"> Kainuu</span>
-                            <span><input type="checkbox" name="maakunta" value="6"> K-Häme</span>
-                            <span><input type="checkbox" name="maakunta" value="7"> K-Pohjanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="8"> K-Suomi</span>
-                            <span><input type="checkbox" name="maakunta" value="9"> Kymenlaakso</span>
-                            <span><input type="checkbox" name="maakunta" value="10"> Lappi</span>
-                            <span><input type="checkbox" name="maakunta" value="11"> Pirkanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="12"> Pohjanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="13"> P-Karjala</span>
-                            <span><input type="checkbox" name="maakunta" value="14"> P-Pohjanmaa</span>
-                            <span><input type="checkbox" name="maakunta" value="15"> P-Savo</span>
-                            <span><input type="checkbox" name="maakunta" value="16"> Päijät-Häme</span>
-                            <span><input type="checkbox" name="maakunta" value="17"> Satakunta</span>
-                            <span><input type="checkbox" name="maakunta" value="18"> Uusimaa</span>
-                            <span><input type="checkbox" name="maakunta" value="19"> V-Suomi</span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-            <div id="kuva-alue"></div>
-        </div>
-    </section>
+    // Sovelluksen pääobjekti (Global State)
+    window.app = {
+      currentUser: null,
 
-    <section id="tripletti" class="hidden" style="text-align:center; padding: 50px;">
-        <h2>Tripletti</h2>
-        <p>Tämä osio työstetään myöhemmin.</p>
-    </section>
-</main>
+      // Navigaation hallinta
+      router: (view) => {
+        const content = document.getElementById('appContent');
+        const nav = document.getElementById('mainNav');
+        
+        // Sulje mobiilivalikko navigoinnin jälkeen
+        nav.classList.remove('open');
 
-<script>
-    function showPage(pageId) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(pageId).classList.remove('hidden');
-    }
+        // Renderöidään sisältö valinnan mukaan
+        switch(view) {
+          case 'home':
+            content.innerHTML = `
+              <div class="card">
+                <h1>Tervetuloa MK Porttaaliin v2.0</h1>
+                <p>Tämä on uusi, mobiiliystävällinen versio sivustosta.</p>
+                <p>Olet nyt "App Shell" -tilassa. Navigointi toimii ilman sivun uudelleenlatausta.</p>
+              </div>
+              <div class="card">
+                <h2>Pikalinkit</h2>
+                <ul>
+                  <li><a href="https://www.geocache.fi/" target="_blank">Geocache.fi</a></li>
+                  <li><a href="https://project-gc.com/" target="_blank">Project-GC</a></li>
+                </ul>
+              </div>
+            `;
+            break;
 
-    function generoiKuvat() {
-        var nimi = document.getElementById('nimimerkki').value;
-        var alue = document.getElementById('kuva-alue');
-        var valitut = document.querySelectorAll('input[name="kuva"]:checked');
-        var maakunnat = document.querySelectorAll('input[name="maakunta"]:checked');
-        var tarkistimet = document.querySelectorAll('input[name="tarkistin"]:checked');
+          case 'generator':
+            content.innerHTML = `
+              <div class="card">
+                <h1>Kuvageneraattori</h1>
+                <p>🚧 Tämä työkalu siirretään tänne seuraavassa vaiheessa.</p>
+                <p>Tässä tulee olemaan T/D-taulukot, kuntakartat ja vuosikalenterit.</p>
+              </div>
+            `;
+            break;
 
-        if (nimi === "") { alert("Syötä kätköilijän nimi!"); return; }
+          case 'stats':
+            // Tarkistetaan onko käyttäjä kirjautunut
+            if (!window.app.currentUser) {
+              content.innerHTML = `
+                <div class="card" style="border-color: var(--error-color);">
+                  <h2>🔒 Pääsy evätty</h2>
+                  <p>Sinun täytyy kirjautua sisään nähdäksesi tilastot.</p>
+                  <button class="btn" onclick="app.login()">Kirjaudu sisään</button>
+                </div>
+              `;
+              return;
+            }
+            content.innerHTML = `
+              <div class="card">
+                <h1>Tilastot</h1>
+                <p>Tervetuloa, <b>${window.app.currentUser.displayName}</b>!</p>
+                <p>🚧 Tilastosisältö siirretään tänne pian.</p>
+              </div>
+            `;
+            break;
 
-        var html = '<div class="result-card"><h3>Linkit kätköilijälle: ' + nimi + '</h3>';
-        html += '<p><a href="https://www.geocaching.com/profile/?u=' + nimi + '" target="_blank">GC.com profiili</a> | ';
-        html += '<a href="https://www.geocache.fi/stat/tilastot.php?n=' + nimi + '" target="_blank">Geocache.fi tilastot</a> | ';
-        html += '<a href="https://project-gc.com/Statistics/ProfileStats?profile_name=' + nimi + '" target="_blank">Project-GC</a></p></div>';
-
-        function luoBlock(otsikko, imgUrl) {
-            var linkUrl = "https://www.geocache.fi/stat/tilastot.php?n=" + nimi;
-            return '<div class="result-card"><h4>' + otsikko + '</h4>' +
-                   '<img src="' + imgUrl + '" style="max-width:100%; border: 1px solid #ccc;"><br><br>' +
-                   '<strong>BBCode:</strong><br><input type="text" value="[URL=' + linkUrl + '][IMG]' + imgUrl + '[/IMG][/URL]" readonly style="width:100%; font-size:11px;"><br>' +
-                   '<strong>HTML-koodi:</strong><br><input type="text" value=\'<a href="' + linkUrl + '"><img src="' + imgUrl + '" border="0"></a>\' readonly style="width:100%; font-size:11px;"></div>';
+          default:
+            content.innerHTML = '<div class="card"><h1>404</h1><p>Sivua ei löytynyt.</p></div>';
         }
+      },
 
-        valitut.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&s=" + cb.value); });
-        maakunnat.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&m=" + cb.value); });
-        tarkistimet.forEach(function(cb) { html += luoBlock(cb.nextSibling.textContent.trim(), "https://www.geocache.fi/stat/mk_stats.php?n=" + nimi + "&t=" + cb.value); });
+      // Mobiilivalikon avaus/sulku
+      toggleMenu: () => {
+        const nav = document.getElementById('mainNav');
+        nav.classList.toggle('open');
+      },
 
-        alue.innerHTML = html;
-    }
-</script>
+      // Kirjautuminen
+      login: () => {
+        signInWithPopup(auth, provider)
+          .then((result) => {
+            console.log("Kirjautunut:", result.user);
+            app.router('home'); // Ohjaa etusivulle onnistumisen jälkeen
+          }).catch((error) => {
+            console.error("Virhe kirjautumisessa:", error);
+            alert("Kirjautuminen epäonnistui: " + error.message);
+          });
+      },
 
+      // Uloskirjautuminen
+      logout: () => {
+        signOut(auth).then(() => {
+          console.log("Uloskirjauduttu");
+          app.router('home');
+        });
+      }
+    };
+
+    // Kuunnellaan käyttäjän tilaa (onko kirjautunut vai ei)
+    onAuthStateChanged(auth, (user) => {
+      window.app.currentUser = user;
+      const authBtn = document.getElementById('authButton');
+      const logoutBtn = document.getElementById('logoutButton');
+      const userDisplay = document.getElementById('userNameDisplay');
+
+      if (user) {
+        // Käyttäjä on kirjautunut
+        authBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        userDisplay.textContent = user.displayName;
+        userDisplay.classList.remove('hidden');
+      } else {
+        // Ei kirjautunut
+        authBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        userDisplay.classList.add('hidden');
+      }
+    });
+
+    // Ladataan etusivu oletuksena
+    app.router('home');
+
+  </script>
 </body>
 </html>
