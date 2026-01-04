@@ -75,7 +75,6 @@ window.app = {
         break;
 
       case 'triplet':
-        // TÄMÄ ON SE UUSI OSIO, JOKA LUKEE TIETOKANTAA
         if (!window.app.currentUser) { app.router('login_view'); return; }
         content.innerHTML = `
             <div class="card">
@@ -86,7 +85,6 @@ window.app = {
         break;
 
       case 'generator':
-        // TÄMÄ ON SE VANHA "LIVE" GENERATOR - TÄHÄN EI OLE KOSKETTU
         let defaultUser = '';
         if (window.app.currentUser) {
             if (window.app.currentUser.email === 'toni@kauppinen.info') {
@@ -254,7 +252,7 @@ window.app = {
     }
   },
 
-  // --- TRIPLETTI LOGIIKKA (LUKEE DATABASEA) ---
+  // --- TRIPLETTI LOGIIKKA (UUSI HAKUTOIMINTO) ---
   loadTripletData: async () => {
       const content = document.getElementById('appContent');
       if (!window.app.currentUser) return;
@@ -272,57 +270,76 @@ window.app = {
               return;
           }
 
-          const data = docSnap.data().municipalities;
+          const fullData = docSnap.data().municipalities;
           
-          // AIKALEIMAN HAKU JA MUOTOILU
           let updatedString = '-';
           if (docSnap.data().updatedAt) {
-              const date = docSnap.data().updatedAt.toDate(); // Muunna Firestore Timestamp JS Dateksi
+              const date = docSnap.data().updatedAt.toDate();
               updatedString = date.toLocaleString('fi-FI', { 
                   day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
               });
           }
-          
-          const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
-          const titles = {
-              1: "1. Ei löytöjä (0/0/0)",
-              2: "2. Vain Tradi",
-              3: "3. Vain Multi",
-              4: "4. Vain Mysteeri",
-              5: "5. Tradi + Multi",
-              6: "6. Multi + Mysteeri",
-              7: "7. Tradi + Mysteeri",
-              8: "8. Triplettikunnat (T+M+Q)"
-          };
 
-          Object.keys(data).sort().forEach(kunta => {
-              const d = data[kunta];
-              const stats = d.s || []; 
-              
-              const t = stats[0] || 0;
-              const m = stats[1] || 0;
-              const q = stats[3] || 0; // Mysteeri on 4. sarake (index 3)
-
-              const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
-
-              if(!t && !m && !q) cats[1].push(itemHTML);
-              else if(t && !m && !q) cats[2].push(itemHTML);
-              else if(!t && m && !q) cats[3].push(itemHTML);
-              else if(!t && !m && q) cats[4].push(itemHTML);
-              else if(t && m && !q) cats[5].push(itemHTML);
-              else if(!t && m && q) cats[6].push(itemHTML);
-              else if(t && !m && q) cats[7].push(itemHTML);
-              else if(t && m && q) cats[8].push(itemHTML);
-          });
-
-          let html = `
+          // Renderöidään pohja (otsikko, haku, containerit)
+          content.innerHTML = `
             <div class="card">
                 <h1>Kuntatilastot</h1>
                 <p style="font-size:0.9em; color:var(--success-color); border-bottom:1px solid var(--border-color); padding-bottom:10px;">
                    ✅ Data päivitetty: <b>${updatedString}</b>
                 </p>
                 
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="tripletSearch" placeholder="Hae kuntaa..." 
+                       style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:8px; font-size:16px;">
+
+                <div id="tripletStatsSummary" style="display:flex; gap:10px; margin-bottom:15px;">
+                    </div>
+
+                <div id="tripletResults">
+                    </div>
+            </div>`;
+
+          // Funktio listan piirtämiseen (kutsutaan alussa ja haun yhteydessä)
+          const renderLists = (filterText) => {
+              const filter = filterText.toLowerCase();
+              const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
+              const titles = {
+                  1: "1. Ei löytöjä (0/0/0)",
+                  2: "2. Vain Tradi",
+                  3: "3. Vain Multi",
+                  4: "4. Vain Mysteeri",
+                  5: "5. Tradi + Multi",
+                  6: "6. Multi + Mysteeri",
+                  7: "7. Tradi + Mysteeri",
+                  8: "8. Triplettikunnat (T+M+Q)"
+              };
+
+              // Suodatetaan ja lajitellaan data
+              Object.keys(fullData).sort().forEach(kunta => {
+                  if (kunta.toLowerCase().includes(filter)) {
+                      const d = fullData[kunta];
+                      const stats = d.s || [];
+                      
+                      const t = stats[0] || 0;
+                      const m = stats[1] || 0;
+                      const q = stats[3] || 0; // Mysteeri (4. sarake)
+
+                      const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
+
+                      if(!t && !m && !q) cats[1].push(itemHTML);
+                      else if(t && !m && !q) cats[2].push(itemHTML);
+                      else if(!t && m && !q) cats[3].push(itemHTML);
+                      else if(!t && !m && q) cats[4].push(itemHTML);
+                      else if(t && m && !q) cats[5].push(itemHTML);
+                      else if(!t && m && q) cats[6].push(itemHTML);
+                      else if(t && !m && q) cats[7].push(itemHTML);
+                      else if(t && m && q) cats[8].push(itemHTML);
+                  }
+              });
+
+              // Päivitetään yläosan laatikot
+              const summaryContainer = document.getElementById('tripletStatsSummary');
+              if(summaryContainer) {
+                  summaryContainer.innerHTML = `
                     <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
                         <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div>
                         <div style="font-size:0.8em;">Triplettiä</div>
@@ -331,29 +348,52 @@ window.app = {
                         <div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div>
                         <div style="font-size:0.8em;">Ei löytöjä</div>
                     </div>
-                </div>
-            `;
+                  `;
+              }
 
-          for(let i=1; i<=8; i++) {
-              const count = cats[i].length;
-              const isOpen = (i === 8 || i === 1) ? 'open' : ''; 
-              const style = (i === 8) ? 'border-color:var(--success-color);' : '';
+              // Rakennetaan HTML
+              let html = '';
+              let totalShown = 0;
+              for(let i=1; i<=8; i++) {
+                  const count = cats[i].length;
+                  totalShown += count;
+                  
+                  // Jos haku on päällä, avataan kaikki kategoriat joissa osumia. 
+                  // Jos ei hakua, avataan vain tripletit (8) ja nollat (1).
+                  // Piilotetaan tyhjät kategoriat vain jos haku on päällä.
+                  const isSearching = filter.length > 0;
+                  const isOpen = (isSearching && count > 0) || (!isSearching && (i === 8 || i === 1)) ? 'open' : ''; 
+                  const style = (i === 8) ? 'border-color:var(--success-color);' : '';
+                  const displayStyle = (isSearching && count === 0) ? 'display:none;' : ''; 
+
+                  html += `
+                    <details ${isOpen} style="margin-bottom:10px; background:rgba(0,0,0,0.1); border-radius:8px; border:1px solid var(--border-color); ${style} ${displayStyle}">
+                        <summary style="padding:10px; cursor:pointer; font-weight:bold; list-style:none;">
+                            ${titles[i]} <span style="float:right; opacity:0.7;">(${count})</span>
+                        </summary>
+                        <div style="padding:10px; border-top:1px solid var(--border-color);">
+                            <ul style="margin:0; padding-left:20px; font-size:0.9em;">
+                                ${count > 0 ? cats[i].join('') : '<li style="list-style:none; opacity:0.5;">Ei kuntia.</li>'}
+                            </ul>
+                        </div>
+                    </details>
+                  `;
+              }
               
-              html += `
-                <details ${isOpen} style="margin-bottom:10px; background:rgba(0,0,0,0.1); border-radius:8px; border:1px solid var(--border-color); ${style}">
-                    <summary style="padding:10px; cursor:pointer; font-weight:bold; list-style:none;">
-                        ${titles[i]} <span style="float:right; opacity:0.7;">(${count})</span>
-                    </summary>
-                    <div style="padding:10px; border-top:1px solid var(--border-color);">
-                        <ul style="margin:0; padding-left:20px; font-size:0.9em;">
-                            ${count > 0 ? cats[i].join('') : '<li style="list-style:none; opacity:0.5;">Ei kuntia tässä kategoriassa.</li>'}
-                        </ul>
-                    </div>
-                </details>
-              `;
-          }
-          html += `</div>`;
-          content.innerHTML = html;
+              if(totalShown === 0) {
+                  html = '<p style="text-align:center; opacity:0.6; margin-top:20px;">Ei hakutuloksia.</p>';
+              }
+
+              document.getElementById('tripletResults').innerHTML = html;
+          };
+
+          // Kutsutaan renderöintiä aluksi tyhjällä haulla
+          renderLists('');
+
+          // Kuunnellaan kirjoitusta
+          document.getElementById('tripletSearch').addEventListener('input', (e) => {
+              renderLists(e.target.value);
+          });
 
       } catch (e) {
           console.error(e);
@@ -361,7 +401,7 @@ window.app = {
       }
   },
 
-  // --- UI LOGIIKKA (KUVAGENERATOR - EI MUUTOKSIA TOIMINNASSA) ---
+  // --- UI LOGIIKKA (KUVAGENERATOR) ---
 
   handleTypeChange: () => {
       const type = document.getElementById('genType').value;
