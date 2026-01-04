@@ -4,73 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Porttaali V2</title>
-    
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LSBHRFCKEP"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-LSBHRFCKEP');
-    </script>
 </head>
 <body>
 
 <header>
     <div><strong>MK Porttaali V2</strong></div>
-    <div id="auth-status">Kirjaudu sisään</div>
 </header>
 
 <nav>
     <button class="nav-btn" onclick="showPage('home')">Etusivu</button>
     <button class="nav-btn" onclick="showPage('generator')">Kuvageneraattori</button>
-    <button class="nav-btn" onclick="showPage('tripletti')">Tripletti</button>
-    <button class="nav-btn" onclick="showPage('info')">Info</button>
 </nav>
 
 <main id="main-content">
     <section id="home">
-        <div class="card">
-            <h2>Tervetuloa MK Porttaaliin!</h2>
-            <p>Tämä on uusi, nopeampi ja mobiiliystävällisempi versio porttaalista.</p>
-            <p>Valitse työkalu ylävalikosta aloittaaksesi.</p>
-        </div>
+        <div class="card"><h2>Tervetuloa</h2><p>Valitse työkalu ylhäältä.</p></div>
     </section>
 
     <section id="generator" class="hidden">
         <div class="card">
             <h2>MK Kuvageneraattori</h2>
-            <p>Hae tilastokuvat suoraan geocache.fi -palvelusta.</p>
-            <input type="text" id="nimimerkki" placeholder="Syötä nimimerkki">
-            <br>
-            <button class="nav-btn" onclick="generoiKuvat()" style="background: var(--accent); color: var(--bg); font-weight: bold;">
-                Generoi kuvat
-            </button>
-        </div>
-        
-        <div id="kuva-alue" style="margin-top: 20px;">
+            <input type="text" id="nimimerkki" placeholder="Syötä nimimerkki" style="max-width:200px;">
+            <button class="nav-btn" onclick="generoiKuvat()" style="background:var(--accent); color:black;">Generoi kuvat</button>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top:20px;">
+                <div>
+                    <h4>Tilastot</h4>
+                    <input type="checkbox" name="kuva" value="1"> Löydetyt/kk<br>
+                    <input type="checkbox" name="kuva" value="2"> Löydetyt/vuosi<br>
+                    <input type="checkbox" name="kuva" value="3"> Löydetyt tänään<br>
+                    <input type="checkbox" name="kuva" value="4"> Kätkötyypit<br>
+                    <input type="checkbox" name="kuva" value="5"> Päivälöydöt<br>
+                    <input type="checkbox" name="kuva" value="6"> Viimeiset 30 vrk<br>
+                    <input type="checkbox" name="kuva" value="7"> FTF-kuva
+                </div>
+                <div>
+                    <h4>Tarkistimet</h4>
+                    <input type="checkbox" name="tarkistin" value="1"> Kuntatarkistin<br>
+                    <input type="checkbox" name="tarkistin" value="2"> Maakuntatarkistin<br>
+                    <input type="checkbox" name="tarkistin" value="3"> Mitalitaulukko<br>
+                    <input type="checkbox" name="tarkistin" value="4"> Löytöputki<br>
+                    <input type="checkbox" name="tarkistin" value="5"> Kuntatarkistin (pieni)
+                </div>
             </div>
-    </section>
-
-    <section id="tripletti" class="hidden">
-        <div class="card">
-            <h2>Triplettiseuranta</h2>
-            <p>Tämä osio vaatii kirjautumisen. Tähän ladataan tietosi suoraan Firebasesta.</p>
-        </div>
-    </section>
-
-    <section id="info" class="hidden">
-        <div class="card">
-            <h2>Tietoa sovelluksesta</h2>
-            <p>Versio: 2.0.0 (PWA)</p>
-            <p>Kehitetty helpottamaan geokätköilytilastojen seurantaa.</p>
-        </div>
+            </div>
+        <div id="kuva-alue"></div>
     </section>
 </main>
 
 <script src="app.js"></script>
-
 </body>
 </html>
