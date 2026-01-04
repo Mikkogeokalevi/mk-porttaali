@@ -4,67 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Porttaali V2</title>
+    
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <style>
-        :root {
-            --bg: #1e1e2e; --card: #313244; --text: #cdd6f4;
-            --accent: #89b4fa; --border: #45475a;
-        }
-        body {
-            margin: 0; font-family: sans-serif;
-            background-color: var(--bg); color: var(--text);
-            display: flex; flex-direction: column; height: 100vh;
-        }
-        header {
-            padding: 1rem; background: var(--card);
-            border-bottom: 2px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        nav { display: flex; gap: 10px; padding: 10px; overflow-x: auto; }
-        .nav-btn {
-            padding: 8px 15px; background: var(--border);
-            border: none; color: white; border-radius: 5px; cursor: pointer;
-        }
-        #main-content { flex: 1; padding: 20px; overflow-y: auto; }
-        .hidden { display: none; }
-    </style>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LSBHRFCKEP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-LSBHRFCKEP');
+    </script>
 </head>
 <body>
 
 <header>
     <div><strong>MK Porttaali V2</strong></div>
-    <div id="auth-status">Ladataan...</div>
+    <div id="auth-status">Kirjaudu sisään</div>
 </header>
 
 <nav>
     <button class="nav-btn" onclick="showPage('home')">Etusivu</button>
     <button class="nav-btn" onclick="showPage('generator')">Kuvageneraattori</button>
     <button class="nav-btn" onclick="showPage('tripletti')">Tripletti</button>
+    <button class="nav-btn" onclick="showPage('info')">Info</button>
 </nav>
 
 <main id="main-content">
     <section id="home">
-        <h2>Tervetuloa!</h2>
-        <p>Tämä on uusi PWA-pohjainen porttaalisi.</p>
+        <div class="card">
+            <h2>Tervetuloa MK Porttaaliin!</h2>
+            <p>Tämä on uusi, nopeampi ja mobiiliystävällisempi versio porttaalista.</p>
+            <p>Valitse työkalu ylävalikosta aloittaaksesi.</p>
+        </div>
     </section>
 
     <section id="generator" class="hidden">
-        <h2>Kuvageneraattori</h2>
-        <p>Tähän tulee geocache.fi integraatio.</p>
+        <div class="card">
+            <h2>MK Kuvageneraattori</h2>
+            <p>Hae tilastokuvat suoraan geocache.fi -palvelusta.</p>
+            <input type="text" id="nimimerkki" placeholder="Syötä nimimerkki">
+            <br>
+            <button class="nav-btn" onclick="generoiKuvat()" style="background: var(--accent); color: var(--bg); font-weight: bold;">
+                Generoi kuvat
+            </button>
+        </div>
+        
+        <div id="kuva-alue" style="margin-top: 20px;">
+            </div>
     </section>
 
     <section id="tripletti" class="hidden">
-        <h2>Triplettikunnat</h2>
-        <p>Tähän tulee Firebasesta ladattava lista.</p>
+        <div class="card">
+            <h2>Triplettiseuranta</h2>
+            <p>Tämä osio vaatii kirjautumisen. Tähän ladataan tietosi suoraan Firebasesta.</p>
+        </div>
+    </section>
+
+    <section id="info" class="hidden">
+        <div class="card">
+            <h2>Tietoa sovelluksesta</h2>
+            <p>Versio: 2.0.0 (PWA)</p>
+            <p>Kehitetty helpottamaan geokätköilytilastojen seurantaa.</p>
+        </div>
     </section>
 </main>
 
-<script>
-    function showPage(pageId) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(pageId).classList.remove('hidden');
-    }
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
