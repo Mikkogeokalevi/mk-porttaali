@@ -36,7 +36,7 @@ window.app = {
       case 'home':
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.4</h1>
+            <h1>MK Porttaali v2.5</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
@@ -45,6 +45,9 @@ window.app = {
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">
                   Tilastot
                 </button>
+                <a href="muuntimet.html" class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; text-decoration:none; display:flex; align-items:center; justify-content:center;">
+                  Muuntimet ↗
+                </a>
                 <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">
                   Ohjeet & Admin
                 </button>
@@ -55,6 +58,7 @@ window.app = {
             <ul>
               <li><a href="https://www.geocache.fi/" target="_blank">Geocache.fi</a></li>
               <li><a href="https://project-gc.com/" target="_blank">Project-GC</a></li>
+              <li><a href="https://mikkogeokalevi.github.io/kuntatarkistin/" target="_blank">Kuntatarkistin</a></li>
             </ul>
           </div>
         `;
