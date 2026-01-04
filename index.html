@@ -2,9 +2,20 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MK Porttaali v2.2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <title>MK Porttaali v2.3</title>
+  
   <link rel="icon" type="image/png" href="mikkokalevi.png">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e1e2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MK Porttaali">
+  <link rel="apple-touch-icon" href="mikkokalevi.png">
   
   <link rel="stylesheet" href="style.css">
 </head>
@@ -25,8 +36,8 @@
       </ul>
       <div id="authContainer">
         <span id="userNameDisplay" class="user-info hidden"></span>
-        <button id="authButton" class="nav-btn" onclick="app.router('login')">Kirjaudu</button>
-        <button id="logoutButton" class="nav-btn hidden" onclick="app.logout()">Kirjaudu ulos</button>
+        <button id="authButton" class="nav-btn" onclick="app.router('login_view')">Kirjaudu</button>
+        <button id="logoutButton" class="nav-btn hidden" onclick="app.logout()">Ulos</button>
       </div>
     </nav>
   </header>
