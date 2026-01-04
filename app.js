@@ -1,10 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// Tuodaan uudet moduulit
+// Tuodaan moduulit
 import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
+import * as Stats from "./stats.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -19,7 +20,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 
-// Alustetaan ikkuna-objekti, jota HTML (index.html) kutsuu
+// Alustetaan sovellus
 window.app = {
   currentUser: null,
 
@@ -27,7 +28,7 @@ window.app = {
   router: (view) => {
     const content = document.getElementById('appContent');
     const nav = document.getElementById('mainNav');
-    if(nav) nav.classList.remove('open'); // Sulje mobiilivalikko vaihdettaessa sivua
+    if(nav) nav.classList.remove('open'); // Sulje mobiilivalikko
 
     switch(view) {
       case 'home':
@@ -39,8 +40,8 @@ window.app = {
                 <button class="btn btn-primary" onclick="app.router('generator')">
                   Avaa Kuvageneraattori (Live)
                 </button>
-                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('triplet')">
-                  Omat Kuntatilastot
+                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">
+                  Tilastot
                 </button>
             </div>
           </div>
@@ -54,25 +55,28 @@ window.app = {
         `;
         break;
 
-      // KORJAUS: Ohjataan "stats" suoraan "triplet"-näkymään
+      // --- UUDET TILASTOREITIT (Kutsuu stats.js) ---
       case 'stats':
-        app.router('triplet');
+        // Avaa tilastojen päävalikon (laatikot)
+        Stats.renderStatsDashboard(content, window.app);
         break;
 
-      case 'triplet':
+      case 'stats_triplet':
         if (!window.app.currentUser) { app.router('login_view'); return; }
-        content.innerHTML = `
-            <div class="card">
-                <h1>Kuntatilastot</h1>
-                <p>Ladataan tietoja...</p>
-            </div>`;
-        app.loadTripletData();
+        Stats.loadTripletData(db, window.app.currentUser, content);
         break;
 
+      case 'stats_all':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
+        Stats.loadAllStats(db, window.app.currentUser, content);
+        break;
+
+      // --- KUVAGENERATTORI ---
       case 'generator':
         renderGeneratorView(content);
         break;
 
+      // --- KIRJAUTUMINEN ---
       case 'login_view':
         content.innerHTML = `
           <div class="card" style="max-width: 400px; margin: 0 auto;">
@@ -93,12 +97,9 @@ window.app = {
     }
   },
 
-  // Mobiilivalikon avaus/sulku
-  toggleMenu: () => {
-      document.getElementById('mainNav').classList.toggle('open');
-  },
+  toggleMenu: () => document.getElementById('mainNav').classList.toggle('open'),
 
-  // --- AUTH-TOIMINNOT (Kutsuu auth.js) ---
+  // --- AUTH-TOIMINNOT ---
   loginGoogle: () => Auth.loginGoogle(auth, (v) => window.app.router(v)),
   logout: () => Auth.logout(auth, (v) => window.app.router(v)),
   
@@ -106,11 +107,7 @@ window.app = {
       const e = document.getElementById('email').value;
       const p = document.getElementById('password').value;
       Auth.handleEmailLogin(auth, e, p, 
-        (msg) => {
-            const errDiv = document.getElementById('loginError');
-            errDiv.style.display = 'block';
-            errDiv.textContent = msg;
-        }, 
+        (msg) => { const d=document.getElementById('loginError'); d.style.display='block'; d.textContent=msg; }, 
         (v) => window.app.router(v)
       );
   },
@@ -119,16 +116,12 @@ window.app = {
       const e = document.getElementById('email').value;
       const p = document.getElementById('password').value;
       Auth.handleRegister(auth, e, p,
-        (msg) => {
-            const errDiv = document.getElementById('loginError');
-            errDiv.style.display = 'block';
-            errDiv.textContent = msg;
-        },
+        (msg) => { const d=document.getElementById('loginError'); d.style.display='block'; d.textContent=msg; },
         (v) => window.app.router(v)
       );
   },
 
-  // Kaverilistan toiminnot (Kutsuu auth.js)
+  // Kaverilistan toiminnot
   loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', 'friendListOptions'),
   addFriend: () => {
       const name = document.getElementById('newFriendName').value.trim();
@@ -139,7 +132,7 @@ window.app = {
   },
   removeFriend: (name) => Auth.removeFriend(db, window.app.currentUser?.uid, name, () => app.loadFriends()),
 
-  // --- KUVAGENERATTORIN TOIMINNOT (Kutsuu generator.js) ---
+  // --- KUVAGENERATTORIN TOIMINNOT ---
   toggleFriendManager: Gen.toggleFriendManager,
   handleTypeChange: Gen.handleTypeChange,
   handleLocTypeChange: Gen.handleLocTypeChange,
@@ -152,153 +145,15 @@ window.app = {
   confirmMunicipalities: Gen.confirmMunicipalities,
   updateProfileLink: Gen.updateProfileLink,
   toggleTimeFields: Gen.toggleTimeFields,
-  generateStatImage: Gen.generateStatImage,
-
-  // --- TRIPLETTIDATA (Tämä pidetään toistaiseksi tässä, kunnes siirretään omaan tiedostoon) ---
-  loadTripletData: async () => {
-      const content = document.getElementById('appContent');
-      if (!window.app.currentUser) return;
-
-      try {
-          const docRef = doc(db, "stats", window.app.currentUser.uid);
-          const docSnap = await getDoc(docRef);
-
-          if (!docSnap.exists() || !docSnap.data().municipalities) {
-              content.innerHTML = `
-                <div class="card">
-                    <h1>Kuntatilastot</h1>
-                    <p>Ei tallennettuja tilastoja. Käytä tietokoneella <a href="admin.html" target="_blank" style="color:var(--accent-color)">Admin-työkalua</a> tietojen päivittämiseen.</p>
-                </div>`;
-              return;
-          }
-
-          const fullData = docSnap.data().municipalities;
-          
-          let updatedString = '-';
-          if (docSnap.data().updatedAt) {
-              const date = docSnap.data().updatedAt.toDate();
-              updatedString = date.toLocaleString('fi-FI', { 
-                  day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
-              });
-          }
-
-          // Renderöidään pohja
-          content.innerHTML = `
-            <div class="card">
-                <h1>Kuntatilastot</h1>
-                <p style="font-size:0.9em; color:var(--success-color); border-bottom:1px solid var(--border-color); padding-bottom:10px;">
-                   ✅ Data päivitetty: <b>${updatedString}</b>
-                </p>
-                
-                <input type="text" id="tripletSearch" placeholder="Hae kuntaa..." 
-                       style="width:100%; padding:12px; margin-bottom:15px; box-sizing:border-box; background:var(--input-bg); color:var(--text-color); border:1px solid var(--border-color); border-radius:8px; font-size:16px;">
-
-                <div id="tripletStatsSummary" style="display:flex; gap:10px; margin-bottom:15px;">
-                </div>
-
-                <div id="tripletResults">
-                </div>
-            </div>`;
-
-          // Funktio listan piirtämiseen
-          const renderLists = (filterText) => {
-              const filter = filterText.toLowerCase();
-              const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
-              const titles = {
-                  1: "1. Ei löytöjä (0/0/0)",
-                  2: "2. Vain Tradi",
-                  3: "3. Vain Multi",
-                  4: "4. Vain Mysteeri",
-                  5: "5. Tradi + Multi",
-                  6: "6. Multi + Mysteeri",
-                  7: "7. Tradi + Mysteeri",
-                  8: "8. Triplettikunnat (T+M+Q)"
-              };
-
-              Object.keys(fullData).sort().forEach(kunta => {
-                  if (kunta.toLowerCase().includes(filter)) {
-                      const d = fullData[kunta];
-                      const stats = d.s || [];
-                      const t = stats[0] || 0;
-                      const m = stats[1] || 0;
-                      const q = stats[3] || 0;
-
-                      const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
-
-                      if(!t && !m && !q) cats[1].push(itemHTML);
-                      else if(t && !m && !q) cats[2].push(itemHTML);
-                      else if(!t && m && !q) cats[3].push(itemHTML);
-                      else if(!t && !m && q) cats[4].push(itemHTML);
-                      else if(t && m && !q) cats[5].push(itemHTML);
-                      else if(!t && m && q) cats[6].push(itemHTML);
-                      else if(t && !m && q) cats[7].push(itemHTML);
-                      else if(t && m && q) cats[8].push(itemHTML);
-                  }
-              });
-
-              // Yhteenvetolaatikot
-              const summaryContainer = document.getElementById('tripletStatsSummary');
-              if(summaryContainer) {
-                  summaryContainer.innerHTML = `
-                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
-                        <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div>
-                        <div style="font-size:0.8em;">Triplettiä</div>
-                    </div>
-                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
-                        <div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div>
-                        <div style="font-size:0.8em;">Ei löytöjä</div>
-                    </div>
-                  `;
-              }
-
-              // Listat HTML
-              let html = '';
-              let totalShown = 0;
-              for(let i=1; i<=8; i++) {
-                  const count = cats[i].length;
-                  totalShown += count;
-                  const isSearching = filter.length > 0;
-                  // Avataan tripletit (8) ja nollat (1) oletuksena, tai haun mukaan
-                  const isOpen = (isSearching && count > 0) || (!isSearching && (i === 8 || i === 1)) ? 'open' : ''; 
-                  const style = (i === 8) ? 'border-color:var(--success-color);' : '';
-                  const displayStyle = (isSearching && count === 0) ? 'display:none;' : ''; 
-
-                  html += `
-                    <details ${isOpen} style="margin-bottom:10px; background:rgba(0,0,0,0.1); border-radius:8px; border:1px solid var(--border-color); ${style} ${displayStyle}">
-                        <summary style="padding:10px; cursor:pointer; font-weight:bold; list-style:none;">
-                            ${titles[i]} <span style="float:right; opacity:0.7;">(${count})</span>
-                        </summary>
-                        <div style="padding:10px; border-top:1px solid var(--border-color);">
-                            <ul style="margin:0; padding-left:20px; font-size:0.9em;">
-                                ${count > 0 ? cats[i].join('') : '<li style="list-style:none; opacity:0.5;">Ei kuntia.</li>'}
-                            </ul>
-                        </div>
-                    </details>
-                  `;
-              }
-              if(totalShown === 0) html = '<p style="text-align:center; opacity:0.6; margin-top:20px;">Ei hakutuloksia.</p>';
-              document.getElementById('tripletResults').innerHTML = html;
-          };
-
-          renderLists('');
-          document.getElementById('tripletSearch').addEventListener('input', (e) => renderLists(e.target.value));
-
-      } catch (e) {
-          console.error(e);
-          content.innerHTML = `<div class="card"><h1 style="color:var(--error-color)">Virhe</h1><p>${e.message}</p></div>`;
-      }
-  }
+  generateStatImage: Gen.generateStatImage
 };
 
-// Apufunktio: Generaattorin HTML (siirretty selkeyden vuoksi tänne alas)
+// Generaattorin HTML (siirretty tänne selkeyden vuoksi)
 function renderGeneratorView(content) {
     let defaultUser = '';
     if (window.app.currentUser) {
-        if (window.app.currentUser.email === 'toni@kauppinen.info') {
-            defaultUser = 'mikkokalevi';
-        } else {
-            defaultUser = window.app.currentUser.displayName || window.app.currentUser.email.split('@')[0];
-        }
+        // Jos tarvitset kovia koodauksia tietyille sähköposteille, ne voi tehdä tässä
+        defaultUser = (window.app.currentUser.email === 'toni@kauppinen.info') ? 'mikkokalevi' : (window.app.currentUser.displayName || '');
     }
 
     const currentYear = new Date().getFullYear();
@@ -403,11 +258,14 @@ function renderGeneratorView(content) {
 
       <div id="paikkakuntaModal" class="modal-overlay">
         <div id="paikkakuntaSelectorModal">
-            <div class="modal-header" id="modalHeaderText">Valitse maakunta</div>
+            <div class="modal-header" id="modalHeaderText">
+                Valitse maakunta
+                <button class="btn-icon" onclick="app.closePaikkakuntaModal()">✕</button>
+            </div>
             <div class="modal-content">
                 <ul id="modalRegionList"></ul>
                 <div id="modalMunicipalityListContainer" class="hidden">
-                    <div class="municipality-item" style="padding:10px; background:rgba(0,0,0,0.2); margin-bottom:10px;">
+                    <div class="municipality-item" style="padding:10px; background:rgba(0,0,0,0.2); margin-bottom:10px; border-radius:4px;">
                          <label><input type="checkbox" id="selectAllMunicipalities" onchange="app.toggleSelectAll(this)"> Valitse kaikki / Poista valinnat</label>
                     </div>
                     <ul id="modalMunicipalityList"></ul>
