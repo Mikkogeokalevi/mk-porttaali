@@ -1,115 +1,87 @@
-// statsHelper.js - Tilastojen laskentalogiikka ja asetukset
+// statsHelper.js - Korjattu ja tarkistettu
 
-// Määritellään sarakkeet Geocache.fi taulukon mukaisessa järjestyksessä.
-// index = monesko sarake taulukossa (0-alkainen).
-// icon = kuvan nimi images-kansiossa.
+// Sarakkeiden määrittely (0 = Tradi, 1 = Multi, 2 = Webbi, 3 = Mysteeri...)
 export const CACHE_TYPES = [
-    { index: 0, name: "Tradi", icon: "tradi.png", id: "tradi" },
-    { index: 1, name: "Multi", icon: "multi.png", id: "multi" },
-    { index: 2, name: "Webbikamera", icon: "webcam.png", id: "webcam" },
-    { index: 3, name: "Mysteeri", icon: "mysse.png", id: "mysse" },
-    { index: 4, name: "Letterbox", icon: "letter.png", id: "letter" },
-    { index: 5, name: "Earthcache", icon: "earth.png", id: "earth" },
-    { index: 6, name: "Eventti", icon: "event.png", id: "event" },
-    { index: 7, name: "Virtuaali", icon: "virtual.png", id: "virtual" },
-    { index: 8, name: "CITO", icon: "cito.png", id: "cito" },
-    { index: 9, name: "Wherigo", icon: "wherigo.png", id: "wherigo" },
-    { index: 10, name: "Comm. Celeb.", icon: "commu.png", id: "commu" },
-    { index: 11, name: "Mega", icon: "mega.png", id: "mega" },
-    // Voit lisätä tähän lisää (esim. Giga, Lab) jos ne ilmestyvät taulukkoon myöhemmin
-    // { index: 12, name: "Giga", icon: "giga.png", id: "giga" } 
+    { index: 0, name: "Tradi", icon: "tradi.png" },
+    { index: 1, name: "Multi", icon: "multi.png" },
+    { index: 2, name: "Webbikamera", icon: "webcam.png" },
+    { index: 3, name: "Mysteeri", icon: "mysse.png" },
+    { index: 4, name: "Letterbox", icon: "letter.png" },
+    { index: 5, name: "Earthcache", icon: "earth.png" },
+    { index: 6, name: "Eventti", icon: "event.png" },
+    { index: 7, name: "Virtuaali", icon: "virtual.png" },
+    { index: 8, name: "CITO", icon: "cito.png" },
+    { index: 9, name: "Wherigo", icon: "wherigo.png" },
+    { index: 10, name: "Comm. Celeb.", icon: "commu.png" },
+    { index: 11, name: "Mega", icon: "mega.png" }
 ];
 
-// Apufunktio: Laske montako eri kätkötyyppiä kunnasta on löydetty
+// Tarkistaa, onko kunnassa Tripletti (Tradi + Multi + Mysteeri)
+export function isTriplet(statsArray) {
+    if (!statsArray || statsArray.length < 4) return false;
+    const t = statsArray[0] || 0; // Tradi
+    const m = statsArray[1] || 0; // Multi
+    const q = statsArray[3] || 0; // Mysteeri (indeksi 3, koska webbi on 2)
+    return (t > 0 && m > 0 && q > 0);
+}
+
+// Laskee montako ERI tyyppiä on löydetty
 export function countFoundTypes(statsArray) {
+    if (!statsArray) return 0;
     let count = 0;
     CACHE_TYPES.forEach(type => {
-        if (statsArray[type.index] && statsArray[type.index] > 0) {
-            count++;
-        }
+        if (statsArray[type.index] > 0) count++;
     });
     return count;
 }
 
-// Apufunktio: Onko kunnassa Tripletti (Tradi, Multi, Mysse)?
-export function isTriplet(statsArray) {
-    const t = statsArray[0] || 0; // Tradi
-    const m = statsArray[1] || 0; // Multi
-    const q = statsArray[3] || 0; // Mysse (HUOM: sarake 3, koska webbikamera on 2)
-    return (t > 0 && m > 0 && q > 0);
-}
-
-// Apufunktio: Onko kunnassa "Värisuora" (Kaikki listatut tyypit)?
-// Huom: Tämä on tiukka ehto. Voidaan löysätä esim. "Vähintään 8 tyyppiä".
-export function getDiversityScore(statsArray) {
-    return countFoundTypes(statsArray);
-}
-
-// Laskee yleistilastot koko maasta
+// Laskee yleistilastot (Prosentit jne.)
 export function calculateGlobalStats(municipalitiesData) {
-    let totalMunicipalities = 0;
-    let foundMunicipalities = 0;
-    let typeCounts = {}; // { "Pirkanmaa": { "Tradi": 100, "Multi": 20... } }
-
-    CACHE_TYPES.forEach(t => typeCounts[t.name] = 0); // Alusta nollat
-
+    let total = 0;
+    let found = 0;
+    
     Object.keys(municipalitiesData).forEach(kunta => {
-        totalMunicipalities++;
-        const d = municipalitiesData[kunta];
-        const stats = d.s || [];
-        
-        // Onko tästä kunnasta löydetty mitään?
-        const totalFinds = stats.reduce((a, b) => a + b, 0);
-        if (totalFinds > 0) foundMunicipalities++;
-
-        // Tyyppijakaumaa varten (tässä yksinkertaistettu versio koko Suomelle)
-        CACHE_TYPES.forEach(type => {
-            const val = stats[type.index] || 0;
-            if (!typeCounts[type.name]) typeCounts[type.name] = 0;
-            typeCounts[type.name] += val;
-        });
+        total++;
+        const stats = municipalitiesData[kunta].s || [];
+        const sum = stats.reduce((a, b) => a + b, 0);
+        if (sum > 0) found++;
     });
 
     return {
-        total: totalMunicipalities,
-        found: foundMunicipalities,
-        percentage: totalMunicipalities > 0 ? ((foundMunicipalities / totalMunicipalities) * 100).toFixed(1) : 0,
-        typeCounts: typeCounts
+        total: total,
+        found: found,
+        percentage: total > 0 ? ((found / total) * 100).toFixed(1) : 0
     };
 }
 
-// Laskee maakuntakohtaiset jakaumat
+// Laskee maakuntien suosituimmat tyypit
 export function calculateRegionStats(municipalitiesData) {
     const regionStats = {};
 
     Object.keys(municipalitiesData).forEach(kunta => {
         const d = municipalitiesData[kunta];
-        const region = d.r || "Tuntematon";
+        const region = d.r || "Muu";
         const stats = d.s || [];
 
         if (!regionStats[region]) {
-            regionStats[region] = { total: 0, types: {} };
+            regionStats[region] = { types: {} };
             CACHE_TYPES.forEach(t => regionStats[region].types[t.name] = 0);
         }
 
-        CACHE_TYPES.forEach(type => {
-            const val = stats[type.index] || 0;
-            regionStats[region].types[type.name] += val;
-            regionStats[region].total += val;
+        CACHE_TYPES.forEach(t => {
+            const val = stats[t.index] || 0;
+            regionStats[region].types[t.name] += val;
         });
     });
 
-    // Selvitetään jokaisen maakunnan suosituin tyyppi
-    Object.keys(regionStats).forEach(region => {
-        let maxType = "-";
-        let maxVal = -1;
-        Object.entries(regionStats[region].types).forEach(([typeName, count]) => {
-            if (count > maxVal) {
-                maxVal = count;
-                maxType = typeName;
-            }
+    // Etsi voittaja jokaiselle maakunnalle
+    Object.keys(regionStats).forEach(r => {
+        let max = -1;
+        let winner = "-";
+        Object.entries(regionStats[r].types).forEach(([type, count]) => {
+            if (count > max) { max = count; winner = type; }
         });
-        regionStats[region].mostPopular = maxType;
+        regionStats[r].mostPopular = winner;
     });
 
     return regionStats;
