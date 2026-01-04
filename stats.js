@@ -1,4 +1,5 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { maakuntienKunnat } from "./data.js";
 
 /* KONFIGURAATIO: Kätkötyyppien indeksit ja ikonit */
 const CACHE_TYPES = [
@@ -28,108 +29,112 @@ export const renderStatsDashboard = (content, app) => {
                 <span style="font-size:2em;">🏆</span><br>Triplettitarkistus
             </button>
             <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_all')">
-                <span style="font-size:2em;">📊</span><br>Kaikki löydöt
+                <span style="font-size:2em;">🗺️</span><br>Maakunnat & Löydöt
+            </button>
+            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px; opacity:0.6; cursor:default;" title="Tulossa myöhemmin">
+                <span style="font-size:2em;">📊</span><br>Top-listat (Tulossa)
             </button>
         </div>
     </div>`;
 };
 
-// UUSI: Kaikki löydöt (Optimoitu: Lataa vain 50 kerrallaan)
+// UUSI: Maakuntanäkymä (Accordion)
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
-    content.innerHTML = `<div class="card"><h1>Kaikki löydöt</h1><p>Ladataan...</p></div>`;
+    content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
+    
     try {
         const fullData = await fetchData(db, user.uid);
         if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa. Käytä Admin-työkalua.</p></div>`; return; }
 
-        let currentLimit = 50; // Kuinka monta näytetään aluksi
-        const BATCH_SIZE = 50; // Kuinka monta ladataan lisää
-
         // Renderöidään runko
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <h2 style="margin:0;">Kuntien Kätkölöydöt</h2>
-                <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0;">Löydöt maakunnittain</h2>
+                <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
             </div>
-            <input type="text" id="munSearch" placeholder="Hae kuntaa..." style="margin-bottom:15px;">
-            <div id="munList"></div>
-            <div id="loadMoreContainer" style="text-align:center; margin-top:15px;"></div>
+            <input type="text" id="regionSearch" placeholder="Hae kuntaa (esim. Lahti)..." style="margin-bottom:15px;">
+            <div id="regionList"></div>
         </div>`;
 
-        const renderMunicipalityList = (filter = "") => {
-            const container = document.getElementById('munList');
-            const loadMoreContainer = document.getElementById('loadMoreContainer');
-            
-            // Tyhjennetään vain jos filtteri muuttuu tai ollaan alussa, ei lisäyksessä
-            if(container.getAttribute('data-filter') !== filter) {
-                container.innerHTML = "";
-                container.setAttribute('data-filter', filter);
-            }
-
+        const renderRegions = (filter = "") => {
+            const container = document.getElementById('regionList');
+            container.innerHTML = "";
             const term = filter.toLowerCase();
-            const allKeys = Object.keys(fullData).sort();
-            
-            // Suodatetaan kunnat hakusanan mukaan
-            const filteredKeys = allKeys.filter(k => k.toLowerCase().startsWith(term));
-            
-            // Otetaan vain ne, jotka mahtuvat nykyiseen limiittiin
-            const visibleKeys = filteredKeys.slice(0, currentLimit);
+            let totalRegionsShown = 0;
 
-            // Jos ollaan "lisäämässä", renderöidään vain uudet, muuten kaikki alusta
-            // Yksinkertaisuuden vuoksi renderöidään tässä optimoidussa versiossa aina visibleKeys
-            // DOM-päivitys on nopea kun elementtejä on vähän (alle 1000).
-            container.innerHTML = ""; 
-
-            visibleKeys.forEach(kunta => {
-                const stats = fullData[kunta].s || [];
-                let foundList = "";
-                let notFoundList = "";
-
-                CACHE_TYPES.forEach(type => {
-                    const count = stats[type.index] || 0;
-                    const li = `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: ${count}</span></li>`;
-                    if (count > 0) foundList += li;
-                    else notFoundList += li;
+            // Käydään läpi maakunnat aakkosjärjestyksessä
+            Object.keys(maakuntienKunnat).sort().forEach(maakunta => {
+                const kunnatMaakunnassa = maakuntienKunnat[maakunta];
+                
+                // Etsitään mitkä tämän maakunnan kunnista löytyvät käyttäjän datasta (fullData)
+                // JA vastaavat hakusanaa
+                const matchingMunicipalities = kunnatMaakunnassa.filter(kunta => {
+                    const hasData = fullData[kunta]; // Onko löytöjä?
+                    const matchesSearch = kunta.toLowerCase().includes(term); // Osuuko haku?
+                    return hasData && matchesSearch;
                 });
 
-                const pgcLink = `https://project-gc.com/Tools/MapCompare?profile_name=${user.displayName || 'user'}&country[]=Finland&county[]=${kunta}&nonefound=on&submit=Filter`;
-                const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
+                // Jos ei yhtään osumaa tässä maakunnassa, ei näytetä maakuntaa ollenkaan
+                if (matchingMunicipalities.length === 0) return;
+
+                totalRegionsShown++;
+
+                // Rakennetaan HTML kunnille
+                let municipalitiesHtml = "";
+                matchingMunicipalities.forEach(kunta => {
+                    const stats = fullData[kunta].s || [];
+                    let foundList = "";
+                    let notFoundList = "";
+
+                    CACHE_TYPES.forEach(type => {
+                        const count = stats[type.index] || 0;
+                        const li = `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: ${count}</span></li>`;
+                        if (count > 0) foundList += li;
+                        else notFoundList += li;
+                    });
+
+                    const pgcLink = `https://project-gc.com/Tools/MapCompare?profile_name=${user.displayName || 'user'}&country[]=Finland&county[]=${kunta}&nonefound=on&submit=Filter`;
+                    const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
+
+                    municipalitiesHtml += `
+                    <div class="municipality-box">
+                        <h3>
+                            <span>
+                                <a href="${gcfiLink}" target="_blank">${kunta}</a> 
+                                <a href="${pgcLink}" target="_blank" style="font-size:0.7em; opacity:0.6; text-decoration:none;">(Pgc)</a>
+                            </span>
+                        </h3>
+                        <h4>Löydetyt:</h4>
+                        <ul class="cache-list">${foundList || '<li style="opacity:0.5">-</li>'}</ul>
+                        ${notFoundList ? `<h4>Ei löytöjä:</h4><ul class="cache-list" style="opacity:0.7;">${notFoundList}</ul>` : ''}
+                    </div>`;
+                });
+
+                // Avataanko haitari? Kyllä, jos on haku päällä. Muuten kiinni.
+                const isOpen = term.length > 0 ? "open" : "";
                 
+                // Maakunnan otsikko (Haitari)
                 container.innerHTML += `
-                <div class="municipality-box">
-                    <h3>
-                        <span>
-                            <a href="${gcfiLink}" target="_blank">${kunta}</a> 
-                            <a href="${pgcLink}" target="_blank" style="font-size:0.8em; opacity:0.7;">(Pgc)</a>
-                        </span>
-                    </h3>
-                    <h4>Löydetyt kätkötyypit:</h4>
-                    <ul class="cache-list">${foundList || '<li style="opacity:0.5">Ei löytöjä</li>'}</ul>
-                    ${notFoundList ? `<h4>Ei löytöjä (tyypit):</h4><ul class="cache-list">${notFoundList}</ul>` : ''}
-                </div>`;
+                <details ${isOpen} class="region-accordion">
+                    <summary>
+                        <span style="font-size:1.1em;">${maakunta}</span>
+                        <span style="float:right; font-weight:normal; opacity:0.7; font-size:0.9em;">${matchingMunicipalities.length} kuntaa</span>
+                    </summary>
+                    <div class="region-content">
+                        ${municipalitiesHtml}
+                    </div>
+                </details>`;
             });
 
-            // Näytä "Lataa lisää" -nappi jos kaikkia ei ole vielä näytetty
-            if (filteredKeys.length > currentLimit) {
-                loadMoreContainer.innerHTML = `<button class="btn" id="btnLoadMore">Näytä lisää (${filteredKeys.length - currentLimit} jäljellä)</button>`;
-                document.getElementById('btnLoadMore').onclick = () => {
-                    currentLimit += BATCH_SIZE;
-                    renderMunicipalityList(filter); // Renderöi uudelleen isommalla limiitillä
-                };
-            } else {
-                loadMoreContainer.innerHTML = filteredKeys.length === 0 ? '<p>Ei hakutuloksia.</p>' : '<p style="font-size:0.8em; opacity:0.5;">Kaikki näytetty.</p>';
+            if (totalRegionsShown === 0) {
+                container.innerHTML = `<p style="text-align:center; margin-top:20px; opacity:0.6;">Ei osumia haulla "${filter}".</p>`;
             }
         };
 
-        // Ensimmäinen renderöinti
-        renderMunicipalityList();
-
-        // Haku nollaa limiitin
-        document.getElementById('munSearch').addEventListener('input', (e) => {
-            currentLimit = 50; // Resetoi limiitti haettaessa
-            renderMunicipalityList(e.target.value);
-        });
+        renderRegions();
+        document.getElementById('regionSearch').addEventListener('input', (e) => renderRegions(e.target.value));
 
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
