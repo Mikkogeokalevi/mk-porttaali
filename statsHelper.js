@@ -1,10 +1,11 @@
-// statsHelper.js - Korjattu ja tarkistettu
+// statsHelper.js - KORJATTU VERSIO
 
-// Sarakkeiden määrittely (0 = Tradi, 1 = Multi, 2 = Webbi, 3 = Mysteeri...)
+// Määritellään sarakkeet Geocache.fi taulukon mukaisessa järjestyksessä.
+// TÄRKEÄÄ: Tämä vastaa Admin-työkalun tallentamaa järjestystä (Tradi, Multi, Web, Mysse...)
 export const CACHE_TYPES = [
     { index: 0, name: "Tradi", icon: "tradi.png" },
     { index: 1, name: "Multi", icon: "multi.png" },
-    { index: 2, name: "Webbikamera", icon: "webcam.png" },
+    { index: 2, name: "Webbikamera", icon: "webcam.png" }, // Tämä on välissä, vaikka harvinainen
     { index: 3, name: "Mysteeri", icon: "mysse.png" },
     { index: 4, name: "Letterbox", icon: "letter.png" },
     { index: 5, name: "Earthcache", icon: "earth.png" },
@@ -17,11 +18,14 @@ export const CACHE_TYPES = [
 ];
 
 // Tarkistaa, onko kunnassa Tripletti (Tradi + Multi + Mysteeri)
+// HUOM: Käyttää indeksejä 0 (Tradi), 1 (Multi) ja 3 (Mysteeri)
 export function isTriplet(statsArray) {
     if (!statsArray || statsArray.length < 4) return false;
-    const t = statsArray[0] || 0; // Tradi
-    const m = statsArray[1] || 0; // Multi
-    const q = statsArray[3] || 0; // Mysteeri (indeksi 3, koska webbi on 2)
+    
+    const t = statsArray[0] || 0; 
+    const m = statsArray[1] || 0; 
+    const q = statsArray[3] || 0; // TÄMÄ OLI AIEMMIN VÄÄRIN, NYT SE ON 3 (Mysteeri)
+    
     return (t > 0 && m > 0 && q > 0);
 }
 
@@ -30,6 +34,8 @@ export function countFoundTypes(statsArray) {
     if (!statsArray) return 0;
     let count = 0;
     CACHE_TYPES.forEach(type => {
+        // Ohitetaan Webbikamera (indeksi 2) laskennasta jos halutaan, 
+        // mutta yleensä se lasketaan "eri tyypiksi". Pidetään mukana.
         if (statsArray[type.index] > 0) count++;
     });
     return count;
@@ -74,7 +80,6 @@ export function calculateRegionStats(municipalitiesData) {
         });
     });
 
-    // Etsi voittaja jokaiselle maakunnalle
     Object.keys(regionStats).forEach(r => {
         let max = -1;
         let winner = "-";
