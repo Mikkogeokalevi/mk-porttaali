@@ -1,19 +1,14 @@
 // Sivun vaihtaminen (SPA-logiikka)
 function showPage(pageId) {
-    // Piilotetaan kaikki osiot
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-    
-    // Näytetään valittu osio
     const activePage = document.getElementById(pageId);
     if (activePage) {
         activePage.classList.remove('hidden');
     }
-
-    // Jos mobiilivalikko on auki, sen voisi sulkea tässä (lisätään myöhemmin)
     console.log("Näytetään sivu: " + pageId);
 }
 
-// MK Kuvageneraattorin toiminnallisuus
+// MK Kuvageneraattorin täydellinen logiikka
 function generoiKuvat() {
     const nimi = document.getElementById('nimimerkki').value.trim();
     const alue = document.getElementById('kuva-alue');
@@ -23,21 +18,52 @@ function generoiKuvat() {
         return;
     }
 
-    // Luodaan kuvat geocache.fi stat-palvelusta
-    // s=1: Löydetyt per kk, s=2: Löydetyt per vuosi
-    alue.innerHTML = `
-        <div class="card">
-            <h3>Löydetyt kuukausittain - ${nimi}</h3>
-            <img src="https://www.geocache.fi/stat/mk_stats.php?n=${nimi}&s=1" alt="Löydetyt per kk" style="width: 100%; height: auto;">
-        </div>
-        <div class="card" style="margin-top: 20px;">
-            <h3>Löydetyt vuosittain - ${nimi}</h3>
-            <img src="https://www.geocache.fi/stat/mk_stats.php?n=${nimi}&s=2" alt="Löydetyt per vuosi" style="width: 100%; height: auto;">
+    // Alkuperäiset linkit ja osoitteet
+    const profiiliLinkki = `https://www.geocaching.com/profile/?u=${nimi}`;
+    const geocacheFiLinkki = `https://www.geocache.fi/stat/tilastot.php?n=${nimi}`;
+    
+    // Kuvatyyppien asetukset
+    const kuvat = [
+        { id: 1, otsikko: "Löydetyt kuukausittain", kuvaus: "mk_stats.php?n=" + nimi + "&s=1" },
+        { id: 2, otsikko: "Löydetyt vuosittain", kuvaus: "mk_stats.php?n=" + nimi + "&s=2" },
+        { id: 3, otsikko: "Löydetyt tänään", kuvaus: "mk_stats.php?n=" + nimi + "&s=3" }
+    ];
+
+    let html = `
+        <div class="card" style="margin-bottom: 20px; border-left: 5px solid var(--accent);">
+            <p><strong>Linkit:</strong> 
+                <a href="${profiiliLinkki}" target="_blank" style="color: var(--accent);">Geocaching.com profiili</a> | 
+                <a href="${geocacheFiLinkki}" target="_blank" style="color: var(--accent);">Geocache.fi tilastot</a>
+            </p>
         </div>
     `;
+
+    kuvat.forEach(kuva => {
+        const imgUrl = `https://www.geocache.fi/stat/${kuva.kuvaus}`;
+        const bbCode = `[URL=${geocacheFiLinkki}][IMG]${imgUrl}[/IMG][/URL]`;
+        const htmlCode = `<a href="${geocacheFiLinkki}"><img src="${imgUrl}" border="0"></a>`;
+
+        html += `
+            <div class="card" style="margin-bottom: 25px;">
+                <h3>${kuva.otsikko}</h3>
+                <img src="${imgUrl}" alt="${kuva.otsikko}" style="max-width: 100%; height: auto; margin-bottom: 15px;">
+                
+                <div style="font-size: 0.85em; background: #1e1e2e; padding: 10px; border-radius: 5px;">
+                    <label><strong>BBCode (Foorumeille):</strong></label>
+                    <input type="text" value='${bbCode}' readonly style="width: 100%; max-width: none; font-family: monospace; font-size: 11px; margin-bottom: 10px;">
+                    
+                    <label><strong>HTML-koodi:</strong></label>
+                    <input type="text" value='${htmlCode}' readonly style="width: 100%; max-width: none; font-family: monospace; font-size: 11px;">
+                </div>
+            </div>
+        `;
+    });
+
+    alue.innerHTML = html;
 }
 
-// Kun sivu on ladattu, varmistetaan että ollaan etusivulla
+// Alustus
 document.addEventListener('DOMContentLoaded', () => {
+    // Jos haluat, että nimimerkki muistetaan, voit lisätä sen tähän myöhemmin (localStorage)
     showPage('home');
 });
