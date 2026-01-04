@@ -1,91 +1,181 @@
 :root {
-    --bg: #1e1e2e;
-    --card: #313244;
-    --text: #cdd6f4;
-    --accent: #89b4fa;
-    --border: #45475a;
-    --button-hover: #585b70;
+  --bg-color: #1e1e2e;
+  --text-color: #cdd6f4;
+  --card-bg: #313244;
+  --border-color: #45475a;
+  --accent-color: #89b4fa;
+  --button-bg: #585b70;
+  --button-hover-bg: #6c7086;
+  --success-color: #a6e3a1;
+  --error-color: #f38ba8;
+  --input-bg: #181825;
+  --border-radius: 8px;
 }
 
 body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
+/* HEADER & NAVIGAATIO */
 header {
-    padding: 1rem;
-    background: var(--card);
-    border-bottom: 2px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-nav {
-    display: flex;
-    gap: 10px;
-    padding: 15px;
-    background: var(--bg);
-    overflow-x: auto;
-    border-bottom: 1px solid var(--border);
+.brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
-.nav-btn {
-    padding: 10px 20px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 8px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
+.brand img {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 50%;
 }
 
-.nav-btn:hover {
-    background: var(--button-hover);
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 5px;
 }
 
-#main-content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
+nav a, nav button.nav-btn {
+  text-decoration: none;
+  color: var(--text-color);
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  transition: background 0.2s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-family: inherit;
 }
 
-section {
-    max-width: 800px;
-    margin: 0 auto;
+nav a:hover, nav button.nav-btn:hover {
+  background-color: var(--button-bg);
 }
 
-.hidden {
-    display: none;
+nav a.active {
+  background-color: var(--button-bg);
+  color: var(--accent-color);
 }
 
-input[type="text"] {
-    padding: 12px;
-    margin: 10px 0;
-    width: 100%;
-    max-width: 300px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: white;
-    box-sizing: border-box;
+/* Kirjautumispainike Navissa */
+#authButton {
+  background-color: var(--accent-color);
+  color: #1e1e2e;
+  font-weight: bold;
+  margin-left: 15px;
+}
+
+.mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* SISÄLTÖALUE */
+main {
+  flex: 1;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card {
-    background: var(--card);
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-img {
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+h1, h2, h3 { color: var(--accent-color); margin-top: 0; }
+
+.btn {
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+  display: inline-block;
+  margin-top: 10px;
 }
+.btn:hover { background-color: var(--button-hover-bg); }
+.btn-google { background-color: #db4437; color: white; width: 100%; margin-top: 10px; }
+.btn-primary { background-color: var(--accent-color); color: #1e1e2e; font-weight: bold; width: 100%; }
+
+/* Lomakekentät */
+input[type="email"], input[type="password"], input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  font-size: 1rem;
+}
+input:focus { outline: 2px solid var(--accent-color); border-color: transparent; }
+
+.user-info { font-size: 0.9em; color: var(--success-color); margin-right: 10px; }
+.divider { margin: 20px 0; border-top: 1px solid var(--border-color); text-align: center; position: relative; }
+.divider span { background-color: var(--card-bg); padding: 0 10px; position: relative; top: -10px; color: #888; }
+.error-msg { color: var(--error-color); margin-top: 10px; font-weight: bold; display: none; }
+
+/* Mobiiliresponsiivisuus */
+@media (max-width: 768px) {
+  .mobile-toggle { display: block; }
+  nav {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: none; flex-direction: column; padding: 10px;
+  }
+  nav.open { display: flex; }
+  nav ul { flex-direction: column; width: 100%; }
+  nav li { width: 100%; }
+  nav a, nav button.nav-btn { display: block; width: 100%; text-align: left; }
+  #authButton { margin-left: 0; margin-top: 10px; width: 100%; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hidden { display: none !important; }
