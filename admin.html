@@ -5,60 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Admin - Triplettigeneraattori</title>
     <style>
-        body { font-family: sans-serif; background-color: #1e1e2e; color: #cdd6f4; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e1e2e; color: #cdd6f4; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
-        h1 { color: #89b4fa; }
+        h1 { color: #89b4fa; border-bottom: 1px solid #45475a; padding-bottom: 10px; }
         
+        .instructions { background: #313244; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; }
+        .instructions code { background: #1e1e2e; padding: 2px 5px; border-radius: 4px; color: #f9e2af; }
+
         textarea {
             width: 100%;
-            height: 200px;
-            background-color: #313244;
+            height: 250px;
+            background-color: #181825;
             color: #fff;
             border: 1px solid #45475a;
-            padding: 10px;
+            padding: 15px;
             font-family: monospace;
+            font-size: 14px;
             margin-bottom: 20px;
+            border-radius: 8px;
+            white-space: pre;
+            overflow-x: auto;
         }
 
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        
         button {
-            background-color: #89b4fa;
-            color: #1e1e2e;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             cursor: pointer;
-            font-size: 1.1em;
-            font-weight: bold;
-            border-radius: 5px;
-            margin-right: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: 0.2s;
         }
-        button:hover { background-color: #b4befe; }
-        button.save-btn { background-color: #a6e3a1; }
+        button.process-btn { background-color: #89b4fa; color: #1e1e2e; }
+        button.process-btn:hover { background-color: #b4befe; }
+        
+        button.save-btn { background-color: #a6e3a1; color: #1e1e2e; display: none; }
+        button.save-btn:hover { background-color: #94e2d5; }
 
-        .status { margin-top: 10px; font-weight: bold; }
-        .preview { margin-top: 20px; background: #313244; padding: 20px; border-radius: 8px; }
+        .status { margin-top: 10px; font-weight: bold; min-height: 24px; }
+        
+        .preview { margin-top: 20px; background: #313244; padding: 20px; border-radius: 8px; border: 1px solid #45475a; display: none; }
         .preview h3 { color: #f9e2af; margin-top: 0; }
-        .cat-block { margin-bottom: 10px; border-bottom: 1px solid #45475a; padding-bottom: 10px; }
+        
+        .cat-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 8px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            font-size: 0.9em;
+        }
+        .cat-count { font-weight: bold; color: #a6e3a1; }
+        .cat-sample { color: #a6adc8; font-style: italic; margin-left: 10px; }
+
+        .warning-box {
+            background-color: rgba(243, 139, 168, 0.1);
+            border: 1px solid #f38ba8;
+            color: #f38ba8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Triplettikuntien Päivitystyökalu</h1>
-    <p>1. Maalaa taulukko Geocache.fi-sivulla (Paikkakunta, Maakunta, Tradi, Multi, Mysse...).<br>
-       2. Kopioi (Ctrl+C).<br>
-       3. Liitä alle (Ctrl+V) ja paina "Prosessoi".</p>
-
-    <textarea id="rawInput" placeholder="Liitä taulukon data tähän..."></textarea>
     
-    <div>
-        <button onclick="processData()">1. Prosessoi data</button>
-        <button id="saveBtn" class="save-btn" onclick="saveToFirebase()" style="display:none;">2. Tallenna tietokantaan</button>
+    <div class="instructions">
+        <strong>Käyttöohje:</strong>
+        <ol>
+            <li>Mene <code>geocache.fi</code> tilastosivulle (Kuntatilasto).</li>
+            <li>Maalaa hiirellä taulukko, jossa näkyy Paikkakunta, Maakunta, Tradi, Multi, Mysse jne.</li>
+            <li>Kopioi (Ctrl+C).</li>
+            <li>Liitä (Ctrl+V) alla olevaan laatikkoon.</li>
+            <li>Paina <strong>1. Prosessoi data</strong>.</li>
+        </ol>
+    </div>
+
+    <div id="warningBox" class="warning-box"></div>
+
+    <textarea id="rawInput" placeholder="Liitä kopioitu taulukko tähän..."></textarea>
+    
+    <div class="btn-group">
+        <button class="process-btn" onclick="processData()">1. Prosessoi data</button>
+        <button id="saveBtn" class="save-btn" onclick="saveToFirebase()">2. Tallenna tietokantaan</button>
     </div>
 
     <div id="statusMsg" class="status"></div>
 
-    <div id="previewArea" class="preview" style="display:none;">
-        <h3>Esikatselu (Tunnistetut kategoriat):</h3>
+    <div id="previewArea" class="preview">
+        <h3>Esikatselu (Löydetyt kategoriat):</h3>
         <div id="previewContent"></div>
     </div>
 </div>
@@ -66,8 +106,10 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    
+    // Tuodaan maakuntalista data.js tiedostosta tunnistusta varten
+    import { suomenMaakunnat } from "./data.js";
 
-    // Firebase Config (SAMA KUIN SOVELLUKSESSA)
     const firebaseConfig = {
       apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
       authDomain: "mk-porttaali.firebaseapp.com",
@@ -84,57 +126,102 @@
 
     window.processData = () => {
         const raw = document.getElementById('rawInput').value;
-        const lines = raw.split('\n');
-        const categories = {
-            1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []
-        };
+        const status = document.getElementById('statusMsg');
+        const warningBox = document.getElementById('warningBox');
         
-        let count = 0;
+        if (!raw.trim()) {
+            status.textContent = "Liitä ensin dataa laatikkoon!";
+            status.style.color = "#f38ba8";
+            return;
+        }
 
-        lines.forEach(line => {
-            const cols = line.split('\t');
-            // Oletus: Geocache.fi taulukon rakenne
-            // Col 0: Index (1)
-            // Col 1: Paikkakunta (Akaa)
-            // Col 2: Maakunta (Pirkanmaa)
-            // Col 3: Tradi
-            // Col 4: Multi
-            // Col 5: Mysse
-            
-            // Varmistetaan että rivillä on dataa (vähintään 6 saraketta)
-            if (cols.length < 6) return;
-            
-            // Ohitetaan otsikkorivi jos se tarttui mukaan (tarkistetaan onko "Tradi" tai vastaava teksti sarakkeessa)
-            if (isNaN(parseInt(cols[3]))) return;
+        const lines = raw.split('\n');
+        const categories = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [] };
+        let successCount = 0;
+        let failCount = 0;
 
-            const kunta = cols[1].trim();
-            const tradi = parseInt(cols[3]) || 0;
-            const multi = parseInt(cols[4]) || 0;
-            const mysse = parseInt(cols[5]) || 0;
+        // Järjestetään maakunnat pituusjärjestykseen (pisimmät ensin), jotta esim "Pohjois-Savo" löytyy ennen "Savo"a (jos sellaista olisi)
+        const sortedRegions = [...suomenMaakunnat].sort((a, b) => b.length - a.length);
+
+        lines.forEach((line, index) => {
+            let cleanLine = line.trim();
+            if (!cleanLine || cleanLine.startsWith("Paikkakunta")) return; // Ohita tyhjät ja otsikot
+
+            let kunta = "";
+            let region = "";
+            let numbersPart = "";
+            let tradi = 0, multi = 0, mysse = 0;
+
+            // 1. Yritetään tunnistaa maakunta riviltä "älykkäästi"
+            let regionFound = false;
+            for (const r of sortedRegions) {
+                const idx = cleanLine.indexOf(r);
+                if (idx > 0) { // Löytyi, eikä ole rivin alussa (koska alussa on kunta)
+                    kunta = cleanLine.substring(0, idx).trim();
+                    region = r;
+                    numbersPart = cleanLine.substring(idx + r.length).trim();
+                    regionFound = true;
+                    break;
+                }
+            }
+
+            if (!regionFound) {
+                // Jos maakuntaa ei löydy nimellä, kokeillaan onko data sarkaineroteltua (TAB)
+                const parts = cleanLine.split('\t');
+                if (parts.length > 5) {
+                    // Oletetaan sarakejärjestys: #, Kunta, Maakunta, T, M, My...
+                    // Jos indeksi (#) puuttuu: Kunta, Maakunta, T, M, My...
+                    let offset = isNaN(parseInt(parts[0])) ? 0 : 1; 
+                    kunta = parts[offset];
+                    // parts[offset+1] on maakunta
+                    tradi = parseInt(parts[offset+2]);
+                    multi = parseInt(parts[offset+3]);
+                    mysse = parseInt(parts[offset+4]);
+                    regionFound = true; // Merkitään käsitellyksi
+                }
+            } else {
+                // Jos maakunta löytyi ja meillä on "numbersPart" (esim "55001...")
+                // Yritetään parsia numerot. Jos on välilyöntejä/tabeja, helppoa.
+                // Jos on pötkö, tämä on vaikeaa. Oletetaan että leikepöydällä on edes jotain välejä.
+                
+                // Korvataan useat välilyönnit yhdellä ja splitataan
+                const nums = numbersPart.replace(/\s+/g, ' ').trim().split(' ');
+                
+                if (nums.length >= 3) {
+                    tradi = parseInt(nums[0]);
+                    multi = parseInt(nums[1]);
+                    mysse = parseInt(nums[2]);
+                } else {
+                    // Hätätilanne: Jos numerot ovat täysin pötkössä (esim. "300..."), 
+                    // tämä on epäluotettavaa, mutta yritetään olettaa 1-numeroiset luvut jos pötkö on lyhyt? 
+                    // Ei, se on liian riskialtista.
+                    // Oletetaan että käyttäjän copy-paste säilyttää välit, vaikka chat-ikkuna ei niitä näyttänytkään.
+                    // Jos tämä feilaa, pyydetään käyttäjää kopioimaan huolellisemmin.
+                    failCount++;
+                    return; 
+                }
+            }
+
+            if (!regionFound || isNaN(tradi)) {
+                return; // Ei onnistunut rivin luku
+            }
+
+            // Siivotaan kunnan nimestä mahdolliset järjestysnumerot alusta (esim "1 Akaa" -> "Akaa")
+            kunta = kunta.replace(/^\d+\s*/, '');
 
             const item = { name: kunta, t: tradi, m: multi, q: mysse };
 
-            // KATEGORIOINTI LOGIIKKA (Alkuperäisen HTML:n mukainen)
+            // LOGIIKKA KATEGORIOILLE (1-8)
+            if (tradi === 0 && multi === 0 && mysse === 0) categories[1].push(item);
+            else if (tradi > 0 && multi === 0 && mysse === 0) categories[2].push(item);
+            else if (tradi === 0 && multi > 0 && mysse === 0) categories[3].push(item);
+            else if (tradi === 0 && multi === 0 && mysse > 0) categories[4].push(item);
+            else if (tradi > 0 && multi > 0 && mysse === 0) categories[5].push(item);
+            else if (tradi === 0 && multi > 0 && mysse > 0) categories[6].push(item);
+            else if (tradi > 0 && multi === 0 && mysse > 0) categories[7].push(item);
+            else if (tradi > 0 && multi > 0 && mysse > 0) categories[8].push(item);
             
-            if (tradi === 0 && multi === 0 && mysse === 0) {
-                categories[1].push(item);
-            } else if (tradi > 0 && multi === 0 && mysse === 0) {
-                categories[2].push(item);
-            } else if (tradi === 0 && multi > 0 && mysse === 0) {
-                categories[3].push(item);
-            } else if (tradi === 0 && multi === 0 && mysse > 0) {
-                categories[4].push(item);
-            } else if (tradi > 0 && multi > 0 && mysse === 0) {
-                categories[5].push(item);
-            } else if (tradi === 0 && multi > 0 && mysse > 0) {
-                categories[6].push(item);
-            } else if (tradi > 0 && multi === 0 && mysse > 0) {
-                categories[7].push(item);
-            } else if (tradi > 0 && multi > 0 && mysse > 0) {
-                categories[8].push(item);
-            }
-            
-            count++;
+            successCount++;
         });
 
         // Lajitellaan aakkosjärjestykseen
@@ -143,47 +230,69 @@
         }
 
         processedCategories = categories;
-        
-        // Näytä esikatselu
+
+        // UI Päivitys
         const preview = document.getElementById('previewContent');
         preview.innerHTML = '';
+        let totalItems = 0;
+        
         for (let i = 1; i <= 8; i++) {
-            const count = categories[i].length;
-            if (count > 0) {
-                const sample = categories[i].slice(0, 3).map(k => k.name).join(', ');
-                preview.innerHTML += `<div class="cat-block"><strong>Kategoria ${i} (${count} kpl):</strong> ${sample}...</div>`;
-            }
+            const list = categories[i];
+            totalItems += list.length;
+            const sample = list.slice(0, 5).map(k => `${k.name} (${k.t},${k.m},${k.q})`).join(', ');
+            
+            const row = document.createElement('div');
+            row.className = 'cat-row';
+            row.innerHTML = `
+                <span>Kategoria ${i}</span>
+                <span class="cat-sample">${sample}${list.length > 5 ? '...' : ''}</span>
+                <span class="cat-count">${list.length} kpl</span>
+            `;
+            preview.appendChild(row);
         }
 
-        document.getElementById('statusMsg').textContent = `Prosessoitu ${count} kuntaa. Tarkista esikatselu ja tallenna.`;
-        document.getElementById('statusMsg').style.color = '#a6e3a1';
+        status.innerHTML = `Prosessoitu <span style="color:#a6e3a1">${successCount}</span> kuntaa.`;
         document.getElementById('previewArea').style.display = 'block';
         document.getElementById('saveBtn').style.display = 'inline-block';
+        
+        if (failCount > 0) {
+            warningBox.style.display = 'block';
+            warningBox.textContent = `Varoitus: ${failCount} riviä jäi lukematta epäselvän muotoilun vuoksi. Tarkista että kopioit koko taulukon.`;
+        } else {
+            warningBox.style.display = 'none';
+        }
     };
 
     window.saveToFirebase = async () => {
+        const saveBtn = document.getElementById('saveBtn');
         const status = document.getElementById('statusMsg');
+        
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Tallennetaan...";
+
         try {
-            status.textContent = "Tallennetaan...";
-            
-            // Tallennetaan data Firestoreen 'stats' kokoelmaan, dokumenttiin 'tripletti'
+            // Tallennetaan 'stats' kokoelmaan, dokumenttiin 'tripletti'
+            // Huom: Tämä korvaa vanhan tiedon kokonaan uudella
             await setDoc(doc(db, "stats", "tripletti"), {
                 data: processedCategories,
                 lastUpdated: serverTimestamp(),
                 updatedByString: new Date().toLocaleString('fi-FI')
             });
 
-            status.textContent = "✅ Tallennettu onnistuneesti! Tiedot näkyvät nyt Porttaalissa.";
+            status.textContent = "✅ Tallennettu onnistuneesti! Tiedot ovat nyt pilvessä.";
+            status.style.color = "#a6e3a1";
+            
             setTimeout(() => {
-                document.getElementById('rawInput').value = '';
-                document.getElementById('previewArea').style.display = 'none';
-                document.getElementById('saveBtn').style.display = 'none';
+                saveBtn.textContent = "2. Tallenna tietokantaan";
+                saveBtn.disabled = false;
+                // document.getElementById('rawInput').value = ''; // Halutessasi tyhjennä
             }, 3000);
 
         } catch (e) {
-            console.error(e);
+            console.error("Virhe:", e);
             status.textContent = "❌ Virhe tallennuksessa: " + e.message;
-            status.style.color = '#f38ba8';
+            status.style.color = "#f38ba8";
+            saveBtn.disabled = false;
         }
     };
 </script>
