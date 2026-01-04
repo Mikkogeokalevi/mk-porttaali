@@ -1,21 +1,19 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-/* KONFIGURAATIO: Määritellään kätkötyyppien indeksit ja ikonit.
-   TARKISTA NÄMÄ: Indeksi (index) viittaa datan sarakkeeseen (0=eka, 1=toka...).
-   Jos joku tyyppi näkyy väärin (esim. Earth onkin Virtuaali), vaihda numeroa tässä. */
+/* KONFIGURAATIO: Kätkötyyppien indeksit ja ikonit */
 const CACHE_TYPES = [
     { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
     { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
-    { index: 3, name: 'Mysse', icon: 'kuvat/mysse.gif' }, // Oletus: index 3
+    { index: 3, name: 'Mysse', icon: 'kuvat/mysse.gif' },
     { index: 4, name: 'Letteri', icon: 'kuvat/letteri.gif' },
-    { index: 5, name: 'Öörtti', icon: 'kuvat/oortti.gif' }, // Earth
+    { index: 5, name: 'Öörtti', icon: 'kuvat/oortti.gif' },
     { index: 6, name: 'Miitti', icon: 'kuvat/miitti.gif' },
     { index: 7, name: 'Virtu', icon: 'kuvat/virtu.gif' },
     { index: 8, name: 'Cito', icon: 'kuvat/cito.gif' },
     { index: 9, name: 'Webcam', icon: 'kuvat/webcam.gif' },
     { index: 10, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
     { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' },
-    { index: 12, name: 'Juhla', icon: 'kuvat/juhla.gif' }, // Giga/Block/yms
+    { index: 12, name: 'Juhla', icon: 'kuvat/juhla.gif' },
     { index: 13, name: 'No Location', icon: 'kuvat/noloc.gif' }
 ];
 
@@ -36,7 +34,7 @@ export const renderStatsDashboard = (content, app) => {
     </div>`;
 };
 
-// UUSI: Kaikki löydöt (Malli: kaikki_katkot.html)
+// UUSI: Kaikki löydöt (Optimoitu: Lataa vain 50 kerrallaan)
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Kaikki löydöt</h1><p>Ladataan...</p></div>`;
@@ -44,7 +42,11 @@ export const loadAllStats = async (db, user, content) => {
         const fullData = await fetchData(db, user.uid);
         if (!fullData) { content.innerHTML = `<div class="card"><p>Ei dataa. Käytä Admin-työkalua.</p></div>`; return; }
 
-        let html = `
+        let currentLimit = 50; // Kuinka monta näytetään aluksi
+        const BATCH_SIZE = 50; // Kuinka monta ladataan lisää
+
+        // Renderöidään runko
+        content.innerHTML = `
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <h2 style="margin:0;">Kuntien Kätkölöydöt</h2>
@@ -52,19 +54,35 @@ export const loadAllStats = async (db, user, content) => {
             </div>
             <input type="text" id="munSearch" placeholder="Hae kuntaa..." style="margin-bottom:15px;">
             <div id="munList"></div>
+            <div id="loadMoreContainer" style="text-align:center; margin-top:15px;"></div>
         </div>`;
-        content.innerHTML = html;
 
         const renderMunicipalityList = (filter = "") => {
             const container = document.getElementById('munList');
-            container.innerHTML = "";
-            const term = filter.toLowerCase();
+            const loadMoreContainer = document.getElementById('loadMoreContainer');
             
-            Object.keys(fullData).sort().forEach(kunta => {
-                if (!kunta.toLowerCase().startsWith(term)) return;
+            // Tyhjennetään vain jos filtteri muuttuu tai ollaan alussa, ei lisäyksessä
+            if(container.getAttribute('data-filter') !== filter) {
+                container.innerHTML = "";
+                container.setAttribute('data-filter', filter);
+            }
+
+            const term = filter.toLowerCase();
+            const allKeys = Object.keys(fullData).sort();
+            
+            // Suodatetaan kunnat hakusanan mukaan
+            const filteredKeys = allKeys.filter(k => k.toLowerCase().startsWith(term));
+            
+            // Otetaan vain ne, jotka mahtuvat nykyiseen limiittiin
+            const visibleKeys = filteredKeys.slice(0, currentLimit);
+
+            // Jos ollaan "lisäämässä", renderöidään vain uudet, muuten kaikki alusta
+            // Yksinkertaisuuden vuoksi renderöidään tässä optimoidussa versiossa aina visibleKeys
+            // DOM-päivitys on nopea kun elementtejä on vähän (alle 1000).
+            container.innerHTML = ""; 
+
+            visibleKeys.forEach(kunta => {
                 const stats = fullData[kunta].s || [];
-                
-                // Jaetaan tyypit kahteen listaan
                 let foundList = "";
                 let notFoundList = "";
 
@@ -75,7 +93,6 @@ export const loadAllStats = async (db, user, content) => {
                     else notFoundList += li;
                 });
 
-                // Luodaan HTML-laatikko (style.css .municipality-box hoitaa ulkoasun)
                 const pgcLink = `https://project-gc.com/Tools/MapCompare?profile_name=${user.displayName || 'user'}&country[]=Finland&county[]=${kunta}&nonefound=on&submit=Filter`;
                 const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
                 
@@ -92,14 +109,32 @@ export const loadAllStats = async (db, user, content) => {
                     ${notFoundList ? `<h4>Ei löytöjä (tyypit):</h4><ul class="cache-list">${notFoundList}</ul>` : ''}
                 </div>`;
             });
+
+            // Näytä "Lataa lisää" -nappi jos kaikkia ei ole vielä näytetty
+            if (filteredKeys.length > currentLimit) {
+                loadMoreContainer.innerHTML = `<button class="btn" id="btnLoadMore">Näytä lisää (${filteredKeys.length - currentLimit} jäljellä)</button>`;
+                document.getElementById('btnLoadMore').onclick = () => {
+                    currentLimit += BATCH_SIZE;
+                    renderMunicipalityList(filter); // Renderöi uudelleen isommalla limiitillä
+                };
+            } else {
+                loadMoreContainer.innerHTML = filteredKeys.length === 0 ? '<p>Ei hakutuloksia.</p>' : '<p style="font-size:0.8em; opacity:0.5;">Kaikki näytetty.</p>';
+            }
         };
+
+        // Ensimmäinen renderöinti
         renderMunicipalityList();
-        document.getElementById('munSearch').addEventListener('input', (e) => renderMunicipalityList(e.target.value));
+
+        // Haku nollaa limiitin
+        document.getElementById('munSearch').addEventListener('input', (e) => {
+            currentLimit = 50; // Resetoi limiitti haettaessa
+            renderMunicipalityList(e.target.value);
+        });
 
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// VANHA: Tripletti (Tiivistetty)
+// VANHA: Tripletti
 export const loadTripletData = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Triplettitarkistus</h1><p>Ladataan...</p></div>`;
@@ -135,7 +170,7 @@ function initTripletLogic(fullData) {
         Object.keys(fullData).sort().forEach(kunta => {
             if (!kunta.toLowerCase().includes(filter)) return;
             const s = fullData[kunta].s || [];
-            const t = s[0]||0, m = s[1]||0, q = s[3]||0; // HUOM: Indexit täällä. Q=3 (Mysteeri)
+            const t = s[0]||0, m = s[1]||0, q = s[3]||0; 
             const item = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
 
             if(!t && !m && !q) cats[1].push(item);
