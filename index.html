@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MK Porttaali V2</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg: #1e1e2e; --card: #313244; --text: #cdd6f4;
+            --accent: #89b4fa; --border: #45475a;
+        }
+        body {
+            margin: 0; font-family: sans-serif;
+            background-color: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; height: 100vh;
+        }
+        header {
+            padding: 1rem; background: var(--card);
+            border-bottom: 2px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        nav { display: flex; gap: 10px; padding: 10px; overflow-x: auto; }
+        .nav-btn {
+            padding: 8px 15px; background: var(--border);
+            border: none; color: white; border-radius: 5px; cursor: pointer;
+        }
+        #main-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div><strong>MK Porttaali V2</strong></div>
+    <div id="auth-status">Ladataan...</div>
+</header>
+
+<nav>
+    <button class="nav-btn" onclick="showPage('home')">Etusivu</button>
+    <button class="nav-btn" onclick="showPage('generator')">Kuvageneraattori</button>
+    <button class="nav-btn" onclick="showPage('tripletti')">Tripletti</button>
+</nav>
+
+<main id="main-content">
+    <section id="home">
+        <h2>Tervetuloa!</h2>
+        <p>Tämä on uusi PWA-pohjainen porttaalisi.</p>
+    </section>
+
+    <section id="generator" class="hidden">
+        <h2>Kuvageneraattori</h2>
+        <p>Tähän tulee geocache.fi integraatio.</p>
+    </section>
+
+    <section id="tripletti" class="hidden">
+        <h2>Triplettikunnat</h2>
+        <p>Tähän tulee Firebasesta ladattava lista.</p>
+    </section>
+</main>
+
+<script>
+    function showPage(pageId) {
+        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
