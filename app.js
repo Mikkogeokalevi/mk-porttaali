@@ -55,9 +55,14 @@ window.app = {
           <div class="card">
             <h1>Tervetuloa MK Porttaaliin</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
-            <button class="btn btn-primary" onclick="app.router('generator')" style="width:100%; margin-top:15px;">
-              Avaa Kuvageneraattori
-            </button>
+            <div style="display:grid; gap:10px; margin-top:15px;">
+                <button class="btn btn-primary" onclick="app.router('generator')">
+                  Avaa Kuvageneraattori
+                </button>
+                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('triplet')">
+                  Kuntatilastot (Tripletti)
+                </button>
+            </div>
           </div>
           <div class="card">
             <h2>Linkit</h2>
@@ -67,6 +72,16 @@ window.app = {
             </ul>
           </div>
         `;
+        break;
+
+      case 'triplet':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
+        content.innerHTML = `
+            <div class="card">
+                <h1>Kuntatilastot</h1>
+                <p>Ladataan tietoja...</p>
+            </div>`;
+        app.loadTripletData();
         break;
 
       case 'generator':
@@ -216,15 +231,7 @@ window.app = {
         app.updateProfileLink();
         break;
 
-      default:
-        // Muut näkymät (stats, login) pysyvät samoina tai tyhjinä tässä esimerkissä
-        if(view === 'login') app.router('login_view'); // Ohjaus login näkymään (alempana)
-        else if(view === 'stats') content.innerHTML = '<div class="card"><h1>Tilastot</h1><p>🚧 Tulossa.</p></div>';
-        else content.innerHTML = '<div class="card"><h1>404</h1></div>';
-    }
-
-    // Login View (erillisenä jotta router switch ei kasva liikaa)
-    if(view === 'login_view') {
+      case 'login_view':
         content.innerHTML = `
           <div class="card" style="max-width: 400px; margin: 0 auto;">
             <h1>Kirjaudu</h1>
@@ -237,7 +244,113 @@ window.app = {
             <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
           </div>
         `;
+        break;
+
+      default:
+        content.innerHTML = '<div class="card"><h1>404</h1></div>';
     }
+  },
+
+  // --- TRIPLETTI LOGIIKKA ---
+  loadTripletData: async () => {
+      const content = document.getElementById('appContent');
+      if (!window.app.currentUser) return;
+
+      try {
+          const docRef = doc(db, "stats", window.app.currentUser.uid);
+          const docSnap = await getDoc(docRef);
+
+          if (!docSnap.exists() || !docSnap.data().municipalities) {
+              content.innerHTML = `
+                <div class="card">
+                    <h1>Kuntatilastot</h1>
+                    <p>Ei tallennettuja tilastoja. Käytä tietokoneella <a href="admin.html" target="_blank" style="color:var(--accent-color)">Admin-työkalua</a> tietojen päivittämiseen.</p>
+                </div>`;
+              return;
+          }
+
+          const data = docSnap.data().municipalities;
+          const updated = docSnap.data().updatedAt ? new Date(docSnap.data().updatedAt.seconds * 1000).toLocaleDateString() : '-';
+          
+          // Alustetaan kategoriat
+          const cats = { 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[] };
+          const titles = {
+              1: "1. Ei löytöjä (0/0/0)",
+              2: "2. Vain Tradi",
+              3: "3. Vain Multi",
+              4: "4. Vain Mysteeri",
+              5: "5. Tradi + Multi",
+              6: "6. Multi + Mysteeri",
+              7: "7. Tradi + Mysteeri",
+              8: "8. Triplettikunnat (T+M+Q)"
+          };
+
+          // Käydään kunnat läpi ja luokitellaan
+          // OLETUS: Admin-työkalu tallensi datan niin että sarakkeet ovat [Tradi, Multi, Web, Mysse...]
+          // Joten: Tradi=index 0, Multi=index 1, Mysse=index 3
+          Object.keys(data).sort().forEach(kunta => {
+              const d = data[kunta];
+              const stats = d.s || []; // Taulukko numeroita
+              
+              const t = stats[0] || 0;
+              const m = stats[1] || 0;
+              const q = stats[3] || 0; // HUOM: Indeksi 3 on Mysteeri (4. sarake)
+
+              const itemHTML = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
+
+              if(!t && !m && !q) cats[1].push(itemHTML);
+              else if(t && !m && !q) cats[2].push(itemHTML);
+              else if(!t && m && !q) cats[3].push(itemHTML);
+              else if(!t && !m && q) cats[4].push(itemHTML);
+              else if(t && m && !q) cats[5].push(itemHTML);
+              else if(!t && m && q) cats[6].push(itemHTML);
+              else if(t && !m && q) cats[7].push(itemHTML);
+              else if(t && m && q) cats[8].push(itemHTML);
+          });
+
+          // Rakennetaan HTML
+          let html = `
+            <div class="card">
+                <h1>Kuntatilastot</h1>
+                <p style="font-size:0.9em; color:var(--subtext-color);">Päivitetty: ${updated}</p>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div>
+                        <div style="font-size:0.8em;">Triplettiä</div>
+                    </div>
+                    <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+                        <div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div>
+                        <div style="font-size:0.8em;">Ei löytöjä</div>
+                    </div>
+                </div>
+            `;
+
+          // Luodaan haitarit (Details) jokaiselle kategorialle
+          for(let i=1; i<=8; i++) {
+              const count = cats[i].length;
+              const isOpen = (i === 8 || i === 1) ? 'open' : ''; // Avaa tripletit ja nollat oletuksena
+              const style = (i === 8) ? 'border-color:var(--success-color);' : '';
+              
+              html += `
+                <details ${isOpen} style="margin-bottom:10px; background:rgba(0,0,0,0.1); border-radius:8px; border:1px solid var(--border-color); ${style}">
+                    <summary style="padding:10px; cursor:pointer; font-weight:bold; list-style:none;">
+                        ${titles[i]} <span style="float:right; opacity:0.7;">(${count})</span>
+                    </summary>
+                    <div style="padding:10px; border-top:1px solid var(--border-color);">
+                        <ul style="margin:0; padding-left:20px; font-size:0.9em;">
+                            ${count > 0 ? cats[i].join('') : '<li style="list-style:none; opacity:0.5;">Ei kuntia tässä kategoriassa.</li>'}
+                        </ul>
+                    </div>
+                </details>
+              `;
+          }
+          html += `</div>`;
+          content.innerHTML = html;
+
+      } catch (e) {
+          console.error(e);
+          content.innerHTML = `<div class="card"><h1 style="color:var(--error-color)">Virhe</h1><p>${e.message}</p></div>`;
+      }
   },
 
   // --- UI LOGIIKKA (MAAKUNTA & KUNTA) ---
