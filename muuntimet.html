@@ -5,8 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Muuntimet</title>
     <link rel="stylesheet" href="muuntimet_style.css">
+    
+    <style>
+        body {
+            margin: 0; /* Poistetaan oletusmarginaalit jotta header istuu ylös */
+        }
+        /* Yläpalkki joka jäljittelee MK Porttaalin tyyliä */
+        .mk-app-header {
+            background-color: #313244; /* Porttaalin kortti-tausta */
+            border-bottom: 1px solid #45475a;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .mk-back-btn {
+            text-decoration: none;
+            color: #89b4fa; /* Porttaalin accent-väri */
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: color 0.2s;
+        }
+        .mk-back-btn:hover {
+            color: #b4befe;
+        }
+        .mk-back-btn span {
+            font-size: 1.4em;
+            line-height: 1;
+        }
+        
+        /* Hienosäätö muuntimen alkuperäiselle laatikolle, jotta se istuu nätisti headerin alle */
+        .sisalto-laatikko {
+            margin-top: 20px !important; 
+        }
+        
+        /* Mobiilissa poistetaan pyöristykset ja marginaalit */
+        @media screen and (max-width: 800px) {
+            .mk-app-header {
+                padding: 12px 15px;
+            }
+            .sisalto-laatikko {
+                margin: 0 auto !important;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                border-top: none;
+                box-shadow: none;
+            }
+        }
+    </style>
 </head>
 <body>
+    
+    <div class="mk-app-header">
+        <a href="index.html" class="mk-back-btn">
+            <span>⬅</span> Takaisin Porttaaliin
+        </a>
+    </div>
+
     <div class="sisalto-laatikko">
         <div class="teksti-alue">
             <div class="header-flex-container">
