@@ -1,7 +1,7 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
 
-/* KONFIGURAATIO: Kätkötyyppien OIKEA järjestys (tarkistettu 1/2026) */
+/* KONFIGURAATIO */
 const CACHE_TYPES = [
     { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
     { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
@@ -13,7 +13,7 @@ const CACHE_TYPES = [
     { index: 7, name: 'Virtu', icon: 'kuvat/virtu.gif' },
     { index: 8, name: 'Cito', icon: 'kuvat/cito.gif' },
     { index: 9, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
-    { index: 10, name: 'Com.Cel', icon: 'kuvat/miitti.gif' }, // Käytetään miitti-ikonia tai juhlaa
+    { index: 10, name: 'Com.Cel', icon: 'kuvat/miitti.gif' }, 
     { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' },
     { index: 12, name: 'No Loc', icon: 'kuvat/noloc.gif' },
     { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
@@ -35,26 +35,23 @@ export const renderStatsDashboard = (content, app) => {
             <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_top')">
                 <span style="font-size:2em;">📊</span><br>Top-listat
             </button>
+            <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_external')">
+                <span style="font-size:2em;">📈</span><br>Kuvatilastot (Geocache.fi)
+            </button>
         </div>
     </div>`;
 };
 
 // --- APUFUNKTIOT ---
-
-// Hakee koko dokumentin (myös aikaleiman)
 async function fetchFullDoc(db, uid) {
     const s = await getDoc(doc(db, "stats", uid));
     return s.exists() ? s.data() : null;
 }
 
-// Muotoilee aikaleiman tekstiksi
 function formatUpdateDate(timestamp) {
     if (!timestamp) return 'Ei tietoa';
     const d = timestamp.toDate();
-    return d.toLocaleString('fi-FI', { 
-        day: 'numeric', month: 'numeric', year: 'numeric', 
-        hour: '2-digit', minute: '2-digit' 
-    });
+    return d.toLocaleString('fi-FI', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // --- 1. TOP-LISTAT ---
@@ -69,11 +66,8 @@ export const loadTopStats = async (db, user, content) => {
         const fullData = docData.municipalities;
         const updateTime = formatUpdateDate(docData.updatedAt);
 
-        // Generoidaan lista kätkötyypeistä valikkoa varten
         let typeOptions = '';
-        CACHE_TYPES.forEach(t => {
-            typeOptions += `<option value="${t.index}">${t.name}</option>`;
-        });
+        CACHE_TYPES.forEach(t => { typeOptions += `<option value="${t.index}">${t.name}</option>`; });
 
         content.innerHTML = `
         <div class="card">
@@ -81,37 +75,17 @@ export const loadTopStats = async (db, user, content) => {
                 <h2 style="margin:0;">Ranking</h2>
                 <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
             </div>
-            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
-                📅 Data päivitetty: <b>${updateTime}</b>
-            </p>
-            
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <label>Järjestä:</label>
             <select id="sortCriteria">
                 <option value="total">Löydöt yhteensä</option>
                 <option value="variety">Kätkötyyppien määrä</option>
-                <optgroup label="Tietty kätkötyyppi">
-                    ${typeOptions}
-                </optgroup>
+                <optgroup label="Tietty kätkötyyppi">${typeOptions}</optgroup>
             </select>
-
             <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <label>Suunta:</label>
-                    <select id="sortOrder">
-                        <option value="desc">Eniten ensin</option>
-                        <option value="asc">Vähiten ensin</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label>Näytä:</label>
-                    <select id="limitCount">
-                        <option value="10">Top 10</option>
-                        <option value="50">Top 50</option>
-                        <option value="1000">Kaikki</option>
-                    </select>
-                </div>
+                <div style="flex:1;"><label>Suunta:</label><select id="sortOrder"><option value="desc">Eniten ensin</option><option value="asc">Vähiten ensin</option></select></div>
+                <div style="flex:1;"><label>Näytä:</label><select id="limitCount"><option value="10">Top 10</option><option value="50">Top 50</option><option value="1000">Kaikki</option></select></div>
             </div>
-
             <div id="topListResult"></div>
         </div>`;
 
@@ -123,15 +97,11 @@ export const loadTopStats = async (db, user, content) => {
 
             let list = Object.keys(fullData).map(kunta => {
                 const s = fullData[kunta].s || [];
-                // Lasketaan summa vain tunnetuista tyypeistä (ei viimeistä YHT-saraketta)
                 let total = 0;
                 CACHE_TYPES.forEach(t => total += (s[t.index] || 0));
-                
                 const variety = CACHE_TYPES.filter(t => (s[t.index] || 0) > 0).length;
-                
                 let specificVal = 0;
                 if (!isNaN(criteria)) specificVal = s[parseInt(criteria)] || 0;
-                
                 return { name: kunta, total, variety, specificVal, stats: s };
             });
 
@@ -140,14 +110,12 @@ export const loadTopStats = async (db, user, content) => {
                 if (criteria === 'total') { valA = a.total; valB = b.total; }
                 else if (criteria === 'variety') { valA = a.variety; valB = b.variety; }
                 else { valA = a.specificVal; valB = b.specificVal; }
-
                 if (valA === valB) return a.name.localeCompare(b.name);
                 return order === 'desc' ? valB - valA : valA - valB;
             });
 
             const slicedList = list.slice(0, limit);
             let html = '<ol style="padding-left:20px; margin-top:10px;">';
-            
             slicedList.forEach(item => {
                 let detailText = "";
                 if (criteria === 'total') detailText = `<b>${item.total}</b> löytöä`;
@@ -157,29 +125,18 @@ export const loadTopStats = async (db, user, content) => {
                     detailText = `<b>${item.specificVal}</b> ${typeName}`;
                 }
                 if (item.total === 0) detailText = `<span style="color:var(--subtext-color)">Ei löytöjä</span>`;
-
-                html += `
-                <li style="margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="font-size:1.1em;">${item.name}</span>
-                        <span style="color:var(--accent-color);">${detailText}</span>
-                    </div>
-                </li>`;
+                html += `<li style="margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;"><div style="display:flex; justify-content:space-between;"><span style="font-size:1.1em;">${item.name}</span><span style="color:var(--accent-color);">${detailText}</span></div></li>`;
             });
             html += '</ol>';
             if (slicedList.length === 0) html = '<p>Ei tuloksia.</p>';
             container.innerHTML = html;
         };
-
-        document.getElementById('sortCriteria').addEventListener('change', updateList);
-        document.getElementById('sortOrder').addEventListener('change', updateList);
-        document.getElementById('limitCount').addEventListener('change', updateList);
+        ['sortCriteria', 'sortOrder', 'limitCount'].forEach(id => document.getElementById(id).addEventListener('change', updateList));
         updateList();
-
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// --- 2. MAAKUNNAT & LÖYDÖT (ACCORDION) ---
+// --- 2. MAAKUNNAT & LÖYDÖT ---
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
@@ -190,8 +147,6 @@ export const loadAllStats = async (db, user, content) => {
         
         const fullData = docData.municipalities;
         const updateTime = formatUpdateDate(docData.updatedAt);
-        
-        // Käytetään tallennettua nimimerkkiä jos löytyy, muuten fallbackina Google-nimeä tai 'user'
         const pgcUser = window.app.savedNickname || user.displayName || 'user';
 
         content.innerHTML = `
@@ -200,9 +155,7 @@ export const loadAllStats = async (db, user, content) => {
                 <h2 style="margin:0;">Löydöt maakunnittain</h2>
                 <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
             </div>
-            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
-                📅 Data päivitetty: <b>${updateTime}</b>
-            </p>
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <input type="text" id="regionSearch" placeholder="Hae kuntaa (esim. Lahti)..." style="margin-bottom:15px;">
             <div id="regionList"></div>
         </div>`;
@@ -227,51 +180,24 @@ export const loadAllStats = async (db, user, content) => {
                 let municipalitiesHtml = "";
                 matchingMunicipalities.forEach(kunta => {
                     const stats = fullData[kunta].s || [];
-                    let foundList = "";
-                    let notFoundList = "";
-
+                    let foundList = "", notFoundList = "";
                     CACHE_TYPES.forEach(type => {
                         const count = stats[type.index] || 0;
                         const li = `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: ${count}</span></li>`;
-                        if (count > 0) foundList += li;
-                        else notFoundList += li;
+                        if (count > 0) foundList += li; else notFoundList += li;
                     });
-
-                    // Korjattu PGC-linkki: Oikea profiilinimi ja tarkat alueparametrit
                     const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=Finland&geocache_crc_region=${encodeURIComponent(maakunta)}&geocache_crc_county=${encodeURIComponent(kunta)}&submit=Filter`;
-                    
                     const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
 
-                    municipalitiesHtml += `
-                    <div class="municipality-box">
-                        <h3>
-                            <span>
-                                <a href="${gcfiLink}" target="_blank">${kunta}</a> 
-                                <a href="${pgcLink}" target="_blank" style="font-size:0.7em; opacity:0.6; text-decoration:none;">(Pgc)</a>
-                            </span>
-                        </h3>
-                        <h4>Löydetyt:</h4>
-                        <ul class="cache-list">${foundList || '<li style="opacity:0.5">-</li>'}</ul>
-                        ${notFoundList ? `<h4>Ei löytöjä:</h4><ul class="cache-list" style="opacity:0.7;">${notFoundList}</ul>` : ''}
-                    </div>`;
+                    municipalitiesHtml += `<div class="municipality-box"><h3><span><a href="${gcfiLink}" target="_blank">${kunta}</a> <a href="${pgcLink}" target="_blank" style="font-size:0.7em; opacity:0.6; text-decoration:none;">(Pgc)</a></span></h3><h4>Löydetyt:</h4><ul class="cache-list">${foundList || '<li style="opacity:0.5">-</li>'}</ul>${notFoundList ? `<h4>Ei löytöjä:</h4><ul class="cache-list" style="opacity:0.7;">${notFoundList}</ul>` : ''}</div>`;
                 });
-
                 const isOpen = term.length > 0 ? "open" : "";
-                container.innerHTML += `
-                <details ${isOpen} class="region-accordion">
-                    <summary>
-                        <span style="font-size:1.1em;">${maakunta}</span>
-                        <span style="float:right; font-weight:normal; opacity:0.7; font-size:0.9em;">${matchingMunicipalities.length} kuntaa</span>
-                    </summary>
-                    <div class="region-content">${municipalitiesHtml}</div>
-                </details>`;
+                container.innerHTML += `<details ${isOpen} class="region-accordion"><summary><span style="font-size:1.1em;">${maakunta}</span><span style="float:right; font-weight:normal; opacity:0.7; font-size:0.9em;">${matchingMunicipalities.length} kuntaa</span></summary><div class="region-content">${municipalitiesHtml}</div></details>`;
             });
-
             if (totalRegionsShown === 0) container.innerHTML = `<p style="text-align:center; margin-top:20px; opacity:0.6;">Ei osumia haulla "${filter}".</p>`;
         };
         renderRegions();
         document.getElementById('regionSearch').addEventListener('input', (e) => renderRegions(e.target.value));
-
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
@@ -282,23 +208,10 @@ export const loadTripletData = async (db, user, content) => {
     try {
         const docData = await fetchFullDoc(db, user.uid);
         if (!docData || !docData.municipalities) { content.innerHTML += `<p>Ei dataa.</p>`; return; }
-        
         const fullData = docData.municipalities;
         const updateTime = formatUpdateDate(docData.updatedAt);
 
-        content.innerHTML = `
-        <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <h1 style="margin:0;">Triplettitarkistus</h1>
-                <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
-            </div>
-            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">
-                📅 Data päivitetty: <b>${updateTime}</b>
-            </p>
-            <input type="text" id="tripletSearch" placeholder="Hae kuntaa...">
-            <div id="tripletStatsSummary" style="display:flex; gap:10px; margin:15px 0;"></div>
-            <div id="tripletResults"></div>
-        </div>`;
+        content.innerHTML = `<div class="card"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><h1 style="margin:0;">Triplettitarkistus</h1><button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button></div><p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p><input type="text" id="tripletSearch" placeholder="Hae kuntaa..."><div id="tripletStatsSummary" style="display:flex; gap:10px; margin:15px 0;"></div><div id="tripletResults"></div></div>`;
         initTripletLogic(fullData);
     } catch (e) { content.innerHTML = `<div class="card"><h1 style="color:var(--error-color)">Virhe</h1><p>${e.message}</p></div>`; }
 };
@@ -312,32 +225,13 @@ function initTripletLogic(fullData) {
         Object.keys(fullData).sort().forEach(kunta => {
             if (!kunta.toLowerCase().includes(filter)) return;
             const s = fullData[kunta].s || [];
-            
-            // INDEKSIT KORJATTU: Tradi=0, Multi=1, Mysteeri=3
-            const t = s[0]||0;
-            const m = s[1]||0; 
-            const q = s[3]||0; 
-            
+            const t = s[0]||0, m = s[1]||0, q = s[3]||0; 
             const item = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
-
-            if(!t && !m && !q) cats[1].push(item);
-            else if(t && !m && !q) cats[2].push(item);
-            else if(!t && m && !q) cats[3].push(item);
-            else if(!t && !m && q) cats[4].push(item);
-            else if(t && m && !q) cats[5].push(item);
-            else if(!t && m && q) cats[6].push(item);
-            else if(t && !m && q) cats[7].push(item);
-            else if(t && m && q) cats[8].push(item);
+            if(!t && !m && !q) cats[1].push(item); else if(t && !m && !q) cats[2].push(item); else if(!t && m && !q) cats[3].push(item); else if(!t && !m && q) cats[4].push(item); else if(t && m && !q) cats[5].push(item); else if(!t && m && q) cats[6].push(item); else if(t && !m && q) cats[7].push(item); else if(t && m && q) cats[8].push(item);
         });
 
         const sumDiv = document.getElementById('tripletStatsSummary');
-        if(sumDiv) sumDiv.innerHTML = `
-            <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
-                <div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div><div style="font-size:0.8em;">Triplettiä</div>
-            </div>
-            <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
-                <div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div><div style="font-size:0.8em;">Ei löytöjä</div>
-            </div>`;
+        if(sumDiv) sumDiv.innerHTML = `<div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;"><div style="font-size:2em; color:var(--success-color);">${cats[8].length}</div><div style="font-size:0.8em;">Triplettiä</div></div><div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;"><div style="font-size:2em; color:var(--error-color);">${cats[1].length}</div><div style="font-size:0.8em;">Ei löytöjä</div></div>`;
 
         let html = '';
         for(let i=1; i<=8; i++) {
@@ -352,3 +246,148 @@ function initTripletLogic(fullData) {
     renderLists('');
     document.getElementById('tripletSearch').addEventListener('input', (e) => renderLists(e.target.value));
 }
+
+// --- 4. UUSI: EXTERNAL STATS (TILASTOT.HTML REPLICA) ---
+export const loadExternalStats = (content) => {
+    // Haetaan oletuskäyttäjä (sama logiikka kuin generator.js)
+    let defaultUser = 'mikkokalevi';
+    if (window.app.currentUser) {
+        if (window.app.savedNickname) defaultUser = window.app.savedNickname;
+        else if (window.app.currentUser.email === 'toni@kauppinen.info') defaultUser = 'mikkokalevi';
+        else if (window.app.currentUser.displayName) defaultUser = window.app.currentUser.displayName;
+    }
+
+    content.innerHTML = `
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Kuvatilastot</h1>
+            <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+        </div>
+        <div class="input-group" style="margin-top:15px;">
+            <label style="flex:1;">Käyttäjä:</label>
+            <input type="text" id="statUser" list="friendListOptions" value="${defaultUser}" style="flex:3;">
+            <button class="btn btn-primary" id="refreshStats" style="flex:1; margin:8px 0 16px;">Päivitä</button>
+        </div>
+        <datalist id="friendListOptions"></datalist>
+    </div>
+    
+    <div id="statsContainer">Ladataan kuvia...</div>
+    `;
+
+    // Täytetään kaverilista
+    const datalist = document.getElementById('friendListOptions');
+    if (window.app.friendsList) {
+        window.app.friendsList.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.name;
+            datalist.appendChild(opt);
+        });
+    }
+
+    // Funktio, joka renderöi kuvat
+    const renderImages = (user) => {
+        const container = document.getElementById('statsContainer');
+        const currentYear = new Date().getFullYear();
+        
+        // Etsitään käyttäjän ID kavereista tai omista tiedoista (interaktiivisia karttoja varten)
+        let userId = null;
+        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) userId = window.app.savedId;
+        else {
+            const f = window.app.friendsList?.find(f => f.name.toLowerCase() === user.toLowerCase());
+            if (f) userId = f.id;
+        }
+
+        // Apufunktio kuvalinkeille (lisää lazy loading)
+        const img = (url) => `<img src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
+        
+        // Apufunktio interaktiivisille kartoille
+        const mapLink = (typeId, text) => {
+            if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
+            let url = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
+            if (typeId) url += `&cachetype=${typeId}`;
+            return `<a href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
+        };
+
+        container.innerHTML = `
+        <div class="card">
+            <details open class="region-accordion"><summary>T/D ${currentYear}</summary>
+                <div class="region-content">
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=1`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=2`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=3`)}
+                </div>
+            </details>
+
+            <details class="region-accordion"><summary>T/D Full</summary>
+                <div class="region-content">
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=1`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=2`)}
+                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=3`)}
+                </div>
+            </details>
+
+            <details class="region-accordion"><summary>Vuosikalenterit</summary>
+                <div class="region-content">
+                    ${img(`https://www.geocache.fi/stat/year.php?&user=${user}`)}
+                    ${img(`https://www.geocache.fi/stat/year.php?&user=${user}&year=${currentYear}`)}
+                    <h4>Tradit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=1`)}
+                    <h4>Multit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=2`)}
+                    <h4>Mysteerit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=3`)}
+                </div>
+            </details>
+
+            <details class="region-accordion"><summary>Kuntakartat</summary>
+                <div class="region-content">
+                    <h3>Yleiskartta</h3>
+                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}`)}
+                    ${mapLink('', 'Avaa interaktiivinen')}
+                    
+                    <h3>Tradit</h3>
+                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=1`)}
+                    ${mapLink('1', 'Avaa interaktiivinen')}
+
+                    <h3>Multit</h3>
+                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=2`)}
+                    ${mapLink('2', 'Avaa interaktiivinen')}
+
+                    <h3>Mysteerit</h3>
+                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=3`)}
+                    ${mapLink('3', 'Avaa interaktiivinen')}
+                </div>
+            </details>
+
+            <details class="region-accordion"><summary>Erikoiskartat (Tripletti, FTF...)</summary>
+                <div class="region-content">
+                    <h3>Tripletti</h3>
+                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&user=${user}&slide=0&cachetype=90`)}
+                    
+                    <h3>FTF Kunnat</h3>
+                    ${img(`https://www.geocache.fi/stat/ftfkunta.php?la=&slide=1&user=${user}`)}
+
+                    <h3>Graticule</h3>
+                    ${img(`https://www.geocache.fi/stat/grat.php?la=&user=${user}`)}
+                </div>
+            </details>
+
+            <details class="region-accordion"><summary>Jasmer & Muut</summary>
+                <div class="region-content">
+                    <h3>Jasmer</h3>
+                    ${img(`https://www.geocache.fi/stat/hiddenday.php?la=&type=2&user=${user}`)}
+                    <h3>Löydöt (Vuosi/Tyyppi)</h3>
+                    ${img(`https://www.geocache.fi/stat/yeartype.php?la=&user=${user}`)}
+                    <h3>Päivälöydöt</h3>
+                    ${img(`https://www.geocache.fi/stat/day.php?la=&user=${user}`)}
+                </div>
+            </details>
+        </div>`;
+    };
+
+    document.getElementById('refreshStats').addEventListener('click', () => {
+        renderImages(document.getElementById('statUser').value.trim());
+    });
+
+    // Renderöi heti oletuskäyttäjällä
+    renderImages(defaultUser);
+};
