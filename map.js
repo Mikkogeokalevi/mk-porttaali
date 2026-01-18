@@ -1,7 +1,7 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// Suomen kuntarajat (GeoJSON) - haetaan avoimesta lähteestä
-const GEOJSON_URL = 'https://raw.githubusercontent.com/geohike/finland-municipalities-geojson/master/finland_municipalities_2022_100k.json';
+// KORJATTU URL: Käytetään vakaampaa lähdettä Suomen kunnille
+const GEOJSON_URL = 'https://raw.githubusercontent.com/Mmmmon/Suomi-geojson/master/suomi.json';
 
 export const renderTripletMap = async (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
@@ -49,6 +49,12 @@ export const renderTripletMap = async (content, db, user, app) => {
     // 3. Haetaan kuntarajat ja piirretään ne
     try {
         const response = await fetch(GEOJSON_URL);
+        
+        // Tarkistetaan onko vastaus onnistunut (status 200)
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const geoData = await response.json();
 
         L.geoJSON(geoData, {
@@ -58,16 +64,26 @@ export const renderTripletMap = async (content, db, user, app) => {
 
     } catch (e) {
         console.error("Karttadatan haku epäonnistui:", e);
-        document.getElementById('map').innerHTML = `<div style="padding:20px; color:black;">Karttadatan lataus epäonnistui. Tarkista internet-yhteys.</div>`;
+        document.getElementById('map').innerHTML = `<div style="padding:20px; color:black; background:white;">Karttadatan lataus epäonnistui: ${e.message}.<br>Yritä myöhemmin uudelleen.</div>`;
     }
 };
 
 // --- APUFUNKTIOT ---
 
+// Apufunktio nimen hakemiseen eri GeoJSON-formaateista
+function getMunicipalityName(feature) {
+    if (feature.properties.Name) return feature.properties.Name;
+    if (feature.properties.name) return feature.properties.name;
+    if (feature.properties.NAMEFIN) return feature.properties.NAMEFIN; // Yleinen suomalaisessa datassa
+    return "Tuntematon";
+}
+
 function getStatsForMunicipality(name, statsData) {
-    // Yritetään löytää kunta. Huom: GeoJSONissa nimet voi olla hieman eri muodossa (esim. ruotsiksi)
-    // Tässä oletetaan että 'name' on suomeksi ja täsmää Geocache.fi dataan.
-    const data = statsData[name];
+    // Yritetään löytää kunta. 
+    // Trimmataan välilyönnit varmuuden vuoksi
+    const cleanName = name.trim();
+    const data = statsData[cleanName];
+    
     if (!data || !data.s) return { t: 0, m: 0, q: 0, total: 0 };
     
     return {
@@ -79,7 +95,7 @@ function getStatsForMunicipality(name, statsData) {
 }
 
 function getStyle(feature, statsData) {
-    const name = feature.properties.Name || feature.properties.name; // GeoJSONista riippuen
+    const name = getMunicipalityName(feature);
     const s = getStatsForMunicipality(name, statsData);
     
     // Lasketaan montako puuttuu (Tradi, Multi, Mysteeri)
@@ -92,7 +108,7 @@ function getStyle(feature, statsData) {
     let fillOpacity = 0.6;
 
     if (missingCount === 0 && s.t > 0) {
-        color = '#a6e3a1'; // Vihreä: Valmis! (ja vähintään 1 tradi varmistuksena)
+        color = '#a6e3a1'; // Vihreä: Valmis!
         fillOpacity = 0.5;
     } else if (missingCount === 1) {
         color = '#f9e2af'; // Keltainen: 1 puuttuu
@@ -102,9 +118,9 @@ function getStyle(feature, statsData) {
         fillOpacity = 0.7;
     }
 
-    // Jos ei ole yhtään löytöä koko kunnasta, pidetään punaisena mutta haaleampana
+    // Jos ei ole yhtään löytöä koko kunnasta, pidetään tummana
     if (s.total === 0) {
-        color = '#313244'; // Tumman harmaa/sininen "koskematon"
+        color = '#313244'; 
         fillOpacity = 0.4;
     }
 
@@ -118,7 +134,7 @@ function getStyle(feature, statsData) {
 }
 
 function onEachFeature(feature, layer, statsData) {
-    const name = feature.properties.Name || feature.properties.name;
+    const name = getMunicipalityName(feature);
     const s = getStatsForMunicipality(name, statsData);
 
     let popupContent = `<strong>${name}</strong><br>`;
@@ -147,8 +163,8 @@ function onEachFeature(feature, layer, statsData) {
             l.bringToFront();
         },
         mouseout: (e) => {
-            layer.resetStyle(e.target); // Tämä ei toimi täydellisesti custom stylen kanssa, mutta riittää usein
-            layer.setStyle({ weight: 1, color: 'rgba(255,255,255,0.2)' }); // Palautetaan raja
+            layer.resetStyle(e.target); 
+            layer.setStyle({ weight: 1, color: 'rgba(255,255,255,0.2)' });
         }
     });
 }
