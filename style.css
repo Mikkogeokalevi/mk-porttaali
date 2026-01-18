@@ -148,6 +148,7 @@ p {
 /* LOMAKE-ELEMENTIT (Input, Select, Date) */
 input[type="text"],
 input[type="email"],
+input[type="number"],
 input[type="password"],
 input[type="date"],
 select {
@@ -573,6 +574,22 @@ summary {
   /* Mobiilissa napit allekkain */
   .stats-dashboard-grid {
       grid-template-columns: 1fr;
+  }
+
+  /* KORJAUS: Kaverin lisäysrivi allekkain mobiilissa */
+  .friend-add-row {
+      flex-direction: column;
+      align-items: stretch;
+  }
+  
+  .friend-add-row input {
+      width: 100%;
+      margin-bottom: 5px;
+  }
+  
+  .friend-add-row button {
+      width: 100%;
+      margin-top: 5px;
   }
 }
 
