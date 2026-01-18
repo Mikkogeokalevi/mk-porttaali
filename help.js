@@ -7,17 +7,45 @@ export const renderHelp = (content, app) => {
             <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Etusivulle</button>
         </div>
         
-        <h3>1. Kuvageneraattori</h3>
-        <p>Luo tilastokuvia Geocache.fi-palvelun datasta. 
-           <br>👉 <strong>Vinkki:</strong> Voit tallentaa oman nimimerkkisi ja ID-numerosi oletukseksi painamalla "Tallenna"-nappia (💾) generaattorissa.</p>
+        <h3>📱 1. Asenna sovellukseksi</h3>
+        <p>Saat MK Porttaalin toimimaan kuin oikea sovellus (koko näytön tila, oma kuvake) lisäämällä sen aloitusnäytölle:</p>
+        <ul style="line-height:1.6; padding-left:20px; color:var(--text-color);">
+            <li style="margin-bottom:10px;">
+                <strong>Android (Chrome):</strong><br>
+                Paina selaimen valikosta (kolme pistettä) <span style="color:var(--accent-color);">"Asenna sovellus"</span> tai "Lisää aloitusnäytölle".
+            </li>
+            <li>
+                <strong>iOS (Safari):</strong><br>
+                Paina Jaa-painiketta (nuoli laatikosta) ja valitse listasta <span style="color:var(--accent-color);">"Lisää Koti-valikkoon"</span> (Add to Home Screen).
+            </li>
+        </ul>
 
-        <h3>2. Tilastot (Omat löydöt)</h3>
-        <p>Tämä osio näyttää edistyneitä tilastoja (kuten Tripletit ja Maakunnat) omien löytöjesi perusteella.</p>
-        <p>Toisin kuin Geocache.fi, tämä työkalu mahdollistaa esimerkiksi puuttuvien kuntien helpon suodatuksen ja "nollakerhon" tarkastelun.</p>
+        <hr style="border-color:var(--border-color); margin:20px 0;">
+
+        <h3>👥 2. Kaverit & ID-numerot</h3>
+        <p>Voit tallentaa kavereiden nimimerkit muistiin Kuvageneraattorissa. <strong>Miksi lisätä myös ID-numero?</strong></p>
+        <p>Kun ID on tallennettu, Kuvatilastot-sivun kartat muuttuvat <strong>interaktiivisiksi linkeiksi</strong>, jotka vievät suoraan Geocache.fi:n klikattavaan karttaan!</p>
         
-        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-top:20px;">
-            <h3 style="margin-top:0; color:#fab387;">🛠️ Datan päivitys (Admin)</h3>
-            <p>Jotta tilastot toimivat, sinun täytyy tuoda omat löytösi tietokantaan. Tämä kannattaa tehdä <strong>tietokoneella</strong>.</p>
+        <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border-left:4px solid var(--accent-color);">
+            <strong>Näin lisäät kaverin:</strong>
+            <ol style="margin-left:15px; padding-left:0;">
+                <li>Mene <strong>Kuvageneraattori</strong>-sivulle.</li>
+                <li>Paina ratas-ikonia (⚙️) käyttäjäkentän vieressä.</li>
+                <li>Kirjoita <strong>Nimimerkki</strong>.</li>
+                <li>Kirjoita <strong>ID-numero</strong> (vapaaehtoinen, mutta suositeltava).
+                    <br><span style="font-size:0.8em; opacity:0.7;">(Löydät ID:n kaverin Geocache.fi-profiilisivun osoiteriviltä: userid=12345)</span>
+                </li>
+                <li>Paina <strong>Lisää</strong>.</li>
+            </ol>
+        </div>
+
+        <hr style="border-color:var(--border-color); margin:20px 0;">
+
+        <h3>📊 3. Omat Tilastot (Päivitys)</h3>
+        <p>Jotta "Tilastot"-osion tarkat analyysit (kuten Tripletit ja puuttuvat kunnat) toimivat, sinun täytyy tuoda omat löytösi tietokantaan.</p>
+        
+        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-top:10px;">
+            <h4 style="margin-top:0; color:#fab387;">🛠️ Datan tuonti (Tee tietokoneella)</h4>
             
             <div style="background:#1e1e2e; padding:15px; border-radius:6px; margin:10px 0; border-left:4px solid #fab387;">
                 <strong>Toimi näin:</strong>
@@ -48,13 +76,6 @@ export const renderHelp = (content, app) => {
             </p>
         </div>
 
-        <h3>3. Tietoturva</h3>
-        <p style="font-size:0.9em; opacity:0.8;">
-            Tämä sovellus on rakennettu yksityisyyttä kunnioittaen. 
-            Vain sinä näet omat tilastosi, jotka tuot Admin-työkalulla. 
-            Kuvageneraattori käyttää julkisia Geocache.fi-linkkejä.
-        </p>
-        
         <p style="text-align:center; margin-top:30px; font-size:0.8em; opacity:0.5;">
             MK Porttaali v2.6
         </p>
