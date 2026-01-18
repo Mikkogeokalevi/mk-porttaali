@@ -8,6 +8,24 @@ const GEOJSON_URLS = [
     './kunnat.json'
 ];
 
+// MÄÄRITELLÄÄN PGC-ALUEET AHVENANMAALLE
+const ALAND_REGIONS = {
+    "Maarianhamina": "Mariehamn",
+    "Brändö": "Ålands skärgård",
+    "Föglö": "Ålands skärgård",
+    "Kumlinge": "Ålands skärgård",
+    "Kökar": "Ålands skärgård",
+    "Sottunga": "Ålands skärgård",
+    "Vårdö": "Ålands skärgård",
+    // Loput menevät "Ålands landsbygd" -kategoriaan, jos maa on Åland
+};
+
+// KUNTALIITOKSET (Vanha nimi -> Uusi nimi)
+// Karttapohja voi olla vanha, mutta tilastot ovat uusia.
+const MUNICIPALITY_MAPPING = {
+    "Pertunmaa": "Mäntyharju"
+};
+
 // Kätkötyypit ikoneineen
 const CACHE_TYPES = [
     { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
@@ -112,7 +130,12 @@ export const renderAllFindsMap = async (content, db, user, app) => {
 // --- APUFUNKTIOT ---
 
 function getMunicipalityName(feature) {
-    return feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi || "Tuntematon";
+    let name = feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi || "Tuntematon";
+    // Kuntaliitoskorjaus (Kartta -> Tilasto)
+    if (MUNICIPALITY_MAPPING[name]) {
+        return MUNICIPALITY_MAPPING[name]; 
+    }
+    return name;
 }
 
 // Etsii mihin maakuntaan kunta kuuluu (PGC-linkkiä varten)
@@ -120,7 +143,32 @@ function findRegionForMunicipality(kuntaName) {
     for (const [maakunta, kunnat] of Object.entries(maakuntienKunnat)) {
         if (kunnat.includes(kuntaName)) return maakunta;
     }
-    return "Finland"; // Fallback
+    return null;
+}
+
+// Apufunktio Ahvenanmaan linkeille
+function getPGCLink(pgcUser, kuntaName, region) {
+    let country = "Finland";
+    let pgcRegion = region;
+    let pgcCounty = kuntaName;
+
+    // Ahvenanmaan erityiskäsittely
+    if (region === "Ahvenanmaa") {
+        country = "Åland Islands";
+        // Määritetään PGC:n käyttämä region (esim. Ålands landsbygd)
+        pgcRegion = ALAND_REGIONS[kuntaName] || "Ålands landsbygd"; 
+        
+        // PGC:ssä Maarianhamina on sekä region että county
+        if (kuntaName === "Maarianhamina") {
+            pgcRegion = "Mariehamn";
+            pgcCounty = "Mariehamn";
+        }
+    }
+
+    // Pertunmaa korjaus linkkiin (jos halutaan että vanha nimi ohjaa uuteen PGC:ssä)
+    // PGC luultavasti on päivittänyt, joten käytetään sitä nimeä mikä saatiin getMunicipalityName:sta (Mäntyharju)
+    
+    return `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=${encodeURIComponent(country)}&geocache_crc_region=${encodeURIComponent(pgcRegion)}&geocache_crc_county=${encodeURIComponent(pgcCounty)}&submit=Filter`;
 }
 
 function getStyle(feature, statsData) {
@@ -138,45 +186,66 @@ function getStyle(feature, statsData) {
 }
 
 function onEachFeature(feature, layer, statsData, pgcUser) {
-    const name = getMunicipalityName(feature);
+    const originalName = feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi;
+    const name = getMunicipalityName(feature); // Tämä palauttaa esim "Mäntyharju" vaikka kartta olisi "Pertunmaa"
+    
     const data = statsData[name.trim()];
     const s = data && data.s ? data.s : [];
-    const total = s.reduce((a,b)=>a+b, 0);
+    
+    // KORJAUS 1: Lasketaan vain näytettävät tyypit yhteensä
+    let displayTotal = 0;
+    
+    // Etsitään maakunta
     const region = findRegionForMunicipality(name);
+    
+    // Otsikko (Näytetään suluissa vanha nimi jos kartta ja data eri)
+    let title = name;
+    if (originalName && originalName !== name) {
+        title = `${name} <span style="font-size:0.8em; opacity:0.7;">(${originalName})</span>`;
+    }
 
-    let popupContent = `<div style="text-align:center; min-width:200px;">
-        <strong style="font-size:1.1em;">${name}</strong>
-        <div style="font-size:0.8em; opacity:0.7;">${region}</div>
+    let popupContent = `<div style="text-align:center; min-width:200px; max-width:250px;">
+        <strong style="font-size:1.1em;">${title}</strong>
+        <div style="font-size:0.8em; opacity:0.7;">${region || ''}</div>
         <hr style="margin:5px 0; border-top:1px solid #555;">`;
 
-    if (total > 0) {
-        popupContent += `<div style="text-align:left; margin-bottom:10px;">`;
-        let foundList = "";
-        let missingList = "";
+    let foundHtml = "";
+    let missingHtml = "";
 
-        CACHE_TYPES.forEach(t => {
-            const count = s[t.index] || 0;
-            if (count > 0) {
-                foundList += `<div><img src="${t.icon}" style="width:14px; vertical-align:middle;"> <b>${t.name}:</b> ${count}</div>`;
-            } else {
-                missingList += `<span style="opacity:0.6; font-size:0.9em; margin-right:5px;">${t.name}</span>`;
-            }
-        });
+    CACHE_TYPES.forEach(t => {
+        const count = s[t.index] || 0;
+        if (count > 0) {
+            displayTotal += count;
+            foundHtml += `<div style="display:inline-block; margin-right:8px; white-space:nowrap;"><img src="${t.icon}" style="width:14px; vertical-align:middle;"> <b>${t.name}:</b> ${count}</div> `;
+        } else {
+            // KORJAUS 2: "Puuttuu" -lista pillereinä
+            missingHtml += `<span style="display:inline-block; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-size:0.8em; margin:2px;">${t.name}</span>`;
+        }
+    });
 
-        popupContent += `<div style="margin-bottom:5px;"><strong>Löydetyt (${total}):</strong></div>${foundList}`;
+    if (displayTotal > 0) {
+        popupContent += `<div style="text-align:left; margin-bottom:10px;">
+            <div style="margin-bottom:5px;"><strong>Löydetyt (${displayTotal}):</strong></div>
+            <div style="display:flex; flex-wrap:wrap; gap:2px;">${foundHtml}</div>
+            `;
         
-        if (missingList) {
-            popupContent += `<div style="margin-top:8px; border-top:1px dotted #555; padding-top:5px;"><strong>Puuttuu:</strong><br>${missingList}</div>`;
+        if (missingHtml) {
+            popupContent += `<div style="margin-top:8px; border-top:1px dotted #555; padding-top:5px;">
+                <strong style="font-size:0.9em;">Puuttuu:</strong><br>
+                <div style="display:flex; flex-wrap:wrap; gap:2px;">${missingHtml}</div>
+            </div>`;
         }
         popupContent += `</div>`;
     } else {
         popupContent += `<div style="color:#f38ba8; font-weight:bold; margin:10px 0;">Ei löytöjä</div>`;
     }
 
-    // PGC Linkki
-    const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=Finland&geocache_crc_region=${encodeURIComponent(region)}&geocache_crc_county=${encodeURIComponent(name)}&submit=Filter`;
+    // KORJAUS 3: PGC Linkki (Ahvenanmaa fix)
+    if (region) {
+        const pgcLink = getPGCLink(pgcUser, name, region);
+        popupContent += `<a href="${pgcLink}" target="_blank" class="btn" style="display:block; font-size:0.8em; padding:5px; margin-top:5px; text-decoration:none; background-color:#585b70;">Avaa PGC Kartta ↗</a>`;
+    }
     
-    popupContent += `<a href="${pgcLink}" target="_blank" class="btn" style="display:block; font-size:0.8em; padding:5px; margin-top:5px; text-decoration:none;">Avaa PGC Kartta ↗</a>`;
     popupContent += `</div>`;
 
     layer.bindPopup(popupContent);
