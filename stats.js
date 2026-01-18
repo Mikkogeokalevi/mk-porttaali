@@ -19,6 +19,18 @@ const CACHE_TYPES = [
     { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
 ];
 
+// AHVENANMAAN ALUEET (PGC LINKKEJÄ VARTEN)
+const ALAND_REGIONS = {
+    "Maarianhamina": "Mariehamn",
+    "Brändö": "Ålands skärgård",
+    "Föglö": "Ålands skärgård",
+    "Kumlinge": "Ålands skärgård",
+    "Kökar": "Ålands skärgård",
+    "Sottunga": "Ålands skärgård",
+    "Vårdö": "Ålands skärgård",
+    // Loput menevät oletuksena "Ålands landsbygd"
+};
+
 // VARMUUSVERKKO: Nämä toimivat aina
 const HARDCODED_IDS = {
     "mikkokalevi": 306478,
@@ -147,7 +159,7 @@ export const loadTopStats = async (db, user, content) => {
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// --- 2. MAAKUNNAT & LÖYDÖT (PÄIVITETTY NAPILLA) ---
+// --- 2. MAAKUNNAT & LÖYDÖT ---
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
@@ -195,16 +207,51 @@ export const loadAllStats = async (db, user, content) => {
                 matchingMunicipalities.forEach(kunta => {
                     const stats = fullData[kunta].s || [];
                     let foundList = "", notFoundList = "";
+                    
+                    // Lasketaan yhteensä vain näytettävät
+                    let displayTotal = 0;
+
                     CACHE_TYPES.forEach(type => {
                         const count = stats[type.index] || 0;
-                        const li = `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: ${count}</span></li>`;
-                        if (count > 0) foundList += li; else notFoundList += li;
+                        if (count > 0) {
+                            displayTotal += count;
+                            foundList += `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: ${count}</span></li>`;
+                        } else {
+                            notFoundList += `<li><img src="${type.icon}" alt="${type.name}"> <span>${type.name}: 0</span></li>`;
+                        }
                     });
-                    const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=Finland&geocache_crc_region=${encodeURIComponent(maakunta)}&geocache_crc_county=${encodeURIComponent(kunta)}&submit=Filter`;
+
+                    // --- PGC LINKIN LOGIIKKA (Fix Ahvenanmaa) ---
+                    let pgcCountry = "Finland";
+                    let pgcRegion = maakunta;
+                    let pgcCounty = kunta;
+
+                    if (maakunta === "Ahvenanmaa") {
+                        pgcCountry = "Åland Islands";
+                        pgcRegion = ALAND_REGIONS[kunta] || "Ålands landsbygd";
+                        if (kunta === "Maarianhamina") {
+                            pgcRegion = "Mariehamn";
+                            pgcCounty = "Mariehamn";
+                        }
+                    }
+
+                    // Kuntaliitoskorjaus (Jos Pertunmaa löytyy listalta, ohjataan Mäntyharjulle PGC:ssä jos halutaan, 
+                    // mutta PGC saattaa tukea vanhojakin. Pidetään yksinkertaisena ja käytetään nimeä sellaisenaan,
+                    // paitsi jos Ahvenanmaa.)
+
+                    const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=${encodeURIComponent(pgcCountry)}&geocache_crc_region=${encodeURIComponent(pgcRegion)}&geocache_crc_county=${encodeURIComponent(pgcCounty)}&submit=Filter`;
                     const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
 
-                    municipalitiesHtml += `<div class="municipality-box"><h3><span><a href="${gcfiLink}" target="_blank">${kunta}</a> <a href="${pgcLink}" target="_blank" style="font-size:0.7em; opacity:0.6; text-decoration:none;">(Pgc)</a></span></h3><h4>Löydetyt:</h4><ul class="cache-list">${foundList || '<li style="opacity:0.5">-</li>'}</ul>${notFoundList ? `<h4>Ei löytöjä:</h4><ul class="cache-list" style="opacity:0.7;">${notFoundList}</ul>` : ''}</div>`;
+                    municipalitiesHtml += `<div class="municipality-box">
+                        <h3><span><a href="${gcfiLink}" target="_blank">${kunta}</a> <a href="${pgcLink}" target="_blank" style="font-size:0.7em; opacity:0.6; text-decoration:none;">(Pgc)</a></span></h3>
+                        
+                        <h4>LÖYDETYT (${displayTotal}):</h4>
+                        <ul class="cache-list">${foundList || '<li style="opacity:0.5">-</li>'}</ul>
+                        
+                        ${notFoundList ? `<h4>EI LÖYTÖJÄ:</h4><ul class="cache-list" style="opacity:0.7;">${notFoundList}</ul>` : ''}
+                    </div>`;
                 });
+                
                 const isOpen = term.length > 0 ? "open" : "";
                 container.innerHTML += `<details ${isOpen} class="region-accordion"><summary><span style="font-size:1.1em;">${maakunta}</span><span style="float:right; font-weight:normal; opacity:0.7; font-size:0.9em;">${matchingMunicipalities.length} kuntaa</span></summary><div class="region-content">${municipalitiesHtml}</div></details>`;
             });
