@@ -149,6 +149,7 @@ export const toggleTimeFields = () => {
     else fields.classList.add('hidden');
 };
 
+// --- TÄRKEIN MUUTOS TÄSSÄ FUNKTIOSSA ---
 export const generateStatImage = () => {
     const baseUrl = "https://www.geocache.fi/stat/";
     const user = document.getElementById("genUser").value.trim();
@@ -164,6 +165,22 @@ export const generateStatImage = () => {
 
     if (!user) { alert("Syötä käyttäjätunnus!"); return; }
 
+    // Logiikka ID:n etsimiseen
+    let userId = null;
+    
+    // 1. Tarkista onko kyseessä käyttäjä itse ja onko hänellä ID
+    if (window.app.savedNickname === user && window.app.savedId) {
+        userId = window.app.savedId;
+    } 
+    // 2. Jos ei, etsi kaverilistasta
+    else if (window.app.friendsList) {
+        const friend = window.app.friendsList.find(f => f.name.toLowerCase() === user.toLowerCase());
+        if (friend && friend.id) {
+            userId = friend.id;
+        }
+    }
+
+    // Rakennetaan kuvan URL
     let params = `?user=${encodeURIComponent(user)}`;
     if (type === "hiddenday") params += `&type=2`;
 
@@ -181,10 +198,33 @@ export const generateStatImage = () => {
         if (locType === 'mkunta') params += `&mkunta=${encodeURIComponent(locValue)}`;
     }
 
-    const finalUrl = `${baseUrl}${type}.php${params}`;
+    const imageUrl = `${baseUrl}${type}.php${params}`;
+    
+    // Rakennetaan "Avaa isona" linkki
+    let largeUrl = imageUrl; 
+    let linkText = "Avaa isona";
+
+    // JOS tyyppi on kunta JA meillä on ID -> muutetaan linkki interaktiiviseksi
+    if (type === 'kunta' && userId) {
+        largeUrl = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
+        linkText = "Avaa interaktiivinen kartta ↗";
+    }
+
     const img = document.getElementById('generatedImg');
     const link = document.getElementById('openLink');
-    img.src = finalUrl;
-    link.href = finalUrl;
+    
+    img.src = imageUrl;
+    link.href = largeUrl;
+    link.textContent = linkText; // Päivitä linkin teksti
+    
+    // Jos linkki on interaktiivinen kartta, korostetaan sitä värillä
+    if (type === 'kunta' && userId) {
+        link.style.backgroundColor = "#fab387"; 
+        link.style.color = "#1e1e2e";
+    } else {
+        link.style.backgroundColor = ""; // Palauta oletus
+        link.style.color = "";
+    }
+
     document.getElementById('resultArea').classList.remove('hidden');
 };
