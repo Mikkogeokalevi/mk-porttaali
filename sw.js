@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v2'; // PÄIVITETTY VERSIO (v1 -> v2)
+const CACHE_NAME = 'mk-porttaali-v4'; // PÄIVITETTY: v3 -> v4
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,14 +9,15 @@ const ASSETS_TO_CACHE = [
   './generator.js',
   './help.js',
   './stats.js',
-  './map.js', // UUSI TIEDOSTO
+  './map.js',
+  './map_all.js',
   './manifest.json',
   './muuntimet.html',
   './muuntimet_style.css',
   './muuntimet_script.js',
   './yksikot.json',
   './mikkokalevi.png',
-  './kunnat.json' // Varmuuskopio kartasta (jos latasit sen)
+  './kunnat.json' // Jos käytössä
 ];
 
 // Asennus: Ladataan tiedostot välimuistiin
@@ -24,7 +25,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting(); // Pakotetaan uusi SW käyttöön heti
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets (v2)');
+      console.log('[SW] Caching assets (v4)');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
