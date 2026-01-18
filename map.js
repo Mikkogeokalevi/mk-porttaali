@@ -1,14 +1,28 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { maakuntienKunnat } from "./data.js"; // Tarvitaan maakuntatietoa linkkeihin
 
 // KARTTALÄHTEET
 const GEOJSON_URLS = [
-    // Lähde 1: Sami Laine (Vakaa)
     'https://raw.githubusercontent.com/samilaine/hallinnollisetrajat/master/kuntarajat.json',
-    // Lähde 2: Teemu Koivisto (Vara)
     'https://raw.githubusercontent.com/TeemuKoivisto/map-of-finland/master/kuntarajat-2018-raw.json',
-    // Lähde 3: Paikallinen
     './kunnat.json'
 ];
+
+// AHVENANMAAN ALUEET (PGC)
+const ALAND_REGIONS = {
+    "Maarianhamina": "Mariehamn",
+    "Brändö": "Ålands skärgård",
+    "Föglö": "Ålands skärgård",
+    "Kumlinge": "Ålands skärgård",
+    "Kökar": "Ålands skärgård",
+    "Sottunga": "Ålands skärgård",
+    "Vårdö": "Ålands skärgård",
+};
+
+// KUNTALIITOKSET
+const MUNICIPALITY_MAPPING = {
+    "Pertunmaa": "Mäntyharju"
+};
 
 export const renderTripletMap = async (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
@@ -33,12 +47,11 @@ export const renderTripletMap = async (content, db, user, app) => {
                 <span style="color:#a6e3a1;">■ Valmis</span> &nbsp;
                 <span style="color:#f9e2af;">■ Puuttuu 1</span> &nbsp;
                 <span style="color:#fab387;">■ Puuttuu 2</span> &nbsp;
-                <span style="color:#f38ba8;">■ 0 löytöä</span>
+                <span style="color:#f38ba8;">■ Puuttuu 3/Ei löytöjä</span>
             </div>
         </div>
     `;
 
-    // 1. Haetaan tilastot
     let statsData = {};
     try {
         const docSnap = await getDoc(doc(db, "stats", user.uid));
@@ -49,12 +62,7 @@ export const renderTripletMap = async (content, db, user, app) => {
         console.error("Virhe tilastojen haussa:", e);
     }
 
-    // 2. Alustetaan kartta - TÄRKEÄ: preferCanvas: true nopeuttaa mobiililla!
-    const map = L.map('map', {
-        preferCanvas: true,
-        zoomControl: false // Siirretään zoom-napit jos tarvis, nyt pois tieltä
-    }).setView([65.0, 26.0], 5);
-
+    const map = L.map('map', { preferCanvas: true, zoomControl: false }).setView([65.0, 26.0], 5);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -63,55 +71,34 @@ export const renderTripletMap = async (content, db, user, app) => {
         maxZoom: 19
     }).addTo(map);
 
-    // 3. PAIKANNUS: Etsitään käyttäjä heti
     const userMarker = L.layerGroup().addTo(map);
+    function locateUser() { map.locate({ setView: true, maxZoom: 9, timeout: 10000 }); }
     
-    function locateUser() {
-        map.locate({ setView: true, maxZoom: 9, timeout: 10000 });
-    }
-
     map.on('locationfound', (e) => {
         userMarker.clearLayers();
-        const radius = e.accuracy / 2;
-        L.circle(e.latlng, radius, { color: '#89b4fa', fillOpacity: 0.1 }).addTo(userMarker);
-        L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0077cc', fillOpacity: 1 }).addTo(userMarker)
-            .bindPopup("Olet tässä").openPopup();
+        L.circle(e.latlng, e.accuracy / 2, { color: '#89b4fa', fillOpacity: 0.1 }).addTo(userMarker);
+        L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0077cc', fillOpacity: 1 }).addTo(userMarker).bindPopup("Olet tässä").openPopup();
     });
-
-    map.on('locationerror', (e) => {
-        console.log("Sijaintia ei löytynyt", e.message);
-    });
-
-    // Käynnistetään paikannus heti
     locateUser();
-
-    // Liitetään nappiin toiminto
     document.getElementById('locateBtn').onclick = locateUser;
 
-    // 4. Ladataan kartta-aineisto
     let geoData = null;
     for (const url of GEOJSON_URLS) {
         try {
             const response = await fetch(url);
-            if (response.ok) {
-                geoData = await response.json();
-                break;
-            }
-        } catch (e) { console.warn("Latausvirhe:", e); }
+            if (response.ok) { geoData = await response.json(); break; }
+        } catch (e) {}
     }
 
-    const loadingEl = document.getElementById('mapLoading');
-    if (loadingEl) loadingEl.remove();
+    document.getElementById('mapLoading')?.remove();
 
     if (geoData) {
-        // Luodaan GeoJSON-kerros
-        const geoJsonLayer = L.geoJSON(geoData, {
+        const pgcUser = window.app.savedNickname || user.displayName || 'user';
+        
+        L.geoJSON(geoData, {
             style: (feature) => getStyle(feature, statsData),
-            onEachFeature: (feature, layer) => onEachFeature(feature, layer, statsData)
+            onEachFeature: (feature, layer) => onEachFeature(feature, layer, statsData, pgcUser)
         }).addTo(map);
-
-        // Jos sijaintia ei löydy, keskitetään Suomeen, muuten annetaan paikannuksen hoitaa
-        // map.fitBounds(geoJsonLayer.getBounds()); 
     } else {
         document.getElementById('map').innerHTML = `<div style="padding:20px; color:black; background:white;">Kartan lataus epäonnistui.</div>`;
     }
@@ -120,7 +107,35 @@ export const renderTripletMap = async (content, db, user, app) => {
 // --- APUFUNKTIOT ---
 
 function getMunicipalityName(feature) {
-    return feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi || "Tuntematon";
+    let name = feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi || "Tuntematon";
+    if (MUNICIPALITY_MAPPING[name]) {
+        return MUNICIPALITY_MAPPING[name]; 
+    }
+    return name;
+}
+
+function findRegionForMunicipality(kuntaName) {
+    for (const [maakunta, kunnat] of Object.entries(maakuntienKunnat)) {
+        if (kunnat.includes(kuntaName)) return maakunta;
+    }
+    return null;
+}
+
+function getPGCLink(pgcUser, kuntaName, region) {
+    let country = "Finland";
+    let pgcRegion = region;
+    let pgcCounty = kuntaName;
+
+    if (region === "Ahvenanmaa") {
+        country = "Åland Islands";
+        pgcRegion = ALAND_REGIONS[kuntaName] || "Ålands landsbygd"; 
+        if (kuntaName === "Maarianhamina") {
+            pgcRegion = "Mariehamn";
+            pgcCounty = "Mariehamn";
+        }
+    }
+    
+    return `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=${encodeURIComponent(country)}&geocache_crc_region=${encodeURIComponent(pgcRegion)}&geocache_crc_county=${encodeURIComponent(pgcCounty)}&submit=Filter`;
 }
 
 function getStatsForMunicipality(name, statsData) {
@@ -143,38 +158,64 @@ function getStyle(feature, statsData) {
     if (s.m === 0) missingCount++;
     if (s.q === 0) missingCount++;
 
-    let color = '#f38ba8'; // Punainen (0 löytöä tai 3 puuttuu)
+    let color = '#f38ba8'; // Punainen
     let fillOpacity = 0.5;
 
     if (s.total > 0) {
-        // Jos on jotain löytöjä, mutta tripletti puuttuu
         if (missingCount === 2) { color = '#fab387'; fillOpacity = 0.6; } // Oranssi
         else if (missingCount === 1) { color = '#f9e2af'; fillOpacity = 0.6; } // Keltainen
         else if (missingCount === 0) { color = '#a6e3a1'; fillOpacity = 0.4; } // Vihreä
     } else {
-        color = '#313244'; // Ei mitään löytöjä (tumma)
+        color = '#313244'; // Ei löytöjä
         fillOpacity = 0.4;
     }
 
     return { fillColor: color, weight: 1, opacity: 1, color: 'rgba(255,255,255,0.1)', fillOpacity: fillOpacity };
 }
 
-function onEachFeature(feature, layer, statsData) {
+function onEachFeature(feature, layer, statsData, pgcUser) {
+    const originalName = feature.properties.Name || feature.properties.name || feature.properties.NAMEFIN || feature.properties.nimi;
     const name = getMunicipalityName(feature);
     const s = getStatsForMunicipality(name, statsData);
+    const region = findRegionForMunicipality(name);
 
-    let popupContent = `<div style="text-align:center;"><strong>${name}</strong></div>`;
+    let title = name;
+    if (originalName && originalName !== name) {
+        title = `${name} <span style="font-size:0.8em; opacity:0.7;">(${originalName})</span>`;
+    }
+
+    let popupContent = `<div style="text-align:center; min-width:200px;">
+        <strong style="font-size:1.1em;">${title}</strong>
+        <div style="font-size:0.8em; opacity:0.7;">${region || ''}</div>
+        <hr style="margin:5px 0; border-top:1px solid #555;">`;
     
     if (s.t > 0 && s.m > 0 && s.q > 0) {
         popupContent += `<div style="color:#2e7d32; font-weight:bold; margin:5px 0;">Tripletti VALMIS! 🏆</div>`;
     } else {
-        popupContent += `<div style="margin:5px 0; font-weight:bold;">Puuttuu:</div>`;
-        if (s.t === 0) popupContent += `❌ Tradi<br>`;
-        if (s.m === 0) popupContent += `❌ Multi<br>`;
-        if (s.q === 0) popupContent += `❌ Mysteeri<br>`;
-        if (s.total === 0) popupContent = `<div style="margin-top:5px; color:#cc0000;">Ei löytöjä lainkaan</div>`;
+        popupContent += `<div style="margin:5px 0; font-weight:bold;">Puuttuu:</div>
+                         <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">`;
+        if (s.t === 0) popupContent += `<span style="background:rgba(166,227,161,0.2); color:#a6e3a1; padding:2px 5px; border-radius:4px; font-size:0.9em;">Tradi</span>`;
+        if (s.m === 0) popupContent += `<span style="background:rgba(137,180,250,0.2); color:#89b4fa; padding:2px 5px; border-radius:4px; font-size:0.9em;">Multi</span>`;
+        if (s.q === 0) popupContent += `<span style="background:rgba(249,226,175,0.2); color:#f9e2af; padding:2px 5px; border-radius:4px; font-size:0.9em;">Mysse</span>`;
+        popupContent += `</div>`;
+        
+        if (s.total === 0) popupContent += `<div style="margin-top:5px; color:#cc0000; font-size:0.9em;">Ei löytöjä lainkaan</div>`;
     }
     
-    // Klikkaus tuo popupin esiin (Leafletin oletus)
+    popupContent += `<div style="margin-top:5px; font-size:0.9em;">Löydöt: T=${s.t}, M=${s.m}, ?=${s.q}</div>`;
+
+    // UUSI: PGC Linkki
+    if (region) {
+        const pgcLink = getPGCLink(pgcUser, name, region);
+        popupContent += `<a href="${pgcLink}" target="_blank" class="btn" style="display:block; font-size:0.8em; padding:5px; margin-top:10px; text-decoration:none; background-color:#585b70;">Avaa PGC Kartta ↗</a>`;
+    }
+
+    popupContent += `</div>`;
+
     layer.bindPopup(popupContent);
+    
+    layer.on({
+        mouseover: (e) => { e.target.setStyle({ weight: 3, color: '#fff' }); e.target.bringToFront(); },
+        mouseout: (e) => { layer.resetStyle(e.target); layer.setStyle({ weight: 1, color: 'rgba(255,255,255,0.1)' }); }
+    });
 }
