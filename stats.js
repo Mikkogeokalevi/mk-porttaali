@@ -249,7 +249,7 @@ function initTripletLogic(fullData) {
 
 // --- 4. UUSI: EXTERNAL STATS (TILASTOT.HTML REPLICA) ---
 export const loadExternalStats = (content) => {
-    // Haetaan oletuskäyttäjä (sama logiikka kuin generator.js)
+    // Haetaan oletuskäyttäjä
     let defaultUser = 'mikkokalevi';
     if (window.app.currentUser) {
         if (window.app.savedNickname) defaultUser = window.app.savedNickname;
@@ -289,7 +289,6 @@ export const loadExternalStats = (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
-        // Etsitään käyttäjän ID kavereista tai omista tiedoista (interaktiivisia karttoja varten)
         let userId = null;
         if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) userId = window.app.savedId;
         else {
@@ -297,16 +296,22 @@ export const loadExternalStats = (content) => {
             if (f) userId = f.id;
         }
 
-        // Apufunktio kuvalinkeille (lisää lazy loading)
         const img = (url) => `<img src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
         
-        // Apufunktio interaktiivisille kartoille
         const mapLink = (typeId, text) => {
             if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
             let url = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
             if (typeId) url += `&cachetype=${typeId}`;
             return `<a href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
         };
+
+        // Luodaan kuukausilista T/D -taulukoille
+        let monthsHtml = "";
+        const monthNames = ["Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kesäkuu", "Heinäkuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu"];
+        monthNames.forEach((mName, i) => {
+            const mNum = (i + 1).toString().padStart(2, '0');
+            monthsHtml += `<h4>${mName}</h4>${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&month=${mNum}`)}`;
+        });
 
         container.innerHTML = `
         <div class="card">
@@ -328,13 +333,39 @@ export const loadExternalStats = (content) => {
                 </div>
             </details>
 
+            <details class="region-accordion"><summary>T/D Kuukaudet</summary>
+                <div class="region-content">
+                    ${monthsHtml}
+                </div>
+            </details>
+
             <details class="region-accordion"><summary>Vuosikalenterit</summary>
                 <div class="region-content">
+                    <h3>Yleiskalenterit</h3>
                     ${img(`https://www.geocache.fi/stat/year.php?&user=${user}`)}
                     ${img(`https://www.geocache.fi/stat/year.php?&user=${user}&year=${currentYear}`)}
-                    <h4>Tradit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=1`)}
-                    <h4>Multit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=2`)}
-                    <h4>Mysteerit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=3`)}
+                    
+                    <h3>Kätkötyypit</h3>
+                    <h4>Tradi</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=1`)}
+                    <h4>Multi</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=2`)}
+                    <h4>Mysteeri</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=3`)}
+                    <h4>Letterbox</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=4`)}
+                    <h4>Event</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=5`)}
+                    <h4>Earthcache</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=6`)}
+                    <h4>Virtual</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=7`)}
+                    <h4>Webcam</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=8`)}
+                    <h4>Wherigo</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=9`)}
+                    <h4>CCE (Comm. Celebration)</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=10`)}
+                    <h4>Mega-Event</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=11`)}
+                    <h4>CITO</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=12`)}
+                    <h4>Giga-Event</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=13`)}
+                    <h4>Block Party</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=14`)}
+                    <h4>LAB Cache</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=20`)}
+                    
+                    <h3>Ryhmät</h3>
+                    <h4>Muut paitsi Labit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=96`)}
+                    <h4>Muut paitsi Tradit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=98`)}
+                    <h4>Kaikki Eventit</h4>${img(`https://www.geocache.fi/stat/year.php?&user=${user}&cachetype=99`)}
                 </div>
             </details>
 
@@ -388,6 +419,5 @@ export const loadExternalStats = (content) => {
         renderImages(document.getElementById('statUser').value.trim());
     });
 
-    // Renderöi heti oletuskäyttäjällä
     renderImages(defaultUser);
 };
