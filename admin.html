@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MK Admin - Datan Kerääjä</title>
+    <title>MK Admin - Datan Kerääjä (Debug)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1e1e2e; color: #cdd6f4; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
@@ -13,7 +13,7 @@
         .user-info { font-weight: bold; color: #a6e3a1; }
         
         textarea {
-            width: 100%; height: 200px; background-color: #181825; color: #fff;
+            width: 100%; height: 150px; background-color: #181825; color: #fff;
             border: 1px solid #45475a; padding: 15px; font-family: monospace;
             border-radius: 8px; white-space: pre; overflow-x: auto;
         }
@@ -24,30 +24,35 @@
         .btn-login { background-color: #db4437; color: white; }
         .btn-process { background-color: #89b4fa; color: #1e1e2e; }
         .btn-save { background-color: #a6e3a1; color: #1e1e2e; }
-        .btn-settings { background-color: #585b70; color: #fff; padding: 5px 10px; font-size: 0.9em; margin-bottom: 10px; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .hidden { display: none !important; }
         .status { margin-top: 10px; font-weight: bold; min-height: 24px; }
         
         .preview { margin-top: 20px; background: #313244; padding: 20px; border-radius: 8px; }
-        .stat-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid #45475a; }
         
-        .detail-list { max-height: 300px; overflow-y: auto; font-size: 0.9em; border-top: 1px solid #45475a; padding-top: 10px; }
-        .detail-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .detail-vals { color: #a6adc8; font-family: monospace; }
-
-        #settingsPanel { background: #252535; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #45475a; }
-        .setting-row { display: flex; gap: 15px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
-        .setting-row input { width: 50px; padding: 5px; background: #181825; color: #fff; border: 1px solid #45475a; border-radius: 4px; }
-        .instruction-text { color: #a6adc8; font-size: 0.9em; margin-bottom: 10px; }
+        /* Debug-grid tyylit */
+        .debug-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .debug-item {
+            background: #181825;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #45475a;
+            text-align: center;
+        }
+        .col-idx { display: block; font-size: 0.75em; color: #a6adc8; margin-bottom: 2px; }
+        .col-val { display: block; font-size: 1.2em; font-weight: bold; color: #fab387; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Tilastojen Päivitystyökalu (Kaikki Data)</h1>
+    <h1>Tilastojen Päivitystyökalu 🕵️</h1>
 
     <div id="authPanel" class="auth-panel">
         <span id="loginStatus">Odotetaan...</span>
@@ -56,44 +61,27 @@
     </div>
 
     <div id="toolArea" class="hidden">
-        
-        <button class="btn-settings" onclick="toggleSettings()">⚙️ Sarakkeiden asetukset (Esikatselua varten)</button>
-        
-        <div id="settingsPanel" class="hidden">
-            <p class="instruction-text">
-                Tämä työkalu tallentaa <strong>kaikki</strong> sarakkeet.<br>
-                Valitse alla vain se, mitkä sarakkeet lasketaan <strong>Tripletti</strong>-esikatseluun tässä ja nyt.<br>
-                <em>(1 = Tradi, 2 = Multi, 4 = Mysteeri - oletus kuvasi perusteella)</em>
-            </p>
-            <div class="setting-row">
-                <label>Tradi sarake:</label> <input type="number" id="colTradi" value="1" min="1">
-                <label>Multi sarake:</label> <input type="number" id="colMulti" value="2" min="1">
-                <label>Mysteeri sarake:</label> <input type="number" id="colMysse" value="4" min="1">
-            </div>
-        </div>
-
-        <p>Liitä tähän Geocache.fi:n "Kuntatilasto" -taulukon sisältö:</p>
+        <p>1. Mene Geocache.fi "Kuntatilasto" -sivulle.<br>
+           2. Maalaa taulukko (Ctrl+A) ja kopioi se (Ctrl+C).<br>
+           3. Liitä sisältö tähän:</p>
         <textarea id="rawInput" placeholder="Liitä tähän..."></textarea>
         
         <div style="margin-top:10px;">
-            <button class="btn-process" onclick="processData()">1. Prosessoi kaikki data</button>
-            <button id="saveBtn" class="btn-save" onclick="saveToFirebase()" style="display:none;">2. Tallenna kaikki tietokantaan</button>
+            <button class="btn-process" onclick="processData()">1. Analysoi sarakkeet</button>
+            <button id="saveBtn" class="btn-save" onclick="saveToFirebase()" style="display:none; margin-left: 10px;">2. Tallenna tietokantaan</button>
         </div>
         
         <div id="statusMsg" class="status"></div>
 
         <div id="previewArea" class="preview hidden">
-            <h3>Esikatselu (Triplettilaskenta):</h3>
-            <div class="stat-summary">
-                <div class="stat-box">Kunnat: <span id="countTotal">-</span></div>
-                <div class="stat-box" style="color:#a6e3a1; border-color:#a6e3a1;">Triplettikunnat: <span id="countTrip">-</span></div>
-                <div class="stat-box">Vain Tradi: <span id="countTradi">-</span></div>
-                <div class="stat-box">Ei löytöjä: <span id="countNone">-</span></div>
-            </div>
+            <h3 style="color: #fab387; margin-top:0;">🔍 Sarakkeiden Tarkistus</h3>
+            <p style="font-size: 0.9em; opacity: 0.8;">
+                Alla näet ensimmäisen löydetyn kunnan datan pilkottuna sarakkeisiin.<br>
+                <strong>VERTAA NÄITÄ LUKUJA GEOCACHE.FI TAULUKKOON!</strong><br>
+                Jos taulukossa "Tradi" on ensimmäinen luku, sen indeksi on 0. Jos "Multi" on toinen, indeksi on 1.
+            </p>
             
-            <h4>Datatarkistus (Tallennetaan koko sarja):</h4>
-            <p style="font-size:0.8em; color:#888;">Tässä näkyy raakadata, joka menee tietokantaan. Hakasulkeissa [Tradi, Multi, Web, Mysse, ...]</p>
-            <div id="detailList" class="detail-list"></div>
+            <div id="debugContainer"></div>
         </div>
     </div>
 </div>
@@ -123,7 +111,6 @@
 
     window.adminLogin = () => signInWithPopup(auth, provider);
     window.adminLogout = () => signOut(auth);
-    window.toggleSettings = () => document.getElementById('settingsPanel').classList.toggle('hidden');
 
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
@@ -149,23 +136,12 @@
         const raw = document.getElementById('rawInput').value;
         if(!raw.trim()) return alert("Liitä ensin dataa!");
 
-        // Käyttäjän asetukset esikatselua varten (sarakkeet alkavat 1:stä, vähennetään 1 array-indeksiä varten)
-        const idxTradi = parseInt(document.getElementById('colTradi').value) - 1;
-        const idxMulti = parseInt(document.getElementById('colMulti').value) - 1;
-        const idxMysse = parseInt(document.getElementById('colMysse').value) - 1;
-
         const lines = raw.split('\n');
-        const municipalityData = {}; // Tähän tallennetaan kaikki
+        const municipalityData = {}; 
         let success = 0;
-        
-        // Järjestetään maakunnat pituusjärjestykseen tunnistusta varten
         const sortedRegions = [...suomenMaakunnat].sort((a, b) => b.length - a.length);
-
-        const detailList = document.getElementById('detailList');
-        detailList.innerHTML = '';
-
-        // Tilastolaskurit (vain esikatselua varten)
-        const cats = { 1:0, 2:0, 8:0 }; 
+        
+        let firstMunicipality = null; // Tallennetaan eka debuggausta varten
 
         lines.forEach(line => {
             let clean = line.trim();
@@ -174,7 +150,6 @@
             let kunta = "", region = "", numsPart = "";
             let found = false;
 
-            // 1. Tunnistetaan maakunta riviltä
             for(const r of sortedRegions) {
                 const idx = clean.indexOf(r);
                 if(idx > 0) {
@@ -186,7 +161,7 @@
                 }
             }
 
-            // 2. Fallback tab-erotteluun
+            // Fallback tab-erotteluun
             if(!found && clean.includes('\t')) {
                 const parts = clean.split('\t');
                 if(parts.length > 4) {
@@ -199,62 +174,42 @@
             }
 
             if(found) {
-                kunta = kunta.replace(/^\d+\s+/, ''); // Poista "1 Akaa" -> "Akaa"
-                
-                // 3. Parsitaan KAIKKI numerot taulukoksi
-                // Korvataan tabit ja useat välit yhdellä välilyönnillä
+                kunta = kunta.replace(/^\d+\s+/, ''); 
                 const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
                 const allStats = numStrings.map(s => parseInt(s) || 0);
 
-                // Tallennetaan koko roska: Maakunta (r) ja tilasto-array (s)
-                municipalityData[kunta] = { 
-                    r: region, 
-                    s: allStats 
-                };
+                municipalityData[kunta] = { r: region, s: allStats };
                 success++;
-
-                // 4. Lasketaan Tripletti-status esikatselua varten käyttäjän asetuksilla
-                const t = allStats[idxTradi] || 0;
-                const m = allStats[idxMulti] || 0;
-                const q = allStats[idxMysse] || 0;
-
-                let isTripletti = (t > 0 && m > 0 && q > 0);
-                let isVainTradi = (t > 0 && m === 0 && q === 0);
-                let isTyhja = (t === 0 && m === 0 && q === 0);
-
-                if(isTripletti) cats[8]++;
-                else if(isVainTradi) cats[2]++;
-                else if(isTyhja) cats[1]++;
-
-                // Näytä 10 ensimmäistä tarkistukseksi
-                if (success <= 10) {
-                    // Korostetaan mysteerisarake (koska se oli ongelma)
-                    const displayStats = [...allStats];
-                    if(displayStats[idxMysse] !== undefined) {
-                        displayStats[idxMysse] = `<b>${displayStats[idxMysse]}</b>`;
-                    }
-                    
-                    detailList.innerHTML += `
-                        <div class="detail-item">
-                            <span>${kunta}</span>
-                            <span class="detail-vals">[${displayStats.slice(0,6).join(', ')}...]</span>
-                        </div>
-                    `;
-                }
+                
+                if (!firstMunicipality) firstMunicipality = { name: kunta, stats: allStats };
             }
         });
 
         processedDataToSave = municipalityData;
 
-        // UI Update
-        document.getElementById('countTotal').textContent = success;
-        document.getElementById('countTrip').textContent = cats[8];
-        document.getElementById('countTradi').textContent = cats[2];
-        document.getElementById('countNone').textContent = cats[1];
-        
+        // RAKENNETAAN DEBUG-NÄKYMÄ
+        const debugDiv = document.getElementById('debugContainer');
+        if (firstMunicipality) {
+            let html = `<div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
+                <h4>Esimerkki: ${firstMunicipality.name}</h4>
+                <div class="debug-grid">`;
+            
+            firstMunicipality.stats.forEach((val, idx) => {
+                html += `<div class="debug-item">
+                            <span class="col-idx">Index ${idx}</span>
+                            <span class="col-val">${val}</span>
+                         </div>`;
+            });
+            
+            html += `</div></div>`;
+            debugDiv.innerHTML = html;
+        } else {
+            debugDiv.innerHTML = '<p style="color:red">Yhtään kuntaa ei tunnistettu. Tarkista kopiointi.</p>';
+        }
+
         document.getElementById('previewArea').classList.remove('hidden');
         document.getElementById('saveBtn').style.display = 'inline-block';
-        document.getElementById('statusMsg').textContent = `Prosessoitu ${success} riviä.`;
+        document.getElementById('statusMsg').textContent = `Prosessoitu ${success} riviä. Tallenna tietokantaan jos sarakkeet näyttävät oikeilta.`;
     };
 
     window.saveToFirebase = async () => {
@@ -265,12 +220,12 @@
 
         try {
             await setDoc(doc(db, "stats", currentUser.uid), {
-                municipalities: processedDataToSave, // Tallennetaan täysi data
+                municipalities: processedDataToSave,
                 updatedAt: serverTimestamp(),
                 updatedBy: currentUser.email,
-                type: "full_stats_v2" // Versio 2 kertoo että tässä on kaikki sarakkeet
+                type: "full_stats_v2"
             });
-            status.textContent = "✅ Tallennettu! Kaikki data on nyt turvassa.";
+            status.textContent = "✅ Tallennettu!";
             status.style.color = "#a6e3a1";
             setTimeout(() => { btn.disabled = false; btn.textContent = "2. Tallenna uudelleen"; }, 3000);
         } catch (e) {
