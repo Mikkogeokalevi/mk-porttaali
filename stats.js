@@ -250,7 +250,6 @@ function initTripletLogic(fullData) {
 // --- 4. UUSI: EXTERNAL STATS (Kuvatilastot) ---
 export const loadExternalStats = async (content) => {
     // 1. TÄRKEÄÄ: Pakotetaan kaverilistan lataus, jotta ID:t ovat käytettävissä
-    // Vaikka käyttäjä tulisi suoraan tälle sivulle.
     if (window.app.loadFriends) {
         await window.app.loadFriends(); 
     }
@@ -283,7 +282,7 @@ export const loadExternalStats = async (content) => {
     <div id="statsContainer">Ladataan kuvia...</div>
     `;
 
-    // Täytetään lista (Nyt kun loadFriends on ajettu, tämän pitäisi toimia)
+    // Täytetään lista
     const datalist = document.getElementById('statsFriendOptions');
     if (window.app.friendsList) {
         window.app.friendsList.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
@@ -298,14 +297,20 @@ export const loadExternalStats = async (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
-        // Etsitään käyttäjän ID automaattisesti yhteisestä listasta
+        // --- KORJATTU ID-HAKULOGIIKKA ---
         let userId = null;
-        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) {
+
+        // 1. Tarkistetaan ensin löytyykö ID "omista tiedoista"
+        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase() && window.app.savedId) {
             userId = window.app.savedId;
-        } else {
-            const f = window.app.friendsList?.find(f => f.name.toLowerCase() === user.toLowerCase());
-            if (f) userId = f.id;
         }
+        
+        // 2. Jos ID on yhä tyhjä, etsitään se kaverilistasta (vaikka nimi olisi sama kuin oma)
+        if (!userId && window.app.friendsList) {
+            const f = window.app.friendsList.find(f => f.name.toLowerCase() === user.toLowerCase());
+            if (f && f.id) userId = f.id;
+        }
+        // --------------------------------
 
         // PÄIVITETÄÄN ID NÄKYVIIN
         const idDisplay = document.getElementById('activeIdDisplay');
