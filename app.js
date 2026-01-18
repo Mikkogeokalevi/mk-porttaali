@@ -7,6 +7,7 @@ import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
+import * as MapView from "./map.js"; // UUSI: Tuodaan karttamoduuli
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -83,6 +84,12 @@ window.app = {
         Stats.loadTripletData(db, window.app.currentUser, content);
         break;
 
+      // UUSI: Karttareitti
+      case 'stats_map':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
+        MapView.renderTripletMap(content, db, window.app.currentUser, window.app);
+        break;
+
       case 'stats_all':
         if (!window.app.currentUser) { app.router('login_view'); return; }
         Stats.loadAllStats(db, window.app.currentUser, content);
@@ -93,7 +100,6 @@ window.app = {
         Stats.loadTopStats(db, window.app.currentUser, content);
         break;
         
-      // UUSI: Geocache.fi kuvatilastot
       case 'stats_external':
         Stats.loadExternalStats(content);
         break;
