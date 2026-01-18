@@ -11,39 +11,31 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove }
 
 const provider = new GoogleAuthProvider();
 
-// Käynnistää kuuntelijan ja päivittää UI:n
 export function initAuth(auth, db, appState) {
     onAuthStateChanged(auth, async (user) => {
         appState.currentUser = user;
-        
         if (user) {
-            // Kun käyttäjä kirjautuu, haetaan heti hänen tallennettu nimimerkkinsä
             const profile = await getUserProfile(db, user.uid);
             if (profile && profile.gc_nickname) {
-                // Tallennetaan se sovelluksen tilaan, jotta generaattori löytää sen
                 appState.savedNickname = profile.gc_nickname;
+                // Tallennetaan myös oma ID jos se on olemassa
+                appState.savedId = profile.gc_id || null;
             }
         } else {
             appState.savedNickname = null;
+            appState.savedId = null;
         }
-        
         updateAuthUI(user);
     });
 }
 
-// Päivittää yläpalkin napit
 function updateAuthUI(user) {
     const authBtn = document.getElementById('authButton');
-    const logoutBtn = document.getElementById('logoutButton'); // Jos on erillinen nappi jossain
     const userDisplay = document.getElementById('userNameDisplay');
-    const authContainer = document.getElementById('authContainer');
-
-    // Koska meillä on navigaatiossa "Kirjaudu" nappi, muutetaan sen tekstiä
     if (authBtn) {
         if (user) {
             authBtn.textContent = "Kirjaudu ulos";
             authBtn.onclick = () => window.app.logout();
-            
             if(userDisplay) {
                 userDisplay.textContent = user.displayName || user.email;
                 userDisplay.classList.remove('hidden');
@@ -51,72 +43,55 @@ function updateAuthUI(user) {
         } else {
             authBtn.textContent = "Kirjaudu";
             authBtn.onclick = () => window.app.router('login_view');
-            
             if(userDisplay) userDisplay.classList.add('hidden');
         }
     }
 }
 
-// --- KIRJAUTUMISTOIMINNOT ---
-
 export const loginGoogle = (auth, onSuccess) => {
-    signInWithPopup(auth, provider)
-        .then(() => onSuccess('home'))
-        .catch(e => alert(e.message));
+    signInWithPopup(auth, provider).then(() => onSuccess('home')).catch(e => alert(e.message));
 };
 
 export const handleEmailLogin = (auth, email, password, onError, onSuccess) => {
-    signInWithEmailAndPassword(auth, email, password)
-        .then(() => onSuccess('home'))
-        .catch(err => onError(err.message));
+    signInWithEmailAndPassword(auth, email, password).then(() => onSuccess('home')).catch(err => onError(err.message));
 };
 
 export const handleRegister = (auth, email, password, onError, onSuccess) => {
-    if(password.length < 6) return alert("Salasana liian lyhyt (min 6 merkkiä)");
-    createUserWithEmailAndPassword(auth, email, password)
-        .then(() => { 
-            alert("Tunnus luotu! Olet nyt kirjautunut."); 
-            onSuccess('home'); 
-        })
-        .catch(err => onError(err.message));
+    if(password.length < 6) return alert("Salasana liian lyhyt");
+    createUserWithEmailAndPassword(auth, email, password).then(() => { alert("Luotu!"); onSuccess('home'); }).catch(err => onError(err.message));
 };
 
 export const logout = (auth, onSuccess) => {
-    signOut(auth)
-        .then(() => onSuccess('home'))
-        .catch(e => console.error(e));
+    signOut(auth).then(() => onSuccess('home')).catch(e => console.error(e));
 };
 
-// --- TIETOKANTA: KAVERIT & PROFIILI ---
-
-// Hakee käyttäjän profiilin (sis. nimimerkin ja kaverit)
 export const getUserProfile = async (db, userId) => {
     if (!userId) return null;
     try {
         const docSnap = await getDoc(doc(db, "users", userId));
         return docSnap.exists() ? docSnap.data() : null;
-    } catch (e) {
-        console.error("Profiilin haku epäonnistui:", e);
-        return null;
-    }
+    } catch (e) { return null; }
 };
 
-// Tallentaa oman kätkönimen oletukseksi
-export const saveGCNickname = async (db, userId, name) => {
+// PÄIVITETTY: Tallentaa nimen JA id:n
+export const saveGCNickname = async (db, userId, name, id) => {
     if (!userId) return alert("Kirjaudu ensin!");
     if (!name) return alert("Nimi ei voi olla tyhjä.");
-    
     try {
-        await setDoc(doc(db, "users", userId), { gc_nickname: name }, { merge: true });
-        alert(`Nimimerkki "${name}" tallennettu oletukseksi! Se täytetään automaattisesti jatkossa.`);
-        // Päivitetään heti tilaan myös
-        if (window.app) window.app.savedNickname = name;
-    } catch (e) {
-        alert("Virhe tallennuksessa: " + e.message);
-    }
+        const data = { gc_nickname: name };
+        if (id) data.gc_id = id; // Tallenna ID jos annettu
+        
+        await setDoc(doc(db, "users", userId), data, { merge: true });
+        alert(`Tallennettu: ${name} (ID: ${id || '-'})`);
+        
+        if (window.app) {
+            window.app.savedNickname = name;
+            window.app.savedId = id;
+        }
+    } catch (e) { alert("Virhe: " + e.message); }
 };
 
-// Lataa kaverilistan ja renderöi sen (käytetään generaattorissa)
+// PÄIVITETTY: Lataa kaverit ja tallentaa ne globaaliin muuttujaan
 export const loadFriends = async (db, userId, containerId, datalistId) => {
     if (!userId) return;
     try {
@@ -128,11 +103,35 @@ export const loadFriends = async (db, userId, containerId, datalistId) => {
         container.innerHTML = ''; 
         if(datalist) datalist.innerHTML = '';
         
+        // Tallennetaan kaverilista muistiin generaattoria varten
+        window.app.friendsList = [];
+
         if (data && data.saved_usernames) {
-            data.saved_usernames.sort().forEach(name => {
-                // UI-lista hallintaan
-                container.innerHTML += `<div class="friend-item"><span>${name}</span><button class="btn-delete" onclick="app.removeFriend('${name}')">✕</button></div>`;
-                // Datalist inputille
+            // Järjestetään aakkosjärjestykseen
+            data.saved_usernames.sort((a, b) => {
+                const nameA = (typeof a === 'object' ? a.name : a).toLowerCase();
+                const nameB = (typeof b === 'object' ? b.name : b).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            data.saved_usernames.forEach(item => {
+                // Käsitellään sekä vanhaa (string) että uutta (object) formaattia
+                const name = typeof item === 'object' ? item.name : item;
+                const id = typeof item === 'object' ? item.id : null;
+                
+                window.app.friendsList.push({ name, id });
+
+                // UI
+                const idText = id ? `<span style="font-size:0.8em; color:var(--accent-color); margin-left:5px;">(#${id})</span>` : '';
+                container.innerHTML += `
+                    <div class="friend-item">
+                        <div>
+                            <span>${name}</span>
+                            ${idText}
+                        </div>
+                        <button class="btn-delete" onclick="app.removeFriend('${name}')">✕</button>
+                    </div>`;
+                
                 if(datalist) datalist.innerHTML += `<option value="${name}"></option>`;
             });
         } else { 
@@ -141,18 +140,35 @@ export const loadFriends = async (db, userId, containerId, datalistId) => {
     } catch (e) { console.error(e); }
 };
 
-export const addFriend = async (db, userId, name, onSuccess) => {
+// PÄIVITETTY: Lisää kaverin objektina {name, id}
+export const addFriend = async (db, userId, name, id, onSuccess) => {
     if (!userId || !name) return;
     try {
-        await setDoc(doc(db, "users", userId), { saved_usernames: arrayUnion(name) }, { merge: true });
+        const friendObj = { name: name, id: id || null };
+        await setDoc(doc(db, "users", userId), { saved_usernames: arrayUnion(friendObj) }, { merge: true });
         onSuccess();
     } catch (e) { alert(e.message); }
 };
 
-export const removeFriend = async (db, userId, name, onSuccess) => {
-    if (!userId || !confirm(`Poista ${name}?`)) return;
+// PÄIVITETTY: Poistaa kaverin (etsii nimen perusteella listasta)
+export const removeFriend = async (db, userId, nameToRemove, onSuccess) => {
+    if (!userId || !confirm(`Poista ${nameToRemove}?`)) return;
     try {
-        await updateDoc(doc(db, "users", userId), { saved_usernames: arrayRemove(name) });
-        onSuccess();
+        // Koska arrayRemove vaatii tarkan objektin, meidän pitää ensin hakea se
+        const docRef = doc(db, "users", userId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const list = docSnap.data().saved_usernames || [];
+            // Etsitään poistettava (joko string tai objekti)
+            const itemToRemove = list.find(item => {
+                const n = typeof item === 'object' ? item.name : item;
+                return n === nameToRemove;
+            });
+
+            if (itemToRemove) {
+                await updateDoc(docRef, { saved_usernames: arrayRemove(itemToRemove) });
+                onSuccess();
+            }
+        }
     } catch (e) { console.error(e); }
 };
