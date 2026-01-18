@@ -1,21 +1,22 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
 
-/* KONFIGURAATIO */
+/* KONFIGURAATIO: Kätkötyyppien OIKEA järjestys (tarkistettu 1/2026) */
 const CACHE_TYPES = [
     { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
     { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
+    { index: 2, name: 'Webcam', icon: 'kuvat/webcam.gif' },
     { index: 3, name: 'Mysse', icon: 'kuvat/mysse.gif' },
     { index: 4, name: 'Letteri', icon: 'kuvat/letteri.gif' },
     { index: 5, name: 'Öörtti', icon: 'kuvat/oortti.gif' },
     { index: 6, name: 'Miitti', icon: 'kuvat/miitti.gif' },
     { index: 7, name: 'Virtu', icon: 'kuvat/virtu.gif' },
     { index: 8, name: 'Cito', icon: 'kuvat/cito.gif' },
-    { index: 9, name: 'Webcam', icon: 'kuvat/webcam.gif' },
-    { index: 10, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
+    { index: 9, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
+    { index: 10, name: 'Com.Cel', icon: 'kuvat/miitti.gif' }, // Käytetään miitti-ikonia tai juhlaa
     { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' },
-    { index: 12, name: 'Juhla', icon: 'kuvat/juhla.gif' },
-    { index: 13, name: 'No Location', icon: 'kuvat/noloc.gif' }
+    { index: 12, name: 'No Loc', icon: 'kuvat/noloc.gif' },
+    { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
 ];
 
 // --- PÄÄVALIKKO ---
@@ -68,6 +69,12 @@ export const loadTopStats = async (db, user, content) => {
         const fullData = docData.municipalities;
         const updateTime = formatUpdateDate(docData.updatedAt);
 
+        // Generoidaan lista kätkötyypeistä valikkoa varten
+        let typeOptions = '';
+        CACHE_TYPES.forEach(t => {
+            typeOptions += `<option value="${t.index}">${t.name}</option>`;
+        });
+
         content.innerHTML = `
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
@@ -81,14 +88,10 @@ export const loadTopStats = async (db, user, content) => {
             <label>Järjestä:</label>
             <select id="sortCriteria">
                 <option value="total">Löydöt yhteensä</option>
-                <option value="variety">Kätkötyyppien määrä (max 13)</option>
-                <option value="0">Tradi</option>
-                <option value="3">Mysse</option>
-                <option value="1">Multi</option>
-                <option value="5">Earth (Öörtti)</option>
-                <option value="7">Virtuaali</option>
-                <option value="4">Letterbox</option>
-                <option value="6">Miitti</option>
+                <option value="variety">Kätkötyyppien määrä</option>
+                <optgroup label="Tietty kätkötyyppi">
+                    ${typeOptions}
+                </optgroup>
             </select>
 
             <div style="display:flex; gap:10px;">
@@ -120,10 +123,15 @@ export const loadTopStats = async (db, user, content) => {
 
             let list = Object.keys(fullData).map(kunta => {
                 const s = fullData[kunta].s || [];
-                const total = s.reduce((a, b) => a + b, 0);
-                const variety = s.filter(v => v > 0).length;
+                // Lasketaan summa vain tunnetuista tyypeistä (ei viimeistä YHT-saraketta)
+                let total = 0;
+                CACHE_TYPES.forEach(t => total += (s[t.index] || 0));
+                
+                const variety = CACHE_TYPES.filter(t => (s[t.index] || 0) > 0).length;
+                
                 let specificVal = 0;
                 if (!isNaN(criteria)) specificVal = s[parseInt(criteria)] || 0;
+                
                 return { name: kunta, total, variety, specificVal, stats: s };
             });
 
@@ -299,7 +307,12 @@ function initTripletLogic(fullData) {
         Object.keys(fullData).sort().forEach(kunta => {
             if (!kunta.toLowerCase().includes(filter)) return;
             const s = fullData[kunta].s || [];
-            const t = s[0]||0, m = s[1]||0, q = s[3]||0; 
+            
+            // INDEKSIT KORJATTU: Tradi=0, Multi=1, Mysteeri=3
+            const t = s[0]||0;
+            const m = s[1]||0; 
+            const q = s[3]||0; 
+            
             const item = `<li><b>${kunta}</b>: T=${t}, M=${m}, ?=${q}</li>`;
 
             if(!t && !m && !q) cats[1].push(item);
