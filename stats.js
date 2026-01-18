@@ -247,7 +247,7 @@ function initTripletLogic(fullData) {
     document.getElementById('tripletSearch').addEventListener('input', (e) => renderLists(e.target.value));
 }
 
-// --- 4. UUSI: EXTERNAL STATS (TILASTOT.HTML REPLICA) ---
+// --- 4. UUSI: EXTERNAL STATS (Kuvatilastot) ---
 export const loadExternalStats = (content) => {
     // Haetaan oletuskäyttäjä
     let defaultUser = 'mikkokalevi';
@@ -265,19 +265,20 @@ export const loadExternalStats = (content) => {
         </div>
         <div class="input-group" style="margin-top:15px;">
             <label style="flex:1;">Käyttäjä:</label>
-            <input type="text" id="statUser" list="friendListOptions" value="${defaultUser}" style="flex:3;">
+            <input type="text" id="statUser" list="statsFriendOptions" value="${defaultUser}" style="flex:3;">
             <button class="btn btn-primary" id="refreshStats" style="flex:1; margin:8px 0 16px;">Päivitä</button>
         </div>
-        <datalist id="friendListOptions"></datalist>
+        <datalist id="statsFriendOptions"></datalist>
     </div>
     
     <div id="statsContainer">Ladataan kuvia...</div>
     `;
 
-    // Täytetään kaverilista
-    const datalist = document.getElementById('friendListOptions');
+    // TÄSSÄ SE TAIKA: Täytetään lista suoraan sovelluksen muistista
+    const datalist = document.getElementById('statsFriendOptions');
     if (window.app.friendsList) {
-        window.app.friendsList.forEach(f => {
+        // Lajitellaan aakkosjärjestykseen
+        window.app.friendsList.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
             const opt = document.createElement('option');
             opt.value = f.name;
             datalist.appendChild(opt);
@@ -289,9 +290,11 @@ export const loadExternalStats = (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
+        // Etsitään käyttäjän ID automaattisesti yhteisestä listasta
         let userId = null;
-        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) userId = window.app.savedId;
-        else {
+        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) {
+            userId = window.app.savedId;
+        } else {
             const f = window.app.friendsList?.find(f => f.name.toLowerCase() === user.toLowerCase());
             if (f) userId = f.id;
         }
@@ -305,7 +308,6 @@ export const loadExternalStats = (content) => {
             return `<a href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
         };
 
-        // Kätkötyyppilista generaattoria varten
         const matrixTypes = [
             { id: '', name: 'Kaikki' },
             { id: '1', name: 'Tradi' },
@@ -328,23 +330,19 @@ export const loadExternalStats = (content) => {
             { id: '99', name: 'Kaikki Eventit' }
         ];
 
-        // Luodaan T/D html
         let tdYearHtml = "";
         let tdFullHtml = "";
 
         matrixTypes.forEach(t => {
-            // Vuosi T/D
             let urlYear = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}`;
             if(t.id) urlYear += `&cachetype=${t.id}`;
             tdYearHtml += `<h4>${t.name}</h4>${img(urlYear)}`;
 
-            // Full T/D
             let urlFull = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}`;
             if(t.id) urlFull += `&cachetype=${t.id}`;
             tdFullHtml += `<h4>${t.name}</h4>${img(urlFull)}`;
         });
 
-        // Luodaan kuukausilista T/D -taulukoille
         let monthsHtml = "";
         const monthNames = ["Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kesäkuu", "Heinäkuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu"];
         monthNames.forEach((mName, i) => {
@@ -355,21 +353,15 @@ export const loadExternalStats = (content) => {
         container.innerHTML = `
         <div class="card">
             <details open class="region-accordion"><summary>T/D ${currentYear}</summary>
-                <div class="region-content">
-                    ${tdYearHtml}
-                </div>
+                <div class="region-content">${tdYearHtml}</div>
             </details>
 
             <details class="region-accordion"><summary>T/D Full</summary>
-                <div class="region-content">
-                    ${tdFullHtml}
-                </div>
+                <div class="region-content">${tdFullHtml}</div>
             </details>
 
             <details class="region-accordion"><summary>T/D Kuukaudet</summary>
-                <div class="region-content">
-                    ${monthsHtml}
-                </div>
+                <div class="region-content">${monthsHtml}</div>
             </details>
 
             <details class="region-accordion"><summary>Vuosikalenterit</summary>
