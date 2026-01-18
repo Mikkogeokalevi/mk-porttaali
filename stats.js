@@ -249,7 +249,7 @@ function initTripletLogic(fullData) {
 
 // --- 4. UUSI: EXTERNAL STATS (Kuvatilastot) ---
 export const loadExternalStats = async (content) => {
-    // 1. TÄRKEÄÄ: Pakotetaan kaverilistan lataus, jotta ID:t ovat käytettävissä
+    // 1. Pakotetaan kaverilistan lataus
     if (window.app.loadFriends) {
         await window.app.loadFriends(); 
     }
@@ -297,22 +297,17 @@ export const loadExternalStats = async (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
-        // --- KORJATTU ID-HAKULOGIIKKA ---
+        // ID-hakulogiikka
         let userId = null;
-
-        // 1. Tarkistetaan ensin löytyykö ID "omista tiedoista"
         if (window.app.savedNickname?.toLowerCase() === user.toLowerCase() && window.app.savedId) {
             userId = window.app.savedId;
         }
-        
-        // 2. Jos ID on yhä tyhjä, etsitään se kaverilistasta (vaikka nimi olisi sama kuin oma)
         if (!userId && window.app.friendsList) {
             const f = window.app.friendsList.find(f => f.name.toLowerCase() === user.toLowerCase());
             if (f && f.id) userId = f.id;
         }
-        // --------------------------------
 
-        // PÄIVITETÄÄN ID NÄKYVIIN
+        // Näytä ID
         const idDisplay = document.getElementById('activeIdDisplay');
         if (idDisplay) {
             idDisplay.textContent = userId ? userId : "(Ei tiedossa - linkit eivät toimi)";
@@ -321,11 +316,13 @@ export const loadExternalStats = async (content) => {
 
         const img = (url, id = "") => `<img ${id ? `id="${id}"` : ""} src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
         
+        // Päivitetty linkkifunktio ottamaan huomioon myös tyypin
         const mapLink = (typeId, text) => {
             if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
             let url = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
             if (typeId) url += `&cachetype=${typeId}`;
-            return `<a href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
+            // Huom: Vuosi-parametria ei tueta geocache.fi interaktiivisessa kartassa samalla tavalla
+            return `<a id="kuntaMapLink" href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
         };
 
         const matrixTypes = [
@@ -350,20 +347,25 @@ export const loadExternalStats = async (content) => {
             { id: '99', name: 'Kaikki Eventit' }
         ];
 
-        // 1. Luodaan Vuosi-valikko T/D -taulukoille
-        let yearOptions = "";
+        // 1. Generoidaan vuosivalinnat
+        let yearOptions = `<option value="">Elinikäinen</option>`;
         for (let y = currentYear; y >= 2000; y--) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
 
-        // 2. Rakennetaan HTML
+        // 2. Generoidaan tyyppivalinnat
+        let typeOptions = "";
+        matrixTypes.forEach(t => {
+            typeOptions += `<option value="${t.id}">${t.name}</option>`;
+        });
+
+        // HTML RAKENNE
         let tdYearHtml = `
             <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
                 <label>Valitse vuosi:</label>
                 <select id="tdYearSelector" style="padding:5px; border-radius:4px;">${yearOptions}</select>
             </div>
-            <div id="tdYearContainer">
-                </div>
+            <div id="tdYearContainer"></div>
         `;
 
         let tdFullHtml = "";
@@ -379,6 +381,22 @@ export const loadExternalStats = async (content) => {
             const mNum = (i + 1).toString().padStart(2, '0');
             monthsHtml += `<h4>${mName}</h4>${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&month=${mNum}`)}`;
         });
+
+        // UUSI DYNAAMINEN KUNTAKARTTA HTML
+        let kuntaMapHtml = `
+            <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px;">
+                <div style="flex:1; min-width:120px;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:2px;">Vuosi</label>
+                    <select id="kuntaYearSelector" style="width:100%; padding:5px; border-radius:4px;">${yearOptions}</select>
+                </div>
+                <div style="flex:1; min-width:120px;">
+                    <label style="display:block; font-size:0.8em; margin-bottom:2px;">Kätkötyyppi</label>
+                    <select id="kuntaTypeSelector" style="width:100%; padding:5px; border-radius:4px;">${typeOptions}</select>
+                </div>
+            </div>
+            <div id="kuntaMapContainer">
+                </div>
+        `;
 
         container.innerHTML = `
         <div class="card">
@@ -424,24 +442,8 @@ export const loadExternalStats = async (content) => {
                 </div>
             </details>
 
-            <details class="region-accordion"><summary>Kuntakartat</summary>
-                <div class="region-content">
-                    <h3>Yleiskartta</h3>
-                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}`)}
-                    ${mapLink('', 'Avaa interaktiivinen')}
-                    
-                    <h3>Tradit</h3>
-                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=1`)}
-                    ${mapLink('1', 'Avaa interaktiivinen')}
-
-                    <h3>Multit</h3>
-                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=2`)}
-                    ${mapLink('2', 'Avaa interaktiivinen')}
-
-                    <h3>Mysteerit</h3>
-                    ${img(`https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}&cachetype=3`)}
-                    ${mapLink('3', 'Avaa interaktiivinen')}
-                </div>
+            <details class="region-accordion"><summary>Kuntakartat (Dynaaminen)</summary>
+                <div class="region-content">${kuntaMapHtml}</div>
             </details>
 
             <details class="region-accordion"><summary>Erikoiskartat (Tripletti, FTF...)</summary>
@@ -469,10 +471,9 @@ export const loadExternalStats = async (content) => {
             </details>
         </div>`;
 
-        // 3. Logiikka vuositilaston päivittämiseen
+        // LOGIIKKA: T/D Vuosipäivitys
         const tdYearSelector = document.getElementById('tdYearSelector');
         const tdYearContainer = document.getElementById('tdYearContainer');
-
         const updateTdImages = (selectedYear) => {
             let html = "";
             matrixTypes.forEach(t => {
@@ -483,9 +484,34 @@ export const loadExternalStats = async (content) => {
             tdYearContainer.innerHTML = html;
         };
 
-        // Alusta nykyisellä vuodella ja lisää kuuntelija
+        // LOGIIKKA: Kuntakartta päivitys
+        const kuntaYearSelector = document.getElementById('kuntaYearSelector');
+        const kuntaTypeSelector = document.getElementById('kuntaTypeSelector');
+        const kuntaMapContainer = document.getElementById('kuntaMapContainer');
+
+        const updateKuntaMap = () => {
+            const y = kuntaYearSelector.value;
+            const t = kuntaTypeSelector.value;
+            
+            let url = `https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}`;
+            if (y) url += `&year=${y}`;
+            if (t) url += `&cachetype=${t}`;
+            
+            let html = img(url);
+            html += mapLink(t, 'Avaa interaktiivinen kartta');
+            kuntaMapContainer.innerHTML = html;
+        };
+
+        // Alustukset
+        // TD: Oletus nykyinen vuosi
+        tdYearSelector.value = currentYear;
         updateTdImages(currentYear);
         tdYearSelector.addEventListener('change', (e) => updateTdImages(e.target.value));
+
+        // Kunta: Oletus "Elinikäinen" ja "Kaikki"
+        updateKuntaMap();
+        kuntaYearSelector.addEventListener('change', updateKuntaMap);
+        kuntaTypeSelector.addEventListener('change', updateKuntaMap);
     };
 
     document.getElementById('refreshStats').addEventListener('click', () => {
