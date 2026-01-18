@@ -19,7 +19,7 @@ const CACHE_TYPES = [
     { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
 ];
 
-// VARMUUSVERKKO: Nämä toimivat aina, vaikka tietokanta pätkisi
+// VARMUUSVERKKO: Nämä toimivat aina
 const HARDCODED_IDS = {
     "mikkokalevi": 306478,
     "eukka": 36206,
@@ -304,25 +304,17 @@ export const loadExternalStats = async (content) => {
         });
     }
 
-    // UUSI: Asetusnapin logiikka
+    // Asetusnappi (quick save)
     document.getElementById('quickSaveIdBtn').onclick = () => {
         const name = document.getElementById('statUser').value.trim();
         if(!name) return;
         const currentId = prompt(`Anna Geocache.fi ID käyttäjälle ${name}:`);
         if(currentId) {
-            // Jos käyttäjä on oma, tallennetaan omiin tietoihin. Jos ei, lisätään kaveriksi.
             if(window.app.savedNickname === name) {
-                window.app.saveNickname(); // Tämä on app.js:ssä määritelty funktio
+                window.app.saveNickname(); 
             } else {
-                // Lisätään kaveriksi (tai päivitetään)
-                if(window.app.addFriend) {
-                    // Kutsumme Auth-moduulin addFriend suoraan tai app.js:n kautta
-                    // Helpointa käyttää app.js:n addFriend logiikkaa mutta se lukee input kentistä
-                    // Joten tehdään suora kutsu Auth-kirjastoon ei onnistu helposti ilman importtia
-                    // Mutta meillä on app.js funktio. Käytetään sitä "hack" tavalla tai ohjataan käyttäjä
-                    alert("Käy Kuvageneraattorissa tallentamassa kaveri ja ID ⚙️-ikonin kautta.");
-                    app.router('generator');
-                }
+                alert("Käy Kuvageneraattorissa tallentamassa kaveri ja ID ⚙️-ikonin kautta.");
+                app.router('generator');
             }
         }
     };
@@ -335,21 +327,16 @@ export const loadExternalStats = async (content) => {
         
         let userId = null;
 
-        // 1. Tarkistetaan HARDCODED lista (Varmuusverkko)
-        if (HARDCODED_IDS[user]) {
-            userId = HARDCODED_IDS[user];
-        } 
-        // 2. Tarkistetaan omista tiedoista
-        else if (window.app.savedNickname?.toLowerCase() === userLower && window.app.savedId) {
-            userId = window.app.savedId;
-        }
-        // 3. Tarkistetaan kaverilistasta
+        // 1. HARDCODED LISTA
+        if (HARDCODED_IDS[user]) userId = HARDCODED_IDS[user];
+        // 2. Omat tiedot
+        else if (window.app.savedNickname?.toLowerCase() === userLower && window.app.savedId) userId = window.app.savedId;
+        // 3. Kaverilista
         else if (window.app.friendsList) {
             const f = window.app.friendsList.find(f => f.name.toLowerCase() === userLower);
             if (f && f.id) userId = f.id;
         }
 
-        // Päivitetään ID näkyviin
         const idDisplay = document.getElementById('activeIdDisplay');
         if (idDisplay) {
             idDisplay.textContent = userId ? userId : "(Ei tiedossa - linkit eivät toimi)";
@@ -358,6 +345,7 @@ export const loadExternalStats = async (content) => {
 
         const img = (url, id = "") => `<img ${id ? `id="${id}"` : ""} src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
         
+        // Linkkifunktio ottaa huomioon tyypin
         const mapLink = (typeId, text) => {
             if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
             let url = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
@@ -387,19 +375,11 @@ export const loadExternalStats = async (content) => {
             { id: '99', name: 'Kaikki Eventit' }
         ];
 
-        // 1. Vuosivalikko
         let yearOptions = `<option value="">Elinikäinen</option>`;
         for (let y = currentYear; y >= 2000; y--) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
 
-        // 2. Tyyppivalikko
-        let typeOptions = "";
-        matrixTypes.forEach(t => {
-            typeOptions += `<option value="${t.id}">${t.name}</option>`;
-        });
-
-        // HTML RAKENNE
         let tdYearHtml = `
             <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
                 <label>Valitse vuosi:</label>
@@ -422,17 +402,11 @@ export const loadExternalStats = async (content) => {
             monthsHtml += `<h4>${mName}</h4>${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&month=${mNum}`)}`;
         });
 
-        // DYNAAMINEN KUNTAKARTTA
+        // UUSI: Dynaaminen Kuntakartta, ilman tyyppivalintaa (tulostaa kaikki allekkain)
         let kuntaMapHtml = `
-            <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px;">
-                <div style="flex:1; min-width:120px;">
-                    <label style="display:block; font-size:0.8em; margin-bottom:2px;">Vuosi</label>
-                    <select id="kuntaYearSelector" style="width:100%; padding:5px; border-radius:4px;">${yearOptions}</select>
-                </div>
-                <div style="flex:1; min-width:120px;">
-                    <label style="display:block; font-size:0.8em; margin-bottom:2px;">Kätkötyyppi</label>
-                    <select id="kuntaTypeSelector" style="width:100%; padding:5px; border-radius:4px;">${typeOptions}</select>
-                </div>
+            <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
+                <label>Valitse vuosi:</label>
+                <select id="kuntaYearSelector" style="padding:5px; border-radius:4px;">${yearOptions}</select>
             </div>
             <div id="kuntaMapContainer"></div>
         `;
@@ -523,21 +497,25 @@ export const loadExternalStats = async (content) => {
             tdYearContainer.innerHTML = html;
         };
 
-        // LOGIIKKA: Kuntakartta päivitys
+        // LOGIIKKA: Kuntakartta päivitys (Loopataan kaikki tyypit)
         const kuntaYearSelector = document.getElementById('kuntaYearSelector');
-        const kuntaTypeSelector = document.getElementById('kuntaTypeSelector');
         const kuntaMapContainer = document.getElementById('kuntaMapContainer');
 
         const updateKuntaMap = () => {
             const y = kuntaYearSelector.value;
-            const t = kuntaTypeSelector.value;
+            let html = "";
             
-            let url = `https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}`;
-            if (y) url += `&year=${y}`;
-            if (t) url += `&cachetype=${t}`;
-            
-            let html = img(url);
-            html += mapLink(t, 'Avaa interaktiivinen kartta');
+            matrixTypes.forEach(t => {
+                let url = `https://www.geocache.fi/stat/kunta.php?la=&slide=1&user=${user}`;
+                if (y) url += `&year=${y}`;
+                if (t.id) url += `&cachetype=${t.id}`;
+                
+                const titleText = y ? `${t.name} (${y})` : `${t.name} (Elinikäinen)`;
+                html += `<h4>${titleText}</h4>`;
+                html += img(url);
+                html += mapLink(t.id, 'Avaa interaktiivinen kartta');
+                html += `<br><br>`;
+            });
             kuntaMapContainer.innerHTML = html;
         };
 
@@ -548,7 +526,6 @@ export const loadExternalStats = async (content) => {
 
         updateKuntaMap();
         kuntaYearSelector.addEventListener('change', updateKuntaMap);
-        kuntaTypeSelector.addEventListener('change', updateKuntaMap);
     };
 
     document.getElementById('refreshStats').addEventListener('click', () => {
