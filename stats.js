@@ -274,10 +274,9 @@ export const loadExternalStats = (content) => {
     <div id="statsContainer">Ladataan kuvia...</div>
     `;
 
-    // TÄSSÄ SE TAIKA: Täytetään lista suoraan sovelluksen muistista
+    // Täytetään lista
     const datalist = document.getElementById('statsFriendOptions');
     if (window.app.friendsList) {
-        // Lajitellaan aakkosjärjestykseen
         window.app.friendsList.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
             const opt = document.createElement('option');
             opt.value = f.name;
@@ -290,7 +289,6 @@ export const loadExternalStats = (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
-        // Etsitään käyttäjän ID automaattisesti yhteisestä listasta
         let userId = null;
         if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) {
             userId = window.app.savedId;
@@ -299,7 +297,7 @@ export const loadExternalStats = (content) => {
             if (f) userId = f.id;
         }
 
-        const img = (url) => `<img src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
+        const img = (url, id = "") => `<img ${id ? `id="${id}"` : ""} src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
         
         const mapLink = (typeId, text) => {
             if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
@@ -330,14 +328,24 @@ export const loadExternalStats = (content) => {
             { id: '99', name: 'Kaikki Eventit' }
         ];
 
-        let tdYearHtml = "";
+        // 1. Luodaan Vuosi-valikko T/D -taulukoille
+        let yearOptions = "";
+        for (let y = currentYear; y >= 2000; y--) {
+            yearOptions += `<option value="${y}">${y}</option>`;
+        }
+
+        // 2. Rakennetaan HTML
+        let tdYearHtml = `
+            <div style="margin-bottom:15px; display:flex; align-items:center; gap:10px;">
+                <label>Valitse vuosi:</label>
+                <select id="tdYearSelector" style="padding:5px; border-radius:4px;">${yearOptions}</select>
+            </div>
+            <div id="tdYearContainer">
+                </div>
+        `;
+
         let tdFullHtml = "";
-
         matrixTypes.forEach(t => {
-            let urlYear = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}`;
-            if(t.id) urlYear += `&cachetype=${t.id}`;
-            tdYearHtml += `<h4>${t.name}</h4>${img(urlYear)}`;
-
             let urlFull = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}`;
             if(t.id) urlFull += `&cachetype=${t.id}`;
             tdFullHtml += `<h4>${t.name}</h4>${img(urlFull)}`;
@@ -352,7 +360,7 @@ export const loadExternalStats = (content) => {
 
         container.innerHTML = `
         <div class="card">
-            <details open class="region-accordion"><summary>T/D ${currentYear}</summary>
+            <details open class="region-accordion"><summary>T/D Vuosittain</summary>
                 <div class="region-content">${tdYearHtml}</div>
             </details>
 
@@ -438,6 +446,24 @@ export const loadExternalStats = (content) => {
                 </div>
             </details>
         </div>`;
+
+        // 3. Logiikka vuositilaston päivittämiseen
+        const tdYearSelector = document.getElementById('tdYearSelector');
+        const tdYearContainer = document.getElementById('tdYearContainer');
+
+        const updateTdImages = (selectedYear) => {
+            let html = "";
+            matrixTypes.forEach(t => {
+                let urlYear = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${selectedYear}`;
+                if(t.id) urlYear += `&cachetype=${t.id}`;
+                html += `<h4>${t.name} (${selectedYear})</h4>${img(urlYear)}`;
+            });
+            tdYearContainer.innerHTML = html;
+        };
+
+        // Alusta nykyisellä vuodella ja lisää kuuntelija
+        updateTdImages(currentYear);
+        tdYearSelector.addEventListener('change', (e) => updateTdImages(e.target.value));
     };
 
     document.getElementById('refreshStats').addEventListener('click', () => {
