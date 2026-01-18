@@ -19,7 +19,7 @@ const CACHE_TYPES = [
     { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
 ];
 
-// VARMUUSVERKKO
+// VARMUUSVERKKO: Nämä toimivat aina
 const HARDCODED_IDS = {
     "mikkokalevi": 306478,
     "eukka": 36206,
@@ -212,7 +212,7 @@ export const loadAllStats = async (db, user, content) => {
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// --- 3. TRIPLETTIJAHTI (UUSI LOGIIKKA) ---
+// --- 3. TRIPLETTIJAHTI ---
 export const loadTripletData = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Triplettijahti</h1><p>Ladataan...</p></div>`;
@@ -224,9 +224,12 @@ export const loadTripletData = async (db, user, content) => {
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px; flex-wrap: wrap; gap: 10px;">
                 <h1 style="margin:0;">Triplettijahti</h1>
-                <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+                <div>
+                    <button class="btn btn-primary" onclick="app.router('stats_map')" style="margin:0; margin-right: 5px;">🗺️ Avaa Kartta</button>
+                    <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+                </div>
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <p style="font-size:0.9em; opacity:0.8;">Tämä lista näyttää mitä kätkötyyppejä (Tradi, Multi, Mysteeri) puuttuu kultakin paikkakunnalta.</p>
@@ -257,7 +260,6 @@ function initTripletLogic(fullData) {
         let missingCount = 0;
         let html = "";
 
-        // Järjestetään kunnat aakkosjärjestykseen
         const sortedKunnat = Object.keys(fullData).sort();
 
         sortedKunnat.forEach(kunta => {
@@ -266,18 +268,16 @@ function initTripletLogic(fullData) {
             const s = fullData[kunta].s || [];
             const t = s[0] || 0; // Tradi
             const m = s[1] || 0; // Multi
-            const q = s[3] || 0; // Mysteeri (Huom: index 3)
+            const q = s[3] || 0; // Mysteeri
 
             const isComplete = (t > 0 && m > 0 && q > 0);
             
             if (isComplete) completedCount++;
             else missingCount++;
 
-            // Suodatusvalinta
             if (filterType === 'missing' && isComplete) return;
             if (filterType === 'complete' && !isComplete) return;
 
-            // Rakennetaan "Puuttuvat" -ikoni rivi
             let missingIcons = "";
             let statusClass = "triplet-complete";
             let statusText = "Valmis! 🎉";
@@ -289,7 +289,6 @@ function initTripletLogic(fullData) {
                 if (m === 0) missingIcons += `<span class="missing-badge" style="border-color:#89b4fa; color:#89b4fa;">Multi</span> `;
                 if (q === 0) missingIcons += `<span class="missing-badge" style="border-color:#f9e2af; color:#f9e2af;">Mysse</span> `;
                 
-                // Jos ei mitään löytöjä (ei edes muita kuin näitä kolmea), koko kunta on "löytämätön"
                 const totalFinds = s.reduce((a,b)=>a+b, 0);
                 if (totalFinds === 0) {
                     missingIcons = `<span style="color:#f38ba8; font-weight:bold;">Ei löytöjä lainkaan</span>`;
@@ -306,7 +305,6 @@ function initTripletLogic(fullData) {
             </div>`;
         });
 
-        // Päivitetään yhteenveto
         const sumDiv = document.getElementById('tripletStatsSummary');
         if(sumDiv) sumDiv.innerHTML = `
             <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center; border:1px solid #a6e3a1;">
@@ -319,7 +317,6 @@ function initTripletLogic(fullData) {
         container.innerHTML = html || '<p style="text-align:center; opacity:0.5;">Ei osumia.</p>';
     };
 
-    // Lisätään CSS dynaamisesti badgeille
     const style = document.createElement('style');
     style.innerHTML = `
         .missing-badge { display:inline-block; padding:2px 6px; border:1px solid; border-radius:4px; font-size:0.8em; font-weight:bold; margin-left:3px; }
