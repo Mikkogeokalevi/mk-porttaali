@@ -248,7 +248,13 @@ function initTripletLogic(fullData) {
 }
 
 // --- 4. UUSI: EXTERNAL STATS (Kuvatilastot) ---
-export const loadExternalStats = (content) => {
+export const loadExternalStats = async (content) => {
+    // 1. TÄRKEÄÄ: Pakotetaan kaverilistan lataus, jotta ID:t ovat käytettävissä
+    // Vaikka käyttäjä tulisi suoraan tälle sivulle.
+    if (window.app.loadFriends) {
+        await window.app.loadFriends(); 
+    }
+
     // Haetaan oletuskäyttäjä
     let defaultUser = 'mikkokalevi';
     if (window.app.currentUser) {
@@ -268,13 +274,16 @@ export const loadExternalStats = (content) => {
             <input type="text" id="statUser" list="statsFriendOptions" value="${defaultUser}" style="flex:3;">
             <button class="btn btn-primary" id="refreshStats" style="flex:1; margin:8px 0 16px;">Päivitä</button>
         </div>
+        <div style="font-size: 0.85em; color: var(--subtext-color); margin-bottom: 15px; text-align: right;">
+            Geocache.fi ID: <span id="activeIdDisplay" style="color: var(--accent-color); font-weight: bold;">-</span>
+        </div>
         <datalist id="statsFriendOptions"></datalist>
     </div>
     
     <div id="statsContainer">Ladataan kuvia...</div>
     `;
 
-    // Täytetään lista
+    // Täytetään lista (Nyt kun loadFriends on ajettu, tämän pitäisi toimia)
     const datalist = document.getElementById('statsFriendOptions');
     if (window.app.friendsList) {
         window.app.friendsList.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
@@ -289,12 +298,20 @@ export const loadExternalStats = (content) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
         
+        // Etsitään käyttäjän ID automaattisesti yhteisestä listasta
         let userId = null;
         if (window.app.savedNickname?.toLowerCase() === user.toLowerCase()) {
             userId = window.app.savedId;
         } else {
             const f = window.app.friendsList?.find(f => f.name.toLowerCase() === user.toLowerCase());
             if (f) userId = f.id;
+        }
+
+        // PÄIVITETÄÄN ID NÄKYVIIN
+        const idDisplay = document.getElementById('activeIdDisplay');
+        if (idDisplay) {
+            idDisplay.textContent = userId ? userId : "(Ei tiedossa - linkit eivät toimi)";
+            idDisplay.style.color = userId ? "var(--success-color)" : "var(--subtext-color)";
         }
 
         const img = (url, id = "") => `<img ${id ? `id="${id}"` : ""} src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
