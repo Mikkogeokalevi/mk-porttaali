@@ -22,7 +22,27 @@ export const renderHelp = (content, app) => {
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
-        <h3>👥 2. Kaverit & ID-numerot</h3>
+        <h3>🗺️ 2. Kartat & Tripletit</h3>
+        <p>Tilastot-osiosta löydät nyt interaktiiviset kartat:</p>
+        <ul style="line-height:1.6; padding-left:20px;">
+            <li style="margin-bottom:10px;">
+                <strong>Triplettijahti:</strong><br>
+                Näyttää missä kunnissa sinulla on tripletti (Tradi + Multi + Mysse) täynnä.
+                <br><span style="color:#a6e3a1;">■ Vihreä</span> = Valmis
+                <br><span style="color:#f38ba8;">■ Punainen</span> = Puuttuu jotain
+            </li>
+            <li style="margin-bottom:10px;">
+                <strong>Löydöt maakunnittain:</strong><br>
+                Yleiskartta kaikista löydetyistä kunnista.
+            </li>
+            <li>
+                <strong>💡 Vinkki:</strong> Klikkaa kartalla olevaa kuntaa! Näet tarkat tiedot puuttuvista kätkötyypeistä ja suoran linkin <em>Project-GC</em> -karttaan.
+            </li>
+        </ul>
+
+        <hr style="border-color:var(--border-color); margin:20px 0;">
+
+        <h3>👥 3. Kaverit & ID-numerot</h3>
         <p>Voit tallentaa kavereiden nimimerkit muistiin Kuvageneraattorissa. <strong>Miksi lisätä myös ID-numero?</strong></p>
         <p>Kun ID on tallennettu, Kuvatilastot-sivun kartat muuttuvat <strong>interaktiivisiksi linkeiksi</strong>, jotka vievät suoraan Geocache.fi:n klikattavaan karttaan!</p>
         
@@ -41,8 +61,8 @@ export const renderHelp = (content, app) => {
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
-        <h3>📊 3. Omat Tilastot (Päivitys)</h3>
-        <p>Jotta "Tilastot"-osion tarkat analyysit (kuten Tripletit ja puuttuvat kunnat) toimivat, sinun täytyy tuoda omat löytösi tietokantaan.</p>
+        <h3>📊 4. Omat Tilastot (Päivitys)</h3>
+        <p>Jotta kartat ja tilastot toimivat, sinun täytyy tuoda omat löytösi tietokantaan.</p>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-top:10px;">
             <h4 style="margin-top:0; color:#fab387;">🛠️ Datan tuonti (Tee tietokoneella)</h4>
