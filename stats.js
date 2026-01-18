@@ -190,6 +190,9 @@ export const loadAllStats = async (db, user, content) => {
         
         const fullData = docData.municipalities;
         const updateTime = formatUpdateDate(docData.updatedAt);
+        
+        // Käytetään tallennettua nimimerkkiä jos löytyy, muuten fallbackina Google-nimeä tai 'user'
+        const pgcUser = window.app.savedNickname || user.displayName || 'user';
 
         content.innerHTML = `
         <div class="card">
@@ -234,7 +237,9 @@ export const loadAllStats = async (db, user, content) => {
                         else notFoundList += li;
                     });
 
-                    const pgcLink = `https://project-gc.com/Tools/MapCompare?profile_name=${user.displayName || 'user'}&country[]=Finland&county[]=${kunta}&nonefound=on&submit=Filter`;
+                    // Korjattu PGC-linkki: Oikea profiilinimi ja tarkat alueparametrit
+                    const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=Finland&geocache_crc_region=${encodeURIComponent(maakunta)}&geocache_crc_county=${encodeURIComponent(kunta)}&submit=Filter`;
+                    
                     const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
 
                     municipalitiesHtml += `
