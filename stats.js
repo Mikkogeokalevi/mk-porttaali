@@ -305,6 +305,45 @@ export const loadExternalStats = (content) => {
             return `<a href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
         };
 
+        // Kätkötyyppilista generaattoria varten
+        const matrixTypes = [
+            { id: '', name: 'Kaikki' },
+            { id: '1', name: 'Tradi' },
+            { id: '2', name: 'Multi' },
+            { id: '3', name: 'Mysteeri' },
+            { id: '4', name: 'Letterbox' },
+            { id: '5', name: 'Event' },
+            { id: '6', name: 'Earthcache' },
+            { id: '7', name: 'Virtual' },
+            { id: '8', name: 'Webcam' },
+            { id: '9', name: 'Wherigo' },
+            { id: '10', name: 'Comm. Cel.' },
+            { id: '11', name: 'Mega' },
+            { id: '12', name: 'CITO' },
+            { id: '13', name: 'Giga' },
+            { id: '14', name: 'Block Party' },
+            { id: '20', name: 'LAB' },
+            { id: '96', name: 'Muut paitsi Labit' },
+            { id: '98', name: 'Muut paitsi Tradit' },
+            { id: '99', name: 'Kaikki Eventit' }
+        ];
+
+        // Luodaan T/D html
+        let tdYearHtml = "";
+        let tdFullHtml = "";
+
+        matrixTypes.forEach(t => {
+            // Vuosi T/D
+            let urlYear = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}`;
+            if(t.id) urlYear += `&cachetype=${t.id}`;
+            tdYearHtml += `<h4>${t.name}</h4>${img(urlYear)}`;
+
+            // Full T/D
+            let urlFull = `https://www.geocache.fi/stat/matrix.php?la=&user=${user}`;
+            if(t.id) urlFull += `&cachetype=${t.id}`;
+            tdFullHtml += `<h4>${t.name}</h4>${img(urlFull)}`;
+        });
+
         // Luodaan kuukausilista T/D -taulukoille
         let monthsHtml = "";
         const monthNames = ["Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kesäkuu", "Heinäkuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu"];
@@ -317,19 +356,13 @@ export const loadExternalStats = (content) => {
         <div class="card">
             <details open class="region-accordion"><summary>T/D ${currentYear}</summary>
                 <div class="region-content">
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=1`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=2`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&year=${currentYear}&cachetype=3`)}
+                    ${tdYearHtml}
                 </div>
             </details>
 
             <details class="region-accordion"><summary>T/D Full</summary>
                 <div class="region-content">
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=1`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=2`)}
-                    ${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&cachetype=3`)}
+                    ${tdFullHtml}
                 </div>
             </details>
 
