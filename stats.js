@@ -147,7 +147,7 @@ export const loadTopStats = async (db, user, content) => {
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }
 };
 
-// --- 2. MAAKUNNAT & LÖYDÖT ---
+// --- 2. MAAKUNNAT & LÖYDÖT (PÄIVITETTY NAPILLA) ---
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
     content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
@@ -162,9 +162,12 @@ export const loadAllStats = async (db, user, content) => {
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; flex-wrap:wrap; gap:10px;">
                 <h2 style="margin:0;">Löydöt maakunnittain</h2>
-                <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
+                <div>
+                    <button class="btn btn-primary" onclick="app.router('stats_map_all')" style="margin:0; margin-right:5px;">🗺️ Avaa Kartta</button>
+                    <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
+                </div>
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <input type="text" id="regionSearch" placeholder="Hae kuntaa (esim. Lahti)..." style="margin-bottom:15px;">
@@ -328,7 +331,7 @@ function initTripletLogic(fullData) {
     document.getElementById('tripletFilter').addEventListener('change', renderLists);
 }
 
-// --- 4. UUSI: EXTERNAL STATS (Kuvatilastot) ---
+// --- 4. EXTERNAL STATS (Kuvatilastot) ---
 export const loadExternalStats = async (content) => {
     // 1. Pakotetaan kaverilistan lataus
     if (window.app.loadFriends) {
