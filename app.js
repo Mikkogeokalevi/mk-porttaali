@@ -53,12 +53,19 @@ window.app = {
                 </button>
             </div>
           </div>
+          
           <div class="card">
-            <h2>Linkit</h2>
-            <ul>
-              <li><a href="https://www.geocache.fi/" target="_blank">Geocache.fi</a></li>
-              <li><a href="https://project-gc.com/" target="_blank">Project-GC</a></li>
-              <li><a href="https://mikkogeokalevi.github.io/kuntatarkistin/" target="_blank">Kuntatarkistin</a></li>
+            <h2>Hyödylliset Linkit</h2>
+            <ul style="line-height: 1.8;">
+              <li><a href="https://www.geocaching.com/" target="_blank">Geocaching.com ↗</a></li>
+              <li><a href="https://www.geocache.fi/" target="_blank">Geocache.fi ↗</a></li>
+              <li><a href="https://project-gc.com/" target="_blank">Project-GC ↗</a></li>
+              <li><a href="https://mikkogeokalevi.github.io/kuntatarkistin/" target="_blank">Kuntatarkistin ↗</a></li>
+              <li><a href="https://www.geocachingtoolbox.com/" target="_blank">Geocaching Toolbox ↗</a></li>
+              <li><a href="https://www.dcode.fr/en" target="_blank">dCode.fr (Salakirjoitukset) ↗</a></li>
+              <li><a href="https://xiit.dy.fi/gc/" target="_blank">Geocalcing2 ↗</a></li>
+              <li><a href="https://gc.de/gc/reversewherigo/" target="_blank">Reverse Wherigo Solver ↗</a></li>
+              <li><a href="https://solvedjigidi.com/" target="_blank">Solved Jigidi ↗</a></li>
             </ul>
           </div>
         `;
