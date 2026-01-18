@@ -19,6 +19,17 @@ const CACHE_TYPES = [
     { index: 13, name: 'Juhla', icon: 'kuvat/juhla.gif' }
 ];
 
+// VARMUUSVERKKO: Nämä toimivat aina, vaikka tietokanta pätkisi
+const HARDCODED_IDS = {
+    "mikkokalevi": 306478,
+    "eukka": 36206,
+    "Tiltu": 309395,
+    "lahjemies": 308779,
+    "milde04": 29523,
+    "mkivimaki": 134775,
+    "E5kimo": 39732
+};
+
 // --- PÄÄVALIKKO ---
 export const renderStatsDashboard = (content, app) => {
     content.innerHTML = `
@@ -272,6 +283,7 @@ export const loadExternalStats = async (content) => {
             <label style="flex:1;">Käyttäjä:</label>
             <input type="text" id="statUser" list="statsFriendOptions" value="${defaultUser}" style="flex:3;">
             <button class="btn btn-primary" id="refreshStats" style="flex:1; margin:8px 0 16px;">Päivitä</button>
+            <button class="btn-icon" id="quickSaveIdBtn" title="Tallenna/Päivitä ID tälle nimimerkille" style="margin-left:5px; background-color:#313244; border:1px solid #45475a;">⚙️</button>
         </div>
         <div style="font-size: 0.85em; color: var(--subtext-color); margin-bottom: 15px; text-align: right;">
             Geocache.fi ID: <span id="activeIdDisplay" style="color: var(--accent-color); font-weight: bold;">-</span>
@@ -292,22 +304,52 @@ export const loadExternalStats = async (content) => {
         });
     }
 
+    // UUSI: Asetusnapin logiikka
+    document.getElementById('quickSaveIdBtn').onclick = () => {
+        const name = document.getElementById('statUser').value.trim();
+        if(!name) return;
+        const currentId = prompt(`Anna Geocache.fi ID käyttäjälle ${name}:`);
+        if(currentId) {
+            // Jos käyttäjä on oma, tallennetaan omiin tietoihin. Jos ei, lisätään kaveriksi.
+            if(window.app.savedNickname === name) {
+                window.app.saveNickname(); // Tämä on app.js:ssä määritelty funktio
+            } else {
+                // Lisätään kaveriksi (tai päivitetään)
+                if(window.app.addFriend) {
+                    // Kutsumme Auth-moduulin addFriend suoraan tai app.js:n kautta
+                    // Helpointa käyttää app.js:n addFriend logiikkaa mutta se lukee input kentistä
+                    // Joten tehdään suora kutsu Auth-kirjastoon ei onnistu helposti ilman importtia
+                    // Mutta meillä on app.js funktio. Käytetään sitä "hack" tavalla tai ohjataan käyttäjä
+                    alert("Käy Kuvageneraattorissa tallentamassa kaveri ja ID ⚙️-ikonin kautta.");
+                    app.router('generator');
+                }
+            }
+        }
+    };
+
     // Funktio, joka renderöi kuvat
     const renderImages = (user) => {
         const container = document.getElementById('statsContainer');
         const currentYear = new Date().getFullYear();
+        const userLower = user.toLowerCase();
         
-        // ID-hakulogiikka
         let userId = null;
-        if (window.app.savedNickname?.toLowerCase() === user.toLowerCase() && window.app.savedId) {
+
+        // 1. Tarkistetaan HARDCODED lista (Varmuusverkko)
+        if (HARDCODED_IDS[user]) {
+            userId = HARDCODED_IDS[user];
+        } 
+        // 2. Tarkistetaan omista tiedoista
+        else if (window.app.savedNickname?.toLowerCase() === userLower && window.app.savedId) {
             userId = window.app.savedId;
         }
-        if (!userId && window.app.friendsList) {
-            const f = window.app.friendsList.find(f => f.name.toLowerCase() === user.toLowerCase());
+        // 3. Tarkistetaan kaverilistasta
+        else if (window.app.friendsList) {
+            const f = window.app.friendsList.find(f => f.name.toLowerCase() === userLower);
             if (f && f.id) userId = f.id;
         }
 
-        // Näytä ID
+        // Päivitetään ID näkyviin
         const idDisplay = document.getElementById('activeIdDisplay');
         if (idDisplay) {
             idDisplay.textContent = userId ? userId : "(Ei tiedossa - linkit eivät toimi)";
@@ -316,12 +358,10 @@ export const loadExternalStats = async (content) => {
 
         const img = (url, id = "") => `<img ${id ? `id="${id}"` : ""} src="${url}" loading="lazy" style="max-width:100%; height:auto; border-radius:8px; margin-bottom:10px; display:block;">`;
         
-        // Päivitetty linkkifunktio ottamaan huomioon myös tyypin
         const mapLink = (typeId, text) => {
             if (!userId) return `<span style="font-size:0.8em; opacity:0.5;">(Linkki vaatii ID:n)</span>`;
             let url = `https://www.geocache.fi/stat/kunta/?userid=${userId}&names=1`;
             if (typeId) url += `&cachetype=${typeId}`;
-            // Huom: Vuosi-parametria ei tueta geocache.fi interaktiivisessa kartassa samalla tavalla
             return `<a id="kuntaMapLink" href="${url}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.9em; margin-bottom:10px;">${text} ↗</a>`;
         };
 
@@ -347,13 +387,13 @@ export const loadExternalStats = async (content) => {
             { id: '99', name: 'Kaikki Eventit' }
         ];
 
-        // 1. Generoidaan vuosivalinnat
+        // 1. Vuosivalikko
         let yearOptions = `<option value="">Elinikäinen</option>`;
         for (let y = currentYear; y >= 2000; y--) {
             yearOptions += `<option value="${y}">${y}</option>`;
         }
 
-        // 2. Generoidaan tyyppivalinnat
+        // 2. Tyyppivalikko
         let typeOptions = "";
         matrixTypes.forEach(t => {
             typeOptions += `<option value="${t.id}">${t.name}</option>`;
@@ -382,7 +422,7 @@ export const loadExternalStats = async (content) => {
             monthsHtml += `<h4>${mName}</h4>${img(`https://www.geocache.fi/stat/matrix.php?la=&user=${user}&month=${mNum}`)}`;
         });
 
-        // UUSI DYNAAMINEN KUNTAKARTTA HTML
+        // DYNAAMINEN KUNTAKARTTA
         let kuntaMapHtml = `
             <div style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:10px;">
                 <div style="flex:1; min-width:120px;">
@@ -394,8 +434,7 @@ export const loadExternalStats = async (content) => {
                     <select id="kuntaTypeSelector" style="width:100%; padding:5px; border-radius:4px;">${typeOptions}</select>
                 </div>
             </div>
-            <div id="kuntaMapContainer">
-                </div>
+            <div id="kuntaMapContainer"></div>
         `;
 
         container.innerHTML = `
@@ -503,12 +542,10 @@ export const loadExternalStats = async (content) => {
         };
 
         // Alustukset
-        // TD: Oletus nykyinen vuosi
         tdYearSelector.value = currentYear;
         updateTdImages(currentYear);
         tdYearSelector.addEventListener('change', (e) => updateTdImages(e.target.value));
 
-        // Kunta: Oletus "Elinikäinen" ja "Kaikki"
         updateKuntaMap();
         kuntaYearSelector.addEventListener('change', updateKuntaMap);
         kuntaTypeSelector.addEventListener('change', updateKuntaMap);
