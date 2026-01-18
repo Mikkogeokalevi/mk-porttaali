@@ -7,7 +7,8 @@ import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
-import * as MapView from "./map.js"; // UUSI: Tuodaan karttamoduuli
+import * as MapView from "./map.js";
+import * as MapAllView from "./map_all.js"; // <--- UUSI IMPORTTI
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -84,10 +85,16 @@ window.app = {
         Stats.loadTripletData(db, window.app.currentUser, content);
         break;
 
-      // UUSI: Karttareitti
+      // Triplettikartta
       case 'stats_map':
         if (!window.app.currentUser) { app.router('login_view'); return; }
         MapView.renderTripletMap(content, db, window.app.currentUser, window.app);
+        break;
+
+      // UUSI: Kaikkien löytöjen kartta
+      case 'stats_map_all':
+        if (!window.app.currentUser) { app.router('login_view'); return; }
+        MapAllView.renderAllFindsMap(content, db, window.app.currentUser, window.app);
         break;
 
       case 'stats_all':
