@@ -24,20 +24,21 @@ const db = getFirestore(firebaseApp);
 // Alustetaan sovellus
 window.app = {
   currentUser: null,
-  savedNickname: null, // Tähän tallentuu käyttäjän asetettu nimimerkki
-  savedId: null,       // Tähän tallentuu käyttäjän ID (jos asetettu)
+  savedNickname: null,
+  savedId: null,
+  friendsList: [], // Alustetaan tyhjäksi
 
   // --- NAVIGOINTI JA ROUTER ---
   router: (view) => {
     const content = document.getElementById('appContent');
     const nav = document.getElementById('mainNav');
-    if(nav) nav.classList.remove('open'); // Sulje mobiilivalikko
+    if(nav) nav.classList.remove('open');
 
     switch(view) {
       case 'home':
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.5</h1>
+            <h1>MK Porttaali v2.6</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
@@ -91,18 +92,21 @@ window.app = {
         if (!window.app.currentUser) { app.router('login_view'); return; }
         Stats.loadTopStats(db, window.app.currentUser, content);
         break;
+        
+      // UUSI: Geocache.fi kuvatilastot
+      case 'stats_external':
+        Stats.loadExternalStats(content);
+        break;
 
       // --- KUVAGENERATTORI ---
       case 'generator':
         renderGeneratorView(content);
         break;
 
-      // --- OHJEET & ADMIN LINKIT ---
       case 'help':
         renderHelp(content, window.app);
         break;
 
-      // --- KIRJAUTUMINEN ---
       case 'login_view':
         content.innerHTML = `
           <div class="card" style="max-width: 400px; margin: 0 auto;">
@@ -147,7 +151,6 @@ window.app = {
       );
   },
 
-  // Nimimerkin JA ID:n tallennus
   saveNickname: () => {
       const name = document.getElementById('genUser').value.trim();
       let currentId = window.app.savedId || "";
@@ -155,13 +158,11 @@ window.app = {
       Auth.saveGCNickname(db, window.app.currentUser?.uid, name, id);
   },
 
-  // Kaverilistan toiminnot
   loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', 'friendListOptions'),
   
   addFriend: () => {
       const name = document.getElementById('newFriendName').value.trim();
-      const id = document.getElementById('newFriendId').value.trim(); // Uusi ID-kenttä
-      
+      const id = document.getElementById('newFriendId').value.trim();
       Auth.addFriend(db, window.app.currentUser?.uid, name, id, () => {
           document.getElementById('newFriendName').value = '';
           document.getElementById('newFriendId').value = '';
@@ -171,7 +172,6 @@ window.app = {
   
   removeFriend: (name) => Auth.removeFriend(db, window.app.currentUser?.uid, name, () => app.loadFriends()),
 
-  // --- KUVAGENERATTORIN TOIMINNOT ---
   toggleFriendManager: Gen.toggleFriendManager,
   handleTypeChange: Gen.handleTypeChange,
   handleLocTypeChange: Gen.handleLocTypeChange,
@@ -190,8 +190,6 @@ window.app = {
 // Generaattorin HTML
 function renderGeneratorView(content) {
     let defaultUser = '';
-    
-    // Logiikka: 1. Tallennettu nimi, 2. Erikoistapaus (admin), 3. Google-nimi
     if (window.app.currentUser) {
         if (window.app.savedNickname) {
             defaultUser = window.app.savedNickname;
@@ -336,6 +334,5 @@ function renderGeneratorView(content) {
     app.updateProfileLink();
 }
 
-// Käynnistetään Auth-kuuntelija ja sovellus
 Auth.initAuth(auth, db, window.app);
 document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
