@@ -25,6 +25,7 @@ const db = getFirestore(firebaseApp);
 window.app = {
   currentUser: null,
   savedNickname: null, // Tähän tallentuu käyttäjän asetettu nimimerkki
+  savedId: null,       // Tähän tallentuu käyttäjän ID (jos asetettu)
 
   // --- NAVIGOINTI JA ROUTER ---
   router: (view) => {
@@ -146,21 +147,28 @@ window.app = {
       );
   },
 
-  // Nimimerkin tallennus
+  // Nimimerkin JA ID:n tallennus
   saveNickname: () => {
       const name = document.getElementById('genUser').value.trim();
-      Auth.saveGCNickname(db, window.app.currentUser?.uid, name);
+      let currentId = window.app.savedId || "";
+      const id = prompt("Anna Geocache.fi ID-numerosi (valinnainen, tarvitaan karttalinkkeihin):", currentId);
+      Auth.saveGCNickname(db, window.app.currentUser?.uid, name, id);
   },
 
   // Kaverilistan toiminnot
   loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', 'friendListOptions'),
+  
   addFriend: () => {
       const name = document.getElementById('newFriendName').value.trim();
-      Auth.addFriend(db, window.app.currentUser?.uid, name, () => {
+      const id = document.getElementById('newFriendId').value.trim(); // Uusi ID-kenttä
+      
+      Auth.addFriend(db, window.app.currentUser?.uid, name, id, () => {
           document.getElementById('newFriendName').value = '';
+          document.getElementById('newFriendId').value = '';
           app.loadFriends();
       });
   },
+  
   removeFriend: (name) => Auth.removeFriend(db, window.app.currentUser?.uid, name, () => app.loadFriends()),
 
   // --- KUVAGENERATTORIN TOIMINNOT ---
@@ -219,10 +227,15 @@ function renderGeneratorView(content) {
         <div id="friendManager" class="hidden">
             <h3>Hallitse nimimerkkejä</h3>
             <div id="friendListContainer">Ladataan...</div>
+            
             <div class="friend-add-row">
-                <input type="text" id="newFriendName" placeholder="Uusi nimimerkki" style="margin:0;">
+                <input type="text" id="newFriendName" placeholder="Nimimerkki" style="margin:0; flex:2;">
+                <input type="number" id="newFriendId" placeholder="ID (valinnainen)" style="margin:0; flex:1;">
                 <button class="btn btn-primary" style="margin:0;" onclick="app.addFriend()">Lisää</button>
             </div>
+            <p style="font-size:0.8em; color:var(--subtext-color); margin-top:5px;">
+                Vinkki: ID-numeron löydät Geocache.fi profiilisivun osoiteriviltä (userid=12345).
+            </p>
         </div>
 
         <label>Kuvan tyyppi:</label>
