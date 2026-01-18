@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v1'; // PÄIVITÄ TÄTÄ KUN TEET MUUTOKSIA!
+const CACHE_NAME = 'mk-porttaali-v2'; // PÄIVITETTY VERSIO (v1 -> v2)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,19 +9,22 @@ const ASSETS_TO_CACHE = [
   './generator.js',
   './help.js',
   './stats.js',
+  './map.js', // UUSI TIEDOSTO
   './manifest.json',
   './muuntimet.html',
   './muuntimet_style.css',
   './muuntimet_script.js',
   './yksikot.json',
-  './mikkokalevi.png' 
+  './mikkokalevi.png',
+  './kunnat.json' // Varmuuskopio kartasta (jos latasit sen)
 ];
 
 // Asennus: Ladataan tiedostot välimuistiin
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Pakotetaan uusi SW käyttöön heti
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets');
+      console.log('[SW] Caching assets (v2)');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -42,11 +45,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Haku: Verkko ensin, sitten välimuisti (Network First strategy)
-// Tämä varmistaa, että käyttäjä saa aina tuoreimman version jos netti toimii.
+// Haku: Verkko ensin, sitten välimuisti (Network First)
 self.addEventListener('fetch', (event) => {
-  // Ohitetaan Firestore ja ulkoiset kuvat välimuistista, jotta data on tuoretta
-  if (event.request.url.includes('firestore') || event.request.url.includes('geocache.fi')) {
+  // Ohitetaan Firestore ja ulkoiset kartat välimuistista
+  if (event.request.url.includes('firestore') || 
+      event.request.url.includes('geocache.fi') ||
+      event.request.url.includes('basemaps.cartocdn.com')) {
       return; 
   }
 
