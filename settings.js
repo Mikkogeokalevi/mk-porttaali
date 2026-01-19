@@ -2,7 +2,7 @@ import { doc, updateDoc, deleteDoc, setDoc, Timestamp } from "https://www.gstati
 import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import * as Auth from "./auth.js"; 
 
-// Kopioitu admin.js:stä datan tuontia varten
+// Kopioitu admin.js:stä datan tuontia varten (tarvitaan "älykkääseen" parsintaan)
 const SUOMEN_MAAKUNNAT = [
     "Ahvenanmaa", "Etelä-Karjala", "Etelä-Pohjanmaa", "Etelä-Savo", "Kainuu", "Kanta-Häme",
     "Keski-Pohjanmaa", "Keski-Suomi", "Kymenlaakso", "Lappi", "Pirkanmaa", "Pohjanmaa",
@@ -11,16 +11,25 @@ const SUOMEN_MAAKUNNAT = [
 ];
 
 export const renderSettingsView = (content, db, user, app) => {
-    if (!user) { app.router('login_view'); return; }
+    // 1. Kirjautumistarkistus
+    if (!user) { 
+        app.router('login_view'); 
+        return; 
+    }
 
+    // 2. Alustetaan muuttujat
     const shortId = app.shortId || "Ladataan...";
     const nickname = app.savedNickname || user.displayName || "Nimetön";
     const gcId = app.savedId || "";
     const email = user.email;
+    
+    // Tarkistetaan onko käyttäjällä oikeus tuoda dataa
     const isPremium = app.userPlan === 'premium' || app.userRole === 'admin';
 
+    // Tyylit input-kentille (16px estää zoomauksen mobiilissa)
     const inputStyle = "width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; background: #181825; border: 1px solid #45475a; color: white; border-radius: 4px; font-size: 16px;";
 
+    // 3. Tilauksen tilan näyttäminen
     let planDisplay = 'Ilmainen';
     if (app.userPlan === 'premium') {
         planDisplay = '💎 Premium';
@@ -34,7 +43,19 @@ export const renderSettingsView = (content, db, user, app) => {
         }
     }
 
-    // --- IMPORT-OSIO ---
+    // 4. Injektoidaan CSS-tyylit raporttia varten (vain tälle sivulle)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
+        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid #45475a; text-align:center; }
+        .stat-box span { display:block; font-size:1.4em; font-weight:bold; margin-top:5px; }
+        .debug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); gap: 4px; margin-top: 10px; }
+        .debug-item { background: #181825; padding: 4px; border-radius: 4px; border: 1px solid #45475a; text-align: center; font-size: 0.7em; }
+        .col-val { display: block; font-weight: bold; color: #fab387; font-size: 1.1em; }
+    `;
+    content.appendChild(style);
+
+    // 5. Rakennetaan Import-osion HTML (näkyy vain Premiumille)
     let importHtml = '';
     
     if (isPremium) {
@@ -49,7 +70,7 @@ export const renderSettingsView = (content, db, user, app) => {
                 <strong style="color:#cdd6f4;">Ohje:</strong>
                 <ol style="margin:5px 0 10px 20px; padding:0; color:#cdd6f4;">
                     <li style="margin-bottom:5px;">Avaa Geocache.fi: <a href="https://www.geocache.fi/stat/other/jakauma.php" target="_blank" style="color:#89b4fa; font-weight:bold; text-decoration:underline;">Löytötilasto paikkakunnittain ↗</a></li>
-                    <li style="margin-bottom:5px;"><strong>Maalaa taulukko</strong> hiirellä (Paikkakunta-sanasta alas asti).</li>
+                    <li style="margin-bottom:5px;"><strong>Maalaa taulukko</strong> hiirellä. Aloita vasemmasta yläkulmasta sanasta <em>"Paikkakunta"</em> ja vedä alas asti.</li>
                     <li>Kopioi (Ctrl+C) ja liitä (Ctrl+V) alla olevaan laatikkoon.</li>
                 </ol>
             </div>
@@ -65,7 +86,8 @@ export const renderSettingsView = (content, db, user, app) => {
 
             <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:16px; border-radius:4px; white-space:pre;" placeholder="Liitä taulukko tähän..."></textarea>
             <button class="btn btn-primary" id="impBtn" style="margin-top:10px; width:100%;">Prosessoi & Tallenna</button>
-            <div id="impLog" style="margin-top:10px; font-family:monospace; font-size:0.8em; white-space: pre-wrap;"></div>
+            
+            <div id="impLog" style="margin-top:20px;"></div>
         </div>
         `;
     } else {
@@ -76,21 +98,28 @@ export const renderSettingsView = (content, db, user, app) => {
         </div>`;
     }
 
+    // Vaaravyöhyke-HTML (piilotettu adminilta)
     let dangerZoneHtml = '';
     if (app.userRole !== 'admin') {
-        dangerZoneHtml = `<h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3><button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none; width:100%; padding:12px;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>`;
+        dangerZoneHtml = `
+            <h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3>
+            <button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none; width:100%; padding:12px;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>
+        `;
     }
 
-    content.innerHTML = `
+    // 6. Kootaan koko sivun HTML
+    content.innerHTML += `
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h1>Omat Asetukset</h1>
             <button class="btn" onclick="app.router('home')">⬅ Etusivulle</button>
         </div>
+
         <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-top:20px; border-left:4px solid var(--accent-color);">
             <h3 style="margin-top:0;">👤 Käyttäjätili</h3>
             <p><strong>Sähköposti:</strong> ${email}</p>
             <p><strong>Tilaus:</strong> ${planDisplay}</p>
+            
             <div style="margin:15px 0; padding:15px; background:#181825; border:1px dashed #fab387; border-radius:6px; text-align:center;">
                 <p style="margin:0; font-size:0.8em; color:#fab387; text-transform:uppercase; letter-spacing:1px;">Sinun MK-tunnuksesi</p>
                 <strong style="font-size:2em; letter-spacing:2px; display:block; margin-top:5px;">${shortId}</strong>
@@ -112,6 +141,7 @@ export const renderSettingsView = (content, db, user, app) => {
         ${importHtml}
 
         <hr style="margin:25px 0; border-color:var(--border-color);">
+
         <h3>👥 Kaverilista</h3>
         <div style="display:flex; gap:10px; margin-bottom:15px;">
             <input type="text" id="newFriendName" placeholder="Nimimerkki" style="${inputStyle} margin-bottom:0;">
@@ -119,28 +149,49 @@ export const renderSettingsView = (content, db, user, app) => {
         </div>
         <button class="btn btn-primary" style="width:100%; margin-bottom:15px;" onclick="app.addFriend()">Lisää kaveri</button>
         
-        <div id="friendListContainer" style="max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px;">Ladataan...</div>
+        <div id="friendListContainer" style="max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px;">
+            Ladataan...
+        </div>
         
         <hr style="margin:25px 0; border-color:var(--border-color);">
+
         ${dangerZoneHtml}
     </div>
     `;
 
+    // 7. Ladataan kaverilista
     Auth.loadFriends(db, user.uid, 'friendListContainer', null);
+
+    // 8. Tallennusfunktio
     window.app.saveSettings = async () => { 
         const newNick = document.getElementById('setNick').value.trim();
         const newId = document.getElementById('setGcId').value.trim();
+        
         if(!newNick) return alert("Nimimerkki ei voi olla tyhjä.");
+
         try {
-            await updateDoc(doc(db, "users", user.uid), { nickname: newNick, gcId: newId });
-            app.savedNickname = newNick; app.savedId = newId; alert("Tiedot tallennettu! ✅");
-        } catch(e) { alert("Virhe tallennuksessa."); }
+            await updateDoc(doc(db, "users", user.uid), {
+                nickname: newNick,
+                gcId: newId
+            });
+            
+            app.savedNickname = newNick;
+            app.savedId = newId;
+            
+            alert("Tiedot tallennettu! ✅");
+        } catch(e) {
+            console.error(e);
+            alert("Virhe tallennuksessa.");
+        }
     };
 
+    // 9. Datan tuonnin logiikka (Vain jos premium)
     if (isPremium) {
         document.getElementById('impBtn').onclick = async () => {
             const raw = document.getElementById('impInput').value;
             const log = document.getElementById('impLog');
+            
+            // Luetaan asetukset
             const idxTradi = parseInt(document.getElementById('impColTradi').value) - 1;
             const idxMulti = parseInt(document.getElementById('impColMulti').value) - 1;
             const idxMysse = parseInt(document.getElementById('impColMysse').value) - 1;
@@ -150,7 +201,14 @@ export const renderSettingsView = (content, db, user, app) => {
                 const lines = raw.split('\n');
                 const result = {};
                 let count = 0;
+                
+                // Järjestetään maakunnat pituuden mukaan, jotta "Pohjois-Savo" löytyy ennen "Savo" (jos sellaista olisi)
                 const sortedRegions = [...SUOMEN_MAAKUNNAT].sort((a, b) => b.length - a.length);
+                
+                // Tilastot raporttia varten
+                const stats = { trip: 0, tradi: 0, none: 0 };
+                let firstRowStats = null;
+                let firstRowName = "";
 
                 lines.forEach(line => {
                     let clean = line.trim();
@@ -159,7 +217,7 @@ export const renderSettingsView = (content, db, user, app) => {
                     let kunta = "", numsPart = "";
                     let found = false;
 
-                    // 1. Etsitään maakunta
+                    // 1. Älykäs haku: Etsitään maakunta tekstin seasta
                     for(const r of sortedRegions) {
                         const idx = clean.indexOf(r);
                         if(idx > 0) {
@@ -170,7 +228,7 @@ export const renderSettingsView = (content, db, user, app) => {
                         }
                     }
 
-                    // 2. Varasuunnitelma tab
+                    // 2. Varasuunnitelma: sarkainerotin (tab)
                     if(!found && clean.includes('\t')) {
                         const parts = clean.split('\t');
                         if(parts.length > 4) {
@@ -185,19 +243,67 @@ export const renderSettingsView = (content, db, user, app) => {
                         kunta = kunta.replace(/^\d+\s+/, ''); 
                         const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
                         const allStats = numStrings.map(s => parseInt(s) || 0);
+
                         result[kunta] = { s: allStats };
                         count++;
+
+                        // Tallennetaan eka rivi raporttia varten
+                        if(!firstRowStats) { firstRowStats = allStats; firstRowName = kunta; }
+
+                        // Lasketaan tilastot
+                        const t = allStats[idxTradi] || 0;
+                        const m = allStats[idxMulti] || 0;
+                        const q = allStats[idxMysse] || 0;
+
+                        if(t > 0 && m > 0 && q > 0) stats.trip++;
+                        else if(t > 0 && m === 0 && q === 0) stats.tradi++;
+                        else if(t === 0 && m === 0 && q === 0) stats.none++;
                     }
                 });
 
                 if (count === 0) throw new Error("Ei dataa tunnistettu. Kopioi taulukko Geocache.fi sivulta.");
                 
-                await setDoc(doc(db, "stats", user.uid), { municipalities: result, updatedAt: Timestamp.now() });
+                // Tallennus Firebaseen
+                await setDoc(doc(db, "stats", user.uid), {
+                    municipalities: result,
+                    updatedAt: Timestamp.now()
+                });
                 
-                const firstKey = Object.keys(result)[0];
-                const s = result[firstKey].s;
-                log.innerHTML = `✅ Valmis! ${count} kuntaa tallennettu.\n\nTarkistus (${firstKey}):\nTradi: ${s[idxTradi]} | Multi: ${s[idxMulti]} | Mysse: ${s[idxMysse]}`;
-            } catch (e) { log.innerHTML = `❌ Virhe: ${e.message}`; }
+                // Rakennetaan visuaalinen raportti (Green box + Stats grid)
+                let reportHtml = `
+                <div style="background:rgba(166, 227, 161, 0.1); border:1px solid #a6e3a1; padding:15px; border-radius:8px;">
+                    <h3 style="margin:0 0 10px 0; color:#a6e3a1;">✅ Tallennettu onnistuneesti!</h3>
+                    
+                    <div class="stat-summary">
+                        <div class="stat-box">Kunnat <span>${count}</span></div>
+                        <div class="stat-box" style="border-color:#a6e3a1; color:#a6e3a1;">Triplettikunnat <span>${stats.trip}</span></div>
+                        <div class="stat-box" style="border-color:#89b4fa; color:#89b4fa;">Vain Tradi <span>${stats.tradi}</span></div>
+                        <div class="stat-box" style="border-color:#f38ba8; color:#f38ba8;">Ei löytöjä <span>${stats.none}</span></div>
+                    </div>`;
+
+                if(firstRowStats) {
+                    reportHtml += `
+                    <div style="margin-top:15px; border-top:1px dashed #555; padding-top:10px;">
+                        <p style="font-size:0.9em; opacity:0.8; margin-bottom:5px;">Tarkistus (${firstRowName}):<br>
+                        <span style="color:#a6e3a1">Tradi (${firstRowStats[idxTradi]})</span> | 
+                        <span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | 
+                        <span style="color:#f38ba8">Mysse (${firstRowStats[idxMysse]})</span></p>
+                        
+                        <div class="debug-grid">`;
+                    
+                    firstRowStats.forEach((v, i) => {
+                        reportHtml += `<div class="debug-item"><span style="display:block; color:#aaa; margin-bottom:2px;">${i}</span><span class="col-val">${v}</span></div>`;
+                    });
+                    
+                    reportHtml += `</div></div>`;
+                }
+                
+                reportHtml += `</div>`;
+                log.innerHTML = reportHtml;
+
+            } catch (e) {
+                log.innerHTML = `<div style="background:rgba(243, 139, 168, 0.1); border:1px solid #f38ba8; padding:15px; border-radius:8px; color:#f38ba8;">❌ Virhe: ${e.message}</div>`;
+            }
         };
     }
 };
