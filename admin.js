@@ -34,18 +34,25 @@ export const renderAdminView = async (content, db, currentUser) => {
         <div id="adminTabData" class="admin-tab-content hidden" style="margin-top:20px;">
             <h3>Datan päivitys (Geocache.fi)</h3>
             
+            <div style="background:rgba(66, 135, 245, 0.1); border:1px solid #4287f5; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.9em; line-height:1.5;">
+                <strong style="color:#89b4fa;">💡 Ohje:</strong>
+                <ol style="margin:5px 0 10px 20px; padding:0; color:#cdd6f4;">
+                    <li style="margin-bottom:5px;">Avaa Geocache.fi: <a href="https://www.geocache.fi/stat/other/jakauma.php" target="_blank" style="color:#89b4fa; font-weight:bold; text-decoration:underline;">Löytötilasto paikkakunnittain ↗</a></li>
+                    <li style="margin-bottom:5px;"><strong>Maalaa taulukko</strong> hiirellä. Aloita vasemmasta yläkulmasta sanasta <em>"Paikkakunta"</em> ja vedä alas asti.</li>
+                    <li>Kopioi (Ctrl+C) ja liitä (Ctrl+V) alla olevaan laatikkoon.</li>
+                </ol>
+            </div>
+
             <details style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
-                <summary style="cursor:pointer; color:#fab387; font-weight:bold;">⚙️ Sarakkeiden asetukset (Klikkaa auki)</summary>
-                <p style="font-size:0.85em; opacity:0.8;">Määritä monesko luku vastaa mitäkin tyyppiä (1 = ensimmäinen luku paikkakunnan jälkeen).</p>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <summary style="cursor:pointer; color:#fab387; font-weight:bold;">⚙️ Sarakkeiden asetukset</summary>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
                     <div><label>Tradi:</label><input type="number" id="colTradi" value="1" style="width:50px;"></div>
                     <div><label>Multi:</label><input type="number" id="colMulti" value="2" style="width:50px;"></div>
                     <div><label>Mysse:</label><input type="number" id="colMysse" value="4" style="width:50px;"></div>
                 </div>
             </details>
 
-            <p style="font-size:0.9em;">Kopioi taulukko "Löytötilasto paikkakunnittain" -sivulta ja liitä tähän.</p>
-            <textarea id="statInput" rows="10" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px;" placeholder="Paikkakunta..."></textarea>
+            <textarea id="statInput" rows="10" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px;" placeholder="Liitä taulukko tähän..."></textarea>
             <button class="btn btn-primary" id="processBtn" style="margin-top:10px;">Prosessoi & Tallenna</button>
             <div id="processLog" style="margin-top:10px; font-family:monospace; font-size:0.8em; white-space: pre-wrap;"></div>
         </div>
@@ -130,7 +137,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         } catch (e) { container.innerHTML = `<p style="color:red">Virhe: ${e.message}</p>`; }
     };
 
-    // --- PROSESSOI DATA (KORJATTU VANHA LOGIIKKA) ---
+    // --- PROSESSOI DATA ---
     document.getElementById('processBtn').onclick = async () => {
         const raw = document.getElementById('statInput').value;
         const log = document.getElementById('processLog');
@@ -147,30 +154,21 @@ export const renderAdminView = async (content, db, currentUser) => {
             let count = 0;
             
             lines.forEach(line => {
-                const parts = line.split('\t'); // Oletetaan tab-erottelu (geocache.fi maalaus)
-                
-                // Tarkistetaan onko rivillä dataa (nimi + numeroita)
+                const parts = line.split('\t'); 
                 if (parts.length > 5) {
                     const kunta = parts[0].trim();
-                    // Ohitetaan otsikkorivi ja turhat
                     if (kunta && kunta !== 'Paikkakunta' && kunta !== 'Summa' && isNaN(parseInt(kunta))) {
-                        // Parsitaan kaikki luvut
-                        // Huom: Geocache.fi taulukossa eka sarake on kunta, toinen (indeksi 1) on eka luku
                         const vals = parts.slice(1).map(v => parseInt(v.replace(/\s/g, '')) || 0);
-                        
-                        // Tallennetaan "raw" array, mutta myös tehdään triplacheck debuggausta varten
                         result[kunta] = { s: vals };
                         count++;
                     }
                 }
             });
 
-            if (count === 0) throw new Error("Ei dataa tunnistettu. Varmista että kopioit taulukon oikein (Ctrl+A, Ctrl+C).");
+            if (count === 0) throw new Error("Ei dataa tunnistettu. Varmista että kopioit taulukon oikein.");
             
-            // Tallennus
             await setDoc(doc(db, "stats", currentUser.uid), { municipalities: result, updatedAt: Timestamp.now() });
             
-            // Debug tulostus logiin
             const firstKey = Object.keys(result)[0];
             const s = result[firstKey].s;
             log.innerHTML = `✅ Valmis! ${count} kuntaa tallennettu.\n\nTarkistus (${firstKey}):\nTradi: ${s[idxTradi]} (sarake ${idxTradi+1})\nMulti: ${s[idxMulti]} (sarake ${idxMulti+1})\nMysse: ${s[idxMysse]} (sarake ${idxMysse+1})`;
@@ -178,7 +176,6 @@ export const renderAdminView = async (content, db, currentUser) => {
         } catch (e) { log.innerHTML = `❌ Virhe: ${e.message}`; }
     };
 
-    // Muut admin-funktiot (samat kuin ennen)
     const settingsRef = doc(db, "settings", "global");
     getDoc(settingsRef).then(snap => { if(snap.exists()) document.getElementById('settingRequireApproval').checked = snap.data().requireApproval || false; });
     document.getElementById('saveSettingsBtn').onclick = async () => { await setDoc(settingsRef, { requireApproval: document.getElementById('settingRequireApproval').checked }, { merge: true }); alert("Asetukset tallennettu."); };
