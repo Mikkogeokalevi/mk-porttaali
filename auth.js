@@ -30,14 +30,12 @@ function generateShortId() {
     return result;
 }
 
-// UI-päivitysfunktio (KORJATTU NÄYTTÄMÄÄN NIMI TAI SÄHKÖPOSTI)
 function updateUI(user, appState) {
     const nameDisplay = document.getElementById('userNameDisplay');
     const loginBtn = document.getElementById('authButton');
     const logoutBtn = document.getElementById('logoutButton');
 
     if (user) {
-        // Päätellään näytettävä nimi: Tallennettu nikki -> Googlen nimi -> Sähköposti
         let displayName = appState.savedNickname;
         if (!displayName || displayName === 'Nimetön') {
             displayName = user.displayName || user.email.split('@')[0];
@@ -84,8 +82,10 @@ export const initAuth = (auth, db, appState) => {
                 appState.userRole = data.role || 'user';
                 appState.userPlan = data.plan || 'free';
                 appState.shortId = data.shortId;
+                
+                // UUSI RIVI: Tallennetaan päättymispäivä muistiin
+                appState.premiumExpires = data.premiumExpires ? data.premiumExpires.toDate() : null;
 
-                // Premium check
                 if (data.premiumExpires) {
                     const now = new Date();
                     if (now > data.premiumExpires.toDate() && data.plan === 'premium') {
@@ -94,9 +94,6 @@ export const initAuth = (auth, db, appState) => {
                     }
                 }
 
-                console.log("Kirjautunut:", appState.savedNickname || user.email);
-                
-                // PÄIVITETÄÄN UI HETI KIRJAUTUMISEN JÄLKEEN
                 updateUI(user, appState);
 
                 const currentHash = window.location.hash.replace('#', '');
@@ -104,7 +101,6 @@ export const initAuth = (auth, db, appState) => {
                     appState.router('home');
                 }
             } else {
-                // Uusi käyttäjä ilman docia (esim. Google login ekaa kertaa)
                 const shortId = generateShortId();
                 await setDoc(userRef, {
                     email: user.email,
@@ -121,8 +117,7 @@ export const initAuth = (auth, db, appState) => {
         } else {
             appState.currentUser = null;
             appState.userRole = 'guest';
-            updateUI(null, appState); // UI päivitys uloskirjautuneelle
-            
+            updateUI(null, appState);
             const currentHash = window.location.hash.replace('#', '');
             if (['stats', 'generator', 'settings', 'admin'].includes(currentHash)) {
                 appState.router('login_view');
@@ -201,7 +196,6 @@ export const addFriend = async (db, uid, name, id, onSuccess) => {
     try {
         const ref = doc(db, "users", uid);
         const snap = await getDoc(ref);
-        // KORJAUS: Luetaan saved_usernames
         let list = snap.data().saved_usernames || snap.data().friends || [];
         if(!list.find(f => f.name.toLowerCase() === name.toLowerCase())) {
             list.push({ name: name, id: id || "" });
