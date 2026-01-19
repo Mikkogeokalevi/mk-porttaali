@@ -11,23 +11,22 @@ import {
     Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// Tuotekoodit ja niiden kestot (päivinä)
-const PRODUCTS = {
-    'T-1VK': 7,
-    'T-3KK': 90,
-    'T-6KK': 180,
-    'T-1V': 365,
-    'T-LIFE': 36500 // 100 vuotta
-};
+// --- 1. TUOTEHALLINTA & HINNASTO ---
+// Voit muokata hintoja ja kestoja tästä:
+const PRODUCTS = [
+    { code: 'T-1VK',  name: 'Testi (1 vko)',   days: 7,     price: '1 €',  color: '#89dceb' },
+    { code: 'T-3KK',  name: 'Jakso (3 kk)',    days: 90,    price: '3 €',  color: '#89b4fa' },
+    { code: 'T-1V',   name: 'Vuosi (12 kk)',   days: 365,   price: '10 €', color: '#fab387' },
+    { code: 'LIFE',   name: '👑 Frendi / Ikuinen', days: 36500, price: '0 €',  color: '#cba6f7' } // 100 vuotta
+];
 
 export const renderAdminView = async (content, db, currentUser) => {
-    // 1. Turvatarkistus: Onko käyttäjä admin?
     if (!currentUser) return;
     
-    // Haetaan käyttäjän rooli varmistukseksi kannasta
+    // Tarkistetaan admin-oikeus
     const userSnap = await getDoc(doc(db, "users", currentUser.uid));
     if (!userSnap.exists() || userSnap.data().role !== 'admin') {
-        content.innerHTML = `<div class="card"><h1 style="color:red;">Pääsy evätty ⛔</h1><p>Sinulla ei ole ylläpitäjän oikeuksia.</p></div>`;
+        content.innerHTML = `<div class="card"><h1 style="color:red;">Pääsy evätty ⛔</h1></div>`;
         return;
     }
 
@@ -50,7 +49,6 @@ export const renderAdminView = async (content, db, currentUser) => {
 
         <div id="adminTabData" class="admin-tab-content hidden" style="margin-top:20px;">
             <h3>Datan päivitys (Geocache.fi)</h3>
-            <p style="font-size:0.9em;">Kopioi taulukko "Löytötilasto paikkakunnittain" -sivulta ja liitä tähän.</p>
             <textarea id="statInput" rows="10" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px;" placeholder="Paikkakunta Tradi Multi..."></textarea>
             <button class="btn btn-primary" id="processBtn" style="margin-top:10px;">Prosessoi & Tallenna</button>
             <div id="processLog" style="margin-top:10px; font-family:monospace; font-size:0.8em;"></div>
@@ -59,10 +57,19 @@ export const renderAdminView = async (content, db, currentUser) => {
         <div id="adminTabSettings" class="admin-tab-content hidden" style="margin-top:20px;">
             <h3>Yleiset asetukset</h3>
             <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
-                <span>🔒 <strong>Vaadi hyväksyntä uusille käyttäjille</strong><br><span style="font-size:0.8em; opacity:0.7;">Jos päällä, uudet tilit menevät tilaan 'pending'.</span></span>
+                <span>🔒 <strong>Vaadi hyväksyntä uusille</strong></span>
                 <input type="checkbox" id="settingRequireApproval" style="transform:scale(1.5);">
             </div>
             <button class="btn btn-primary" id="saveSettingsBtn" style="margin-top:15px;">Tallenna asetukset</button>
+        </div>
+    </div>
+
+    <div id="premiumModal" class="modal-overlay">
+        <div class="modal-box" style="background:#1e1e2e; padding:20px; border-radius:10px; border:1px solid #fab387; max-width:400px; width:90%;">
+            <h2 style="margin-top:0;">Lisää Premium 💎</h2>
+            <p id="premiumTargetUser" style="opacity:0.7; margin-bottom:20px;">Käyttäjälle...</p>
+            <div id="productList" style="display:grid; gap:10px;"></div>
+            <button class="btn" style="margin-top:20px; width:100%;" onclick="document.getElementById('premiumModal').classList.remove('open')">Peruuta</button>
         </div>
     </div>
     
@@ -79,10 +86,15 @@ export const renderAdminView = async (content, db, currentUser) => {
         .badge-blocked { background:#f38ba8; color:#1e1e2e; }
         .badge-premium { background:#fab387; color:#1e1e2e; }
         .badge-free { background:#bac2de; color:#1e1e2e; }
+        /* Modal tyylit */
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
+        .modal-overlay.open { display:flex; }
+        .product-btn { padding:15px; border:none; border-radius:8px; font-weight:bold; color:#1e1e2e; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+        .product-btn:hover { opacity:0.9; transform:scale(1.02); }
     </style>
     `;
 
-    // --- LOGIIKKA: Välilehdet ---
+    // --- TAB LOGIC ---
     window.app.adminSwitchTab = (tabName) => {
         document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById('adminTab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
@@ -90,7 +102,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         event.target.classList.add('active');
     };
 
-    // --- LOGIIKKA: Lataa käyttäjät ---
+    // --- LATAA KÄYTTÄJÄT ---
     const loadUsers = async () => {
         const container = document.getElementById('adminTabUsers');
         container.innerHTML = 'Ladataan...';
@@ -104,14 +116,15 @@ export const renderAdminView = async (content, db, currentUser) => {
                 const u = docSnap.data();
                 const uid = docSnap.id;
                 
-                // Status badge
                 let statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
-                
-                // Plan badge
                 let planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
+                
                 if (u.plan === 'premium' && u.premiumExpires) {
-                    const expDate = u.premiumExpires.toDate().toLocaleDateString();
-                    planBadge += ` <span style="font-size:0.8em;">(-> ${expDate})</span>`;
+                    const expDate = u.premiumExpires.toDate();
+                    // Tarkistetaan onko "IKUINEN" (yli 50 vuotta tulevaisuudessa)
+                    const isLife = expDate.getFullYear() > 2050;
+                    const dateStr = isLife ? "∞ Ikuinen" : expDate.toLocaleDateString();
+                    planBadge += ` <span style="font-size:0.8em;">(-> ${dateStr})</span>`;
                 }
 
                 html += `
@@ -130,7 +143,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                             <option value="approved" ${u.status==='approved'?'selected':''}>Approved</option>
                             <option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option>
                         </select>
-                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminAddPremium('${uid}')">💎 Lisää Premium</button>
+                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
                         <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
                     </div>
                 </div>`;
@@ -143,105 +156,94 @@ export const renderAdminView = async (content, db, currentUser) => {
         }
     };
 
-    // --- LOGIIKKA: Datan prosessointi (Vanha admin.html toiminnallisuus) ---
+    // --- PROSESSOI DATA ---
     document.getElementById('processBtn').onclick = async () => {
         const raw = document.getElementById('statInput').value;
         const log = document.getElementById('processLog');
         log.innerHTML = "Aloitetaan...";
-        
         try {
             const lines = raw.split('\n');
             const result = {};
             let count = 0;
-
             lines.forEach(line => {
                 const parts = line.split('\t');
                 if (parts.length > 5) {
                     const kunta = parts[0].trim();
                     if (kunta && kunta !== 'Paikkakunta' && kunta !== 'Summa') {
-                        // Parsitaan arvot (Tradi, Multi, Webcam, Mysse...)
                         const vals = parts.slice(1).map(v => parseInt(v) || 0);
                         result[kunta] = { s: vals };
                         count++;
                     }
                 }
             });
-
-            if (count === 0) throw new Error("Ei dataa tunnistettu. Varmista että kopioit taulukon oikein.");
-
-            // Tallennetaan adminin omiin tilastoihin (Admin voi sitten katsella niitä)
-            // HUOM: Jos haluat päivittää *toisen* käyttäjän tilastoja, tämä logiikka pitää muuttaa.
-            // Nyt tämä päivittää "logged in user" eli sinun omat tilastosi.
-            await setDoc(doc(db, "stats", currentUser.uid), {
-                municipalities: result,
-                updatedAt: Timestamp.now()
-            });
-
-            log.innerHTML = `✅ Valmis! ${count} kuntaa päivitetty tietokantaan (Sinun tilillesi).`;
-
-        } catch (e) {
-            log.innerHTML = `❌ Virhe: ${e.message}`;
-        }
+            if (count === 0) throw new Error("Ei dataa tunnistettu.");
+            await setDoc(doc(db, "stats", currentUser.uid), { municipalities: result, updatedAt: Timestamp.now() });
+            log.innerHTML = `✅ Valmis! ${count} kuntaa päivitetty sinun tilillesi.`;
+        } catch (e) { log.innerHTML = `❌ Virhe: ${e.message}`; }
     };
 
-    // --- LOGIIKKA: Asetukset (Require Approval) ---
+    // --- ASETUKSET ---
     const settingsRef = doc(db, "settings", "global");
-    
-    // Lataa nykyiset asetukset
     getDoc(settingsRef).then(snap => {
-        if(snap.exists()) {
-            document.getElementById('settingRequireApproval').checked = snap.data().requireApproval || false;
-        }
+        if(snap.exists()) document.getElementById('settingRequireApproval').checked = snap.data().requireApproval || false;
     });
-
     document.getElementById('saveSettingsBtn').onclick = async () => {
-        const val = document.getElementById('settingRequireApproval').checked;
-        await setDoc(settingsRef, { requireApproval: val }, { merge: true });
+        await setDoc(settingsRef, { requireApproval: document.getElementById('settingRequireApproval').checked }, { merge: true });
         alert("Asetukset tallennettu.");
     };
 
-    // --- GLOBAALIT ADMIN-FUNKTIOT (Kutsutaan HTML:stä) ---
+    // --- GLOBAALIT ADMIN-FUNKTIOT ---
     
     window.app.adminChangeStatus = async (uid, newStatus) => {
         await updateDoc(doc(db, "users", uid), { status: newStatus });
-        loadUsers(); // Päivitä lista
+        loadUsers();
     };
 
-    window.app.adminAddPremium = async (uid) => {
-        const code = prompt("Syötä tuotekoodi (esim. T-1V, T-6KK):").toUpperCase();
-        if (!PRODUCTS[code]) return alert("Virheellinen koodi!");
+    // AVAA PREMIUM-VALIKKO
+    window.app.adminOpenPremium = (uid, name) => {
+        document.getElementById('premiumTargetUser').textContent = `Lisätään käyttäjälle: ${name}`;
+        const list = document.getElementById('productList');
+        list.innerHTML = '';
 
-        const days = PRODUCTS[code];
-        
-        // Haetaan nykyinen expiraatio
+        PRODUCTS.forEach(prod => {
+            const btn = document.createElement('button');
+            btn.className = 'product-btn';
+            btn.style.backgroundColor = prod.color;
+            btn.innerHTML = `<span>${prod.name}</span> <span>${prod.price}</span>`;
+            btn.onclick = () => app.adminApplyPremium(uid, prod);
+            list.appendChild(btn);
+        });
+
+        document.getElementById('premiumModal').classList.add('open');
+    };
+
+    // TOTEUTA PREMIUM LISÄYS
+    window.app.adminApplyPremium = async (uid, product) => {
         const uSnap = await getDoc(doc(db, "users", uid));
         let currentExp = uSnap.data().premiumExpires ? uSnap.data().premiumExpires.toDate() : new Date();
         
-        // Jos vanha aika on mennyt jo umpeen, aloitetaan tästä hetkestä
+        // Jos vanha aika mennyt, aloitetaan tästä hetkestä
         if (currentExp < new Date()) currentExp = new Date();
 
         // Lisätään päivät
-        currentExp.setDate(currentExp.getDate() + days);
+        currentExp.setDate(currentExp.getDate() + product.days);
 
         await updateDoc(doc(db, "users", uid), {
             plan: 'premium',
             premiumExpires: Timestamp.fromDate(currentExp)
         });
         
-        alert(`Premium lisätty! Uusi päättymispäivä: ${currentExp.toLocaleDateString()}`);
+        document.getElementById('premiumModal').classList.remove('open');
+        alert(`✅ Lisätty ${product.name}! Uusi päättymispäivä: ${currentExp.toLocaleDateString()}`);
         loadUsers();
     };
 
     window.app.adminDeleteUser = async (uid) => {
-        if(!confirm("Haluatko varmasti poistaa tämän käyttäjän ja hänen tilastonsa?")) return;
-        
-        // Poistetaan stats ja user doc. (Huom: Auth-käyttäjää ei voi poistaa tästä suoraan ilman Cloud Functionsia,
-        // mutta poistamalla docin estämme kirjautumisen 'auth.js' tarkistuksessa)
+        if(!confirm("Poistetaanko käyttäjä ja tilastot pysyvästi?")) return;
         await deleteDoc(doc(db, "stats", uid));
         await deleteDoc(doc(db, "users", uid));
         loadUsers();
     };
 
-    // Käynnistetään listan lataus
     loadUsers();
 };
