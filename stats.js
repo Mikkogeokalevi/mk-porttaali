@@ -462,8 +462,6 @@ export const loadExternalStats = async (content) => {
             { id: '12', name: 'CITO' },
             { id: '13', name: 'Giga' },
             { id: '14', name: 'Block Party' },
-            { id: '20', name: 'LAB' },
-            { id: '96', name: 'Muut paitsi Labit' },
             { id: '98', name: 'Muut paitsi Tradit' },
             { id: '99', name: 'Kaikki Eventit' }
         ];
