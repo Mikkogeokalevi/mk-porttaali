@@ -35,15 +35,13 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
-    // --- KORJAUS: SULJE VALIKKO AUTOMAATTISESTI ---
+    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
     if (nav && nav.classList.contains('open')) {
         nav.classList.remove('open');
     }
-    // ----------------------------------------------
 
     const content = document.getElementById('appContent');
-    
     const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings'];
     
     if (protectedViews.includes(view) && !window.app.currentUser) {
@@ -81,16 +79,13 @@ window.app = {
         content.innerHTML = `
           <div class="card">
             <h1>MK Porttaali v2.6 ${planBadge}</h1>
-            
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' ? '🔒' : ''}</button>
-                
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <a href="muuntimet.html" class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; text-decoration:none; display:flex; align-items:center; justify-content:center;">Muuntimet ↗</a>
                     <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
                 </div>
-                
                 <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet</button>
                 ${adminButton}
             </div>
@@ -98,25 +93,10 @@ window.app = {
         `;
         break;
 
-      case 'settings':
-        renderSettingsView(content, db, window.app.currentUser, window.app);
-        break;
+      case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
+      case 'admin': renderAdminView(content, db, window.app.currentUser); break;
+      case 'locked_view': content.innerHTML = `<div class="card" style="text-align:center;"><h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1><button class="btn" onclick="app.logout()">Kirjaudu ulos</button></div>`; break;
 
-      case 'admin':
-        renderAdminView(content, db, window.app.currentUser);
-        break;
-
-      case 'locked_view':
-        content.innerHTML = `
-            <div class="card" style="text-align:center;">
-                <h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1>
-                <p>Käyttäjätilisi on luotu, mutta ylläpito ei ole vielä hyväksynyt sitä.</p>
-                <button class="btn" onclick="app.logout()">Kirjaudu ulos</button>
-            </div>
-        `;
-        break;
-
-      // Tilastot
       case 'stats': if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app); break;
       case 'stats_triplet': if (checkPremium(content)) Stats.loadTripletData(db, window.app.currentUser, content); break;
       case 'stats_map': if (checkPremium(content)) MapView.renderTripletMap(content, db, window.app.currentUser, window.app); break;
@@ -135,8 +115,7 @@ window.app = {
             <input type="email" id="email" placeholder="Sähköposti" style="margin-bottom:10px;">
             <input type="password" id="password" placeholder="Salasana" style="margin-bottom:10px;">
             <div id="registerFields" class="hidden">
-                <input type="text" id="regNick" placeholder="Nimimerkki (Geocaching.com)" style="margin-bottom:10px; border-color:var(--accent-color);">
-                <p style="font-size:0.8em; opacity:0.8; margin-bottom:10px;">Valitse salasana ja sähköposti yltä.</p>
+                <input type="text" id="regNick" placeholder="Nimimerkki" style="margin-bottom:10px; border-color:var(--accent-color);">
             </div>
             <button id="btnLogin" class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
             <button id="btnRegister" class="btn hidden" style="background-color:#a6e3a1; color:#1e1e2e;" onclick="app.handleRegister()">Luo uusi tili</button>
@@ -145,9 +124,7 @@ window.app = {
             <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
             <p style="text-align:center; margin-top:20px; font-size:0.9em;">
                 <span id="toggleText">Eikö sinulla ole tiliä?</span> 
-                <a href="#" onclick="app.toggleAuthMode()" style="color:var(--accent-color); font-weight:bold;">
-                    <span id="toggleLink">Rekisteröidy tästä</span>
-                </a>
+                <a href="#" onclick="app.toggleAuthMode()" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
             </p>
           </div>
         `;
@@ -177,7 +154,6 @@ window.app = {
   },
   
   toggleMenu: () => document.getElementById('mainNav').classList.toggle('open'),
-
   loginGoogle: () => Auth.loginGoogle(auth, (v) => window.app.router(v)),
   logout: () => Auth.logout(auth, (v) => window.app.router(v)),
   handleEmailLogin: () => {
@@ -194,11 +170,9 @@ window.app = {
       Auth.handleRegister(auth, db, e, p, n, (v) => window.app.router(v));
   },
   deleteMyAccount: () => Auth.deleteMyAccount(auth, db),
+  saveNickname: () => { /* Vanha */ },
   
-  saveNickname: () => { /* Vanha toiminto, poistetaan käytöstä */ },
-  
-  // Wrapperit Settings-sivun toiminnoille
-  loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', null),
+  loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', 'friendSelect'),
   addFriend: () => {
       const name = document.getElementById('newFriendName').value.trim();
       const id = document.getElementById('newFriendId').value.trim();
@@ -232,7 +206,7 @@ function checkPremium(content) {
             <h2>Premium-ominaisuus</h2>
             <p>Tilastot ja kartat vaativat aktiivisen Premium-tilauksen.</p>
             <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
-                <p style="margin:0; font-size:0.9em; opacity:0.8;">Sinun ID-koodisi:</p>
+                <p style="margin:0; font-size:0.9em; opacity:0.8;">Sinun MK-tunnuksesi:</p>
                 <h3 style="margin:5px 0; letter-spacing:2px; color:#fab387; font-size:1.5em;">${idCode}</h3>
             </div>
             <p style="font-size:0.9em;">Maksa MobilePaylla ja kirjoita viestiin koodisi <strong>${idCode}</strong>.</p>
@@ -263,9 +237,13 @@ function renderGeneratorView(content) {
         <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
         
         <label>Käyttäjätunnus:</label>
+        
+        <select id="friendSelect" style="width:100%; margin-bottom:5px; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px; display:none;" onchange="if(this.value) document.getElementById('genUser').value = this.value">
+            <option value="">-- Valitse tallennettu kaveri --</option>
+        </select>
+
         <div class="input-group">
-            <input type="text" id="genUser" list="friendListOptions" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()">
-            <datalist id="friendListOptions"></datalist>
+            <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
         </div>
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
