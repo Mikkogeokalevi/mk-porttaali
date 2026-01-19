@@ -1,6 +1,6 @@
 import { doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import * as Auth from "./auth.js"; // Tarvitaan kaverilistan lataukseen
+import * as Auth from "./auth.js"; 
 
 export const renderSettingsView = (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
@@ -10,6 +10,21 @@ export const renderSettingsView = (content, db, user, app) => {
     const gcId = app.savedId || "";
     const email = user.email;
     const plan = app.userPlan === 'premium' ? '💎 Premium' : 'Ilmainen';
+
+    // Piilotetaan poistonappi Adminilta
+    let dangerZoneHtml = '';
+    if (app.userRole !== 'admin') {
+        dangerZoneHtml = `
+            <h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3>
+            <p style="font-size:0.9em; opacity:0.7; margin-bottom:10px;">Toimintoa ei voi peruuttaa.</p>
+            <button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>
+        `;
+    } else {
+        dangerZoneHtml = `
+            <h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3>
+            <p style="font-size:0.9em; opacity:0.7;">Ylläpitäjän tiliä ei voi poistaa asetuksista.</p>
+        `;
+    }
 
     content.innerHTML = `
     <div class="card">
@@ -60,8 +75,7 @@ export const renderSettingsView = (content, db, user, app) => {
 
         <hr style="margin:25px 0; border-color:var(--border-color);">
 
-        <h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3>
-        <button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>
+        ${dangerZoneHtml}
     </div>
     `;
 
