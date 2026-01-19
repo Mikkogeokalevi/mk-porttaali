@@ -24,18 +24,26 @@ export const renderSettingsView = (content, db, user, app) => {
         }
     }
 
-    // Luodaan HTML
+    // --- IMPORT-OSIO ---
     let importHtml = '';
     
-    // --- IMPORT-OSIO VAIN PREMIUMILLE ---
     if (isPremium) {
         importHtml = `
         <div style="margin-top:25px; border-top:1px solid var(--border-color); padding-top:20px;">
             <h3>📥 Tuo omat tilastot</h3>
-            <p style="font-size:0.9em; opacity:0.8;">Päivitä löytötilastosi Geocache.fi:stä, jotta kartat toimivat.</p>
+            
+            <div style="background:rgba(66, 135, 245, 0.1); border:1px solid #4287f5; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.9em; line-height:1.5;">
+                <strong style="color:#89b4fa;">💡 Toimi näin:</strong>
+                <ol style="margin:5px 0 10px 20px; padding:0; color:#cdd6f4;">
+                    <li style="margin-bottom:5px;">Avaa Geocache.fi: <a href="https://www.geocache.fi/stat/other/jakauma.php" target="_blank" style="color:#89b4fa; font-weight:bold; text-decoration:underline;">Löytötilasto paikkakunnittain ↗</a></li>
+                    <li style="margin-bottom:5px;"><strong>Maalaa taulukko</strong> hiirellä. Aloita vasemmasta yläkulmasta sanasta <em>"Paikkakunta"</em> ja vedä alas asti.</li>
+                    <li>Kopioi (Ctrl+C) ja liitä (Ctrl+V) alla olevaan laatikkoon.</li>
+                </ol>
+            </div>
             
             <details style="margin-bottom:10px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
                 <summary style="cursor:pointer; color:#fab387; font-size:0.9em;">⚙️ Sarakkeiden asetukset (Jos tripletti on väärin)</summary>
+                <p style="font-size:0.8em; opacity:0.7; margin:5px 0;">Jos Geocache.fi muuttaa järjestystä, korjaa numerot tähän (1 = ensimmäinen luku).</p>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
                     <div><label style="font-size:0.8em;">Tradi:</label><input type="number" id="impColTradi" value="1" style="width:40px; padding:2px;"></div>
                     <div><label style="font-size:0.8em;">Multi:</label><input type="number" id="impColMulti" value="2" style="width:40px; padding:2px;"></div>
@@ -43,7 +51,7 @@ export const renderSettingsView = (content, db, user, app) => {
                 </div>
             </details>
 
-            <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:0.8em;" placeholder="Maalaa Geocache.fi:n 'Kuntatilasto'-taulukko ja liitä tähän..."></textarea>
+            <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:0.8em;" placeholder="Liitä taulukko tähän..."></textarea>
             <button class="btn btn-primary" id="impBtn" style="margin-top:10px; width:100%;">Prosessoi & Tallenna</button>
             <div id="impLog" style="margin-top:10px; font-family:monospace; font-size:0.8em; white-space: pre-wrap;"></div>
         </div>
@@ -56,7 +64,6 @@ export const renderSettingsView = (content, db, user, app) => {
         </div>`;
     }
 
-    // VAARAVYÖHYKE
     let dangerZoneHtml = '';
     if (app.userRole !== 'admin') {
         dangerZoneHtml = `<h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3><button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>`;
@@ -101,7 +108,7 @@ export const renderSettingsView = (content, db, user, app) => {
     `;
 
     Auth.loadFriends(db, user.uid, 'friendListContainer', null);
-    window.app.saveSettings = async () => { /* ... (sama tallennus kuin ennen) ... */ 
+    window.app.saveSettings = async () => { 
         const newNick = document.getElementById('setNick').value.trim();
         const newId = document.getElementById('setGcId').value.trim();
         if(!newNick) return alert("Nimimerkki ei voi olla tyhjä.");
@@ -111,13 +118,10 @@ export const renderSettingsView = (content, db, user, app) => {
         } catch(e) { alert("Virhe tallennuksessa."); }
     };
 
-    // --- IMPORT LOGIIKKA (Jos Premium) ---
     if (isPremium) {
         document.getElementById('impBtn').onclick = async () => {
             const raw = document.getElementById('impInput').value;
             const log = document.getElementById('impLog');
-            
-            // Luetaan asetukset
             const idxTradi = parseInt(document.getElementById('impColTradi').value) - 1;
             const idxMulti = parseInt(document.getElementById('impColMulti').value) - 1;
             const idxMysse = parseInt(document.getElementById('impColMysse').value) - 1;
@@ -147,7 +151,6 @@ export const renderSettingsView = (content, db, user, app) => {
                 const firstKey = Object.keys(result)[0];
                 const s = result[firstKey].s;
                 log.innerHTML = `✅ Valmis! ${count} kuntaa tallennettu.\n\nTarkistus (${firstKey}):\nTradi: ${s[idxTradi]} | Multi: ${s[idxMulti]} | Mysse: ${s[idxMysse]}`;
-
             } catch (e) { log.innerHTML = `❌ Virhe: ${e.message}`; }
         };
     }
