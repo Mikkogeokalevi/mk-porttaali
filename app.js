@@ -10,7 +10,7 @@ import { renderHelp } from "./help.js";
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
 import { renderAdminView } from "./admin.js";
-import { renderSettingsView } from "./settings.js"; // <--- UUSI
+import { renderSettingsView } from "./settings.js"; 
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -35,6 +35,13 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
+    // --- KORJAUS: SULJE VALIKKO AUTOMAATTISESTI ---
+    const nav = document.getElementById('mainNav');
+    if (nav && nav.classList.contains('open')) {
+        nav.classList.remove('open');
+    }
+    // ----------------------------------------------
+
     const content = document.getElementById('appContent');
     
     const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings'];
@@ -91,7 +98,7 @@ window.app = {
         `;
         break;
 
-      case 'settings': // <--- UUSI REITTI
+      case 'settings':
         renderSettingsView(content, db, window.app.currentUser, window.app);
         break;
 
@@ -168,6 +175,7 @@ window.app = {
           document.getElementById('toggleLink').textContent = "Kirjaudu sisään";
       }
   },
+  
   toggleMenu: () => document.getElementById('mainNav').classList.toggle('open'),
 
   loginGoogle: () => Auth.loginGoogle(auth, (v) => window.app.router(v)),
@@ -187,8 +195,9 @@ window.app = {
   },
   deleteMyAccount: () => Auth.deleteMyAccount(auth, db),
   
-  // NÄMÄ SIIRRETTY SETTINGS.JS -TIEDOSTOON, MUTTA PIDETÄÄN TÄSSÄ VIELÄ JOS TARVITAAN VANHOISTA SYISTÄ
-  // (Oikeasti app.addFriend kutsuu nyt settings-näkymän funktiota, mutta tässä on wrapperit)
+  saveNickname: () => { /* Vanha toiminto, poistetaan käytöstä */ },
+  
+  // Wrapperit Settings-sivun toiminnoille
   loadFriends: () => Auth.loadFriends(db, window.app.currentUser?.uid, 'friendListContainer', null),
   addFriend: () => {
       const name = document.getElementById('newFriendName').value.trim();
@@ -215,7 +224,6 @@ window.app = {
 };
 
 function checkPremium(content) {
-    // ... Sama premium-koodi kuin aiemmin
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
     const idCode = window.app.shortId || "VIRHE";
     content.innerHTML = `
@@ -234,7 +242,6 @@ function checkPremium(content) {
     return false;
 }
 
-// SIIVOTTU GENERAATTORI-NÄKYMÄ
 function renderGeneratorView(content) {
     let defaultUser = '';
     if (window.app.currentUser) {
@@ -250,7 +257,6 @@ function renderGeneratorView(content) {
     let monthOptions = '<option value="current">— Kk —</option>';
     months.forEach((m, i) => monthOptions += `<option value="${(i+1).toString().padStart(2,'0')}">${m}</option>`);
 
-    // TÄSSÄ MUUTOS: Poistettu nimimerkin hallinta, käytetään vain inputtia tai listaa
     content.innerHTML = `
       <div class="card">
         <h1>Kuvageneraattori</h1>
