@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v6'; // v5 -> v6
+const CACHE_NAME = 'mk-porttaali-v7'; // PÄIVITETTY: v6 -> v7
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './auth.js',
   './admin.js',
-  './settings.js', // <--- UUSI
+  './settings.js', // Mukana
   './data.js',
   './generator.js',
   './help.js',
@@ -21,12 +21,13 @@ const ASSETS_TO_CACHE = [
   './mikkokalevi.png',
   './kunnat.json'
 ];
+
 // Asennus: Ladataan tiedostot välimuistiin
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  self.skipWaiting(); // Pakotetaan uusi SW käyttöön heti
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets (v6)');
+      console.log('[SW] Caching assets (v7)');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
