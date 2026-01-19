@@ -8,7 +8,8 @@ import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
 import * as MapView from "./map.js";
-import * as MapAllView from "./map_all.js"; // <--- UUSI IMPORTTI
+import * as MapAllView from "./map_all.js";
+import { renderAdminView } from "./admin.js"; // <--- UUSI: Admin-näkymä
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -28,7 +29,10 @@ window.app = {
   currentUser: null,
   savedNickname: null,
   savedId: null,
-  friendsList: [], // Alustetaan tyhjäksi
+  friendsList: [],
+  userRole: 'guest', // 'guest', 'user', 'admin'
+  userPlan: 'free',  // 'free', 'premium'
+  shortId: '',       // Maksukoodia varten
 
   // --- NAVIGOINTI JA ROUTER ---
   router: (view) => {
@@ -36,25 +40,42 @@ window.app = {
     const nav = document.getElementById('mainNav');
     if(nav) nav.classList.remove('open');
 
+    // Tarkistetaan onko käyttäjä kirjautunut (suojatut sivut)
+    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin'];
+    if (protectedViews.includes(view) && !window.app.currentUser) {
+        window.app.router('login_view');
+        return;
+    }
+
     switch(view) {
       case 'home':
+        let adminButton = '';
+        if (window.app.userRole === 'admin') {
+            adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
+        }
+        
+        let planBadge = window.app.userPlan === 'premium' 
+            ? '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.8em; font-weight:bold; margin-left:5px;">PREMIUM</span>' 
+            : '';
+
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.6</h1>
+            <h1>MK Porttaali v2.6 ${planBadge}</h1>
             <p>Mobiiliystävällinen geokätköilytyökalupakki.</p>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">
                   Avaa Kuvageneraattori (Live)
                 </button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">
-                  Tilastot
+                  Tilastot ${window.app.userPlan === 'free' ? '🔒' : ''}
                 </button>
                 <a href="muuntimet.html" class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; text-decoration:none; display:flex; align-items:center; justify-content:center;">
                   Muuntimet ↗
                 </a>
                 <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">
-                  Ohjeet & Admin
+                  Ohjeet
                 </button>
+                ${adminButton}
             </div>
           </div>
           
@@ -66,52 +87,58 @@ window.app = {
               <li><a href="https://project-gc.com/" target="_blank">Project-GC ↗</a></li>
               <li><a href="https://mikkogeokalevi.github.io/kuntatarkistin/" target="_blank">Kuntatarkistin ↗</a></li>
               <li><a href="https://www.geocachingtoolbox.com/" target="_blank">Geocaching Toolbox ↗</a></li>
-              <li><a href="https://www.dcode.fr/en" target="_blank">dCode.fr (Salakirjoitukset) ↗</a></li>
-              <li><a href="https://xiit.dy.fi/gc/" target="_blank">Geocalcing2 ↗</a></li>
-              <li><a href="https://gc.de/gc/reversewherigo/" target="_blank">Reverse Wherigo Solver ↗</a></li>
-              <li><a href="https://solvedjigidi.com/" target="_blank">Solved Jigidi ↗</a></li>
             </ul>
           </div>
         `;
         break;
 
-      // --- TILASTOREITIT ---
+      // --- ADMIN VIEW ---
+      case 'admin':
+        renderAdminView(content, db, window.app.currentUser);
+        break;
+
+      // --- ACCOUNT PENDING VIEW ---
+      case 'locked_view':
+        content.innerHTML = `
+            <div class="card" style="text-align:center;">
+                <h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1>
+                <p>Käyttäjätilisi on luotu, mutta ylläpito ei ole vielä hyväksynyt sitä.</p>
+                <p>Yritä myöhemmin uudelleen.</p>
+                <button class="btn" onclick="app.logout()">Kirjaudu ulos</button>
+            </div>
+        `;
+        break;
+
+      // --- TILASTOREITIT (PREMIUM LUKITUS) ---
       case 'stats':
-        Stats.renderStatsDashboard(content, window.app);
+        if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app);
         break;
 
       case 'stats_triplet':
-        if (!window.app.currentUser) { app.router('login_view'); return; }
-        Stats.loadTripletData(db, window.app.currentUser, content);
+        if (checkPremium(content)) Stats.loadTripletData(db, window.app.currentUser, content);
         break;
 
-      // Triplettikartta
       case 'stats_map':
-        if (!window.app.currentUser) { app.router('login_view'); return; }
-        MapView.renderTripletMap(content, db, window.app.currentUser, window.app);
+        if (checkPremium(content)) MapView.renderTripletMap(content, db, window.app.currentUser, window.app);
         break;
 
-      // UUSI: Kaikkien löytöjen kartta
       case 'stats_map_all':
-        if (!window.app.currentUser) { app.router('login_view'); return; }
-        MapAllView.renderAllFindsMap(content, db, window.app.currentUser, window.app);
+        if (checkPremium(content)) MapAllView.renderAllFindsMap(content, db, window.app.currentUser, window.app);
         break;
 
       case 'stats_all':
-        if (!window.app.currentUser) { app.router('login_view'); return; }
-        Stats.loadAllStats(db, window.app.currentUser, content);
+        if (checkPremium(content)) Stats.loadAllStats(db, window.app.currentUser, content);
         break;
 
       case 'stats_top':
-        if (!window.app.currentUser) { app.router('login_view'); return; }
-        Stats.loadTopStats(db, window.app.currentUser, content);
+        if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content);
         break;
         
       case 'stats_external':
-        Stats.loadExternalStats(content);
+        if (checkPremium(content)) Stats.loadExternalStats(content);
         break;
 
-      // --- KUVAGENERATTORI ---
+      // --- MUUT ---
       case 'generator':
         renderGeneratorView(content);
         break;
@@ -127,7 +154,11 @@ window.app = {
             <input type="email" id="email" placeholder="Sähköposti">
             <input type="password" id="password" placeholder="Salasana">
             <button class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu</button>
-            <button class="btn" style="width:100%" onclick="app.handleRegister()">Luo uusi</button>
+            
+            <div class="divider"><span>TAI REKISTERÖIDY</span></div>
+            <input type="text" id="regNick" placeholder="Nimimerkki (Geocaching.com)">
+            <button class="btn" style="width:100%" onclick="app.handleRegister()">Luo uusi tili</button>
+            
             <div id="loginError" class="error-msg"></div>
             <div class="divider"><span>TAI</span></div>
             <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
@@ -158,11 +189,14 @@ window.app = {
   handleRegister: () => {
       const e = document.getElementById('email').value;
       const p = document.getElementById('password').value;
-      Auth.handleRegister(auth, e, p,
-        (msg) => { const d=document.getElementById('loginError'); d.style.display='block'; d.textContent=msg; },
-        (v) => window.app.router(v)
-      );
+      const n = document.getElementById('regNick').value;
+      if(!n) { alert("Anna nimimerkki!"); return; }
+      
+      Auth.handleRegister(auth, db, e, p, n, (v) => window.app.router(v));
   },
+
+  // Käyttäjän poisto (Settings-valikosta tai vastaavasta, nyt lisätään Help-sivulle tai profiiliin myöhemmin)
+  deleteMyAccount: () => Auth.deleteMyAccount(auth, db),
 
   saveNickname: () => {
       const name = document.getElementById('genUser').value.trim();
@@ -199,6 +233,43 @@ window.app = {
   toggleTimeFields: Gen.toggleTimeFields,
   generateStatImage: Gen.generateStatImage
 };
+
+// --- APUFUNKTIO: PREMIUM TARKISTUS ---
+function checkPremium(content) {
+    if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') {
+        return true;
+    }
+    
+    const idCode = window.app.shortId || "VIRHE";
+    
+    content.innerHTML = `
+        <div class="card" style="text-align:center; padding:40px 20px;">
+            <div style="font-size:3em; margin-bottom:10px;">💎</div>
+            <h2>Premium-ominaisuus</h2>
+            <p>Tilastot ja kartat vaativat aktiivisen Premium-tilauksen.</p>
+            
+            <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
+                <p style="margin:0; font-size:0.9em; opacity:0.8;">Sinun ID-koodisi:</p>
+                <h3 style="margin:5px 0; letter-spacing:2px; color:#fab387; font-size:1.5em;">${idCode}</h3>
+            </div>
+            
+            <p style="font-size:0.9em; line-height:1.6;">
+                <strong>Hinnasto:</strong><br>
+                Testi (1 vko): 1€<br>
+                Vuosi (12 kk): 10€
+            </p>
+            
+            <p style="font-size:0.9em; margin-top:15px;">
+                Maksa MobilePaylla ja kirjoita viestiin koodisi <strong>${idCode}</strong>.
+            </p>
+
+            <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
+            <br><br>
+            <button class="btn" style="background:none; border:none; color:#f38ba8; font-size:0.8em;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini</button>
+        </div>
+    `;
+    return false;
+}
 
 // Generaattorin HTML
 function renderGeneratorView(content) {
