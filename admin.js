@@ -9,6 +9,14 @@ const PRODUCTS = [
     { code: 'LIFE',   name: '👑 Frendi / Ikuinen', days: 36500, price: '0 €',  color: '#cba6f7' }
 ];
 
+// Suomen maakunnat (Tarvitaan datan parsintaan)
+const SUOMEN_MAAKUNNAT = [
+    "Ahvenanmaa", "Etelä-Karjala", "Etelä-Pohjanmaa", "Etelä-Savo", "Kainuu", "Kanta-Häme",
+    "Keski-Pohjanmaa", "Keski-Suomi", "Kymenlaakso", "Lappi", "Pirkanmaa", "Pohjanmaa",
+    "Pohjois-Karjala", "Pohjois-Pohjanmaa", "Pohjois-Savo", "Päijät-Häme", "Satakunta",
+    "Uusimaa", "Varsinais-Suomi"
+];
+
 export const renderAdminView = async (content, db, currentUser) => {
     if (!currentUser) return;
     const userSnap = await getDoc(doc(db, "users", currentUser.uid));
@@ -33,16 +41,8 @@ export const renderAdminView = async (content, db, currentUser) => {
 
         <div id="adminTabData" class="admin-tab-content hidden" style="margin-top:20px;">
             <h3>Datan päivitys (Geocache.fi)</h3>
+            <p style="font-size:0.9em;">Tämä työkalu käyttää "vanhaa kunnon" logiikkaa, joka osaa lukea maakunnat rivin keskeltä.</p>
             
-            <div style="background:rgba(66, 135, 245, 0.1); border:1px solid #4287f5; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.9em; line-height:1.5;">
-                <strong style="color:#89b4fa;">💡 Ohje:</strong>
-                <ol style="margin:5px 0 10px 20px; padding:0; color:#cdd6f4;">
-                    <li style="margin-bottom:5px;">Avaa Geocache.fi: <a href="https://www.geocache.fi/stat/other/jakauma.php" target="_blank" style="color:#89b4fa; font-weight:bold; text-decoration:underline;">Löytötilasto paikkakunnittain ↗</a></li>
-                    <li style="margin-bottom:5px;"><strong>Maalaa taulukko</strong> hiirellä. Aloita vasemmasta yläkulmasta sanasta <em>"Paikkakunta"</em> ja vedä alas asti.</li>
-                    <li>Kopioi (Ctrl+C) ja liitä (Ctrl+V) alla olevaan laatikkoon.</li>
-                </ol>
-            </div>
-
             <details style="margin-bottom:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
                 <summary style="cursor:pointer; color:#fab387; font-weight:bold;">⚙️ Sarakkeiden asetukset</summary>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
@@ -52,7 +52,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                 </div>
             </details>
 
-            <textarea id="statInput" rows="10" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px;" placeholder="Liitä taulukko tähän..."></textarea>
+            <textarea id="statInput" rows="10" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; white-space:pre;" placeholder="Liitä taulukko tähän..."></textarea>
             <button class="btn btn-primary" id="processBtn" style="margin-top:10px;">Prosessoi & Tallenna</button>
             <div id="processLog" style="margin-top:10px; font-family:monospace; font-size:0.8em; white-space: pre-wrap;"></div>
         </div>
@@ -137,7 +137,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         } catch (e) { container.innerHTML = `<p style="color:red">Virhe: ${e.message}</p>`; }
     };
 
-    // --- PROSESSOI DATA ---
+    // --- PROSESSOI DATA (KORJATTU VANHA LOGIIKKA) ---
     document.getElementById('processBtn').onclick = async () => {
         const raw = document.getElementById('statInput').value;
         const log = document.getElementById('processLog');
@@ -152,16 +152,47 @@ export const renderAdminView = async (content, db, currentUser) => {
             const lines = raw.split('\n');
             const result = {};
             let count = 0;
+            const sortedRegions = [...SUOMEN_MAAKUNNAT].sort((a, b) => b.length - a.length);
             
             lines.forEach(line => {
-                const parts = line.split('\t'); 
-                if (parts.length > 5) {
-                    const kunta = parts[0].trim();
-                    if (kunta && kunta !== 'Paikkakunta' && kunta !== 'Summa' && isNaN(parseInt(kunta))) {
-                        const vals = parts.slice(1).map(v => parseInt(v.replace(/\s/g, '')) || 0);
-                        result[kunta] = { s: vals };
-                        count++;
+                let clean = line.trim();
+                if(!clean || clean.startsWith("Paikkakunta") || clean.length < 5) return;
+
+                let kunta = "", numsPart = "";
+                let found = false;
+
+                // 1. Yritetään löytää maakunta tekstin seasta (Älykäs haku)
+                for(const r of sortedRegions) {
+                    const idx = clean.indexOf(r);
+                    if(idx > 0) {
+                        kunta = clean.substring(0, idx).trim();
+                        numsPart = clean.substring(idx + r.length).trim();
+                        found = true;
+                        break;
                     }
+                }
+
+                // 2. Jos ei löydy, kokeillaan tab-erottelua (Varasuunnitelma)
+                if(!found && clean.includes('\t')) {
+                    const parts = clean.split('\t');
+                    if(parts.length > 4) {
+                        let offset = isNaN(parseInt(parts[0])) ? 0 : 1;
+                        kunta = parts[offset];
+                        numsPart = parts.slice(offset+2).join(' ');
+                        found = true;
+                    }
+                }
+
+                if(found) {
+                    // Siivotaan kunnan nimestä mahdolliset järjestysnumerot alusta (esim "1. Helsinki")
+                    kunta = kunta.replace(/^\d+\s+/, ''); 
+                    
+                    // Pilkotaan numerot välilyöntien perusteella
+                    const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
+                    const allStats = numStrings.map(s => parseInt(s) || 0);
+
+                    result[kunta] = { s: allStats };
+                    count++;
                 }
             });
 
@@ -169,6 +200,7 @@ export const renderAdminView = async (content, db, currentUser) => {
             
             await setDoc(doc(db, "stats", currentUser.uid), { municipalities: result, updatedAt: Timestamp.now() });
             
+            // Debug tulostus logiin (otetaan eka oikea rivi)
             const firstKey = Object.keys(result)[0];
             const s = result[firstKey].s;
             log.innerHTML = `✅ Valmis! ${count} kuntaa tallennettu.\n\nTarkistus (${firstKey}):\nTradi: ${s[idxTradi]} (sarake ${idxTradi+1})\nMulti: ${s[idxMulti]} (sarake ${idxMulti+1})\nMysse: ${s[idxMysse]} (sarake ${idxMysse+1})`;
