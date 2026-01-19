@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v9'; // PÄIVITETTY: v6 -> v7
+const CACHE_NAME = 'mk-porttaali-v11'; // PÄIVITETTY: v10 -> v11
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './auth.js',
   './admin.js',
-  './settings.js', // Mukana
+  './settings.js',
   './data.js',
   './generator.js',
   './help.js',
@@ -24,10 +24,10 @@ const ASSETS_TO_CACHE = [
 
 // Asennus: Ladataan tiedostot välimuistiin
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Pakotetaan uusi SW käyttöön heti
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets (v7)');
+      console.log('[SW] Caching assets (v11)');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -48,9 +48,8 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Haku: Verkko ensin, sitten välimuisti (Network First)
+// Haku: Verkko ensin, sitten välimuisti
 self.addEventListener('fetch', (event) => {
-  // Ohitetaan Firestore ja ulkoiset kartat välimuistista
   if (event.request.url.includes('firestore') || 
       event.request.url.includes('geocache.fi') ||
       event.request.url.includes('googleapis.com') ||
@@ -61,7 +60,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Jos verkkohaku onnistuu, päivitetään välimuisti taustalla
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
@@ -72,7 +70,6 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Jos verkko ei toimi, palautetaan välimuistista
         return caches.match(event.request);
       })
   );
