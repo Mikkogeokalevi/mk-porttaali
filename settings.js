@@ -2,6 +2,14 @@ import { doc, updateDoc, deleteDoc, setDoc, Timestamp } from "https://www.gstati
 import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import * as Auth from "./auth.js"; 
 
+// Kopioitu admin.js:stä datan tuontia varten
+const SUOMEN_MAAKUNNAT = [
+    "Ahvenanmaa", "Etelä-Karjala", "Etelä-Pohjanmaa", "Etelä-Savo", "Kainuu", "Kanta-Häme",
+    "Keski-Pohjanmaa", "Keski-Suomi", "Kymenlaakso", "Lappi", "Pirkanmaa", "Pohjanmaa",
+    "Pohjois-Karjala", "Pohjois-Pohjanmaa", "Pohjois-Savo", "Päijät-Häme", "Satakunta",
+    "Uusimaa", "Varsinais-Suomi"
+];
+
 export const renderSettingsView = (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
 
@@ -11,7 +19,6 @@ export const renderSettingsView = (content, db, user, app) => {
     const email = user.email;
     const isPremium = app.userPlan === 'premium' || app.userRole === 'admin';
 
-    // Mobiiliystävällinen input-tyyli (16px estää zoomauksen iOS:lla)
     const inputStyle = "width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; background: #181825; border: 1px solid #45475a; color: white; border-radius: 4px; font-size: 16px;";
 
     let planDisplay = 'Ilmainen';
@@ -56,7 +63,7 @@ export const renderSettingsView = (content, db, user, app) => {
                 </div>
             </details>
 
-            <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:16px; border-radius:4px;" placeholder="Liitä taulukko tähän..."></textarea>
+            <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:16px; border-radius:4px; white-space:pre;" placeholder="Liitä taulukko tähän..."></textarea>
             <button class="btn btn-primary" id="impBtn" style="margin-top:10px; width:100%;">Prosessoi & Tallenna</button>
             <div id="impLog" style="margin-top:10px; font-family:monospace; font-size:0.8em; white-space: pre-wrap;"></div>
         </div>
@@ -143,19 +150,50 @@ export const renderSettingsView = (content, db, user, app) => {
                 const lines = raw.split('\n');
                 const result = {};
                 let count = 0;
+                const sortedRegions = [...SUOMEN_MAAKUNNAT].sort((a, b) => b.length - a.length);
+
                 lines.forEach(line => {
-                    const parts = line.split('\t');
-                    if (parts.length > 5) {
-                        const kunta = parts[0].trim();
-                        if (kunta && kunta !== 'Paikkakunta' && kunta !== 'Summa' && isNaN(parseInt(kunta))) {
-                            const vals = parts.slice(1).map(v => parseInt(v.replace(/\s/g, '')) || 0);
-                            result[kunta] = { s: vals };
-                            count++;
+                    let clean = line.trim();
+                    if(!clean || clean.startsWith("Paikkakunta") || clean.length < 5) return;
+
+                    let kunta = "", numsPart = "";
+                    let found = false;
+
+                    // 1. Etsitään maakunta
+                    for(const r of sortedRegions) {
+                        const idx = clean.indexOf(r);
+                        if(idx > 0) {
+                            kunta = clean.substring(0, idx).trim();
+                            numsPart = clean.substring(idx + r.length).trim();
+                            found = true;
+                            break;
                         }
                     }
+
+                    // 2. Varasuunnitelma tab
+                    if(!found && clean.includes('\t')) {
+                        const parts = clean.split('\t');
+                        if(parts.length > 4) {
+                            let offset = isNaN(parseInt(parts[0])) ? 0 : 1;
+                            kunta = parts[offset];
+                            numsPart = parts.slice(offset+2).join(' ');
+                            found = true;
+                        }
+                    }
+
+                    if(found) {
+                        kunta = kunta.replace(/^\d+\s+/, ''); 
+                        const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
+                        const allStats = numStrings.map(s => parseInt(s) || 0);
+                        result[kunta] = { s: allStats };
+                        count++;
+                    }
                 });
+
                 if (count === 0) throw new Error("Ei dataa tunnistettu. Kopioi taulukko Geocache.fi sivulta.");
+                
                 await setDoc(doc(db, "stats", user.uid), { municipalities: result, updatedAt: Timestamp.now() });
+                
                 const firstKey = Object.keys(result)[0];
                 const s = result[firstKey].s;
                 log.innerHTML = `✅ Valmis! ${count} kuntaa tallennettu.\n\nTarkistus (${firstKey}):\nTradi: ${s[idxTradi]} | Multi: ${s[idxMulti]} | Mysse: ${s[idxMysse]}`;
