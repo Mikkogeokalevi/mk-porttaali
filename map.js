@@ -184,30 +184,34 @@ function onEachFeature(feature, layer, statsData, pgcUser) {
         title = `${name} <span style="font-size:0.8em; opacity:0.7;">(${originalName})</span>`;
     }
 
+    // --- KORJATTU POPUP-SISÄLTÖ (PAREMPI KONTRASTI) ---
     let popupContent = `<div style="text-align:center; min-width:200px;">
-        <strong style="font-size:1.1em;">${title}</strong>
-        <div style="font-size:0.8em; opacity:0.7;">${region || ''}</div>
+        <strong style="font-size:1.1em; color:#333;">${title}</strong>
+        <div style="font-size:0.8em; opacity:0.7; color:#555;">${region || ''}</div>
         <hr style="margin:5px 0; border-top:1px solid #555;">`;
     
     if (s.t > 0 && s.m > 0 && s.q > 0) {
         popupContent += `<div style="color:#2e7d32; font-weight:bold; margin:5px 0;">Tripletti VALMIS! 🏆</div>`;
     } else {
-        popupContent += `<div style="margin:5px 0; font-weight:bold;">Puuttuu:</div>
+        popupContent += `<div style="margin:5px 0; font-weight:bold; color:#333;">Puuttuu:</div>
                          <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">`;
-        if (s.t === 0) popupContent += `<span style="background:rgba(166,227,161,0.2); color:#a6e3a1; padding:2px 5px; border-radius:4px; font-size:0.9em;">Tradi</span>`;
-        if (s.m === 0) popupContent += `<span style="background:rgba(137,180,250,0.2); color:#89b4fa; padding:2px 5px; border-radius:4px; font-size:0.9em;">Multi</span>`;
-        if (s.q === 0) popupContent += `<span style="background:rgba(249,226,175,0.2); color:#f9e2af; padding:2px 5px; border-radius:4px; font-size:0.9em;">Mysse</span>`;
+        
+        // Tummempi teksti, selkeä tausta ja reunus
+        if (s.t === 0) popupContent += `<span style="background:#d1e7dd; color:#0f5132; padding:4px 8px; border-radius:4px; font-weight:bold; border:1px solid #0f5132;">Tradi</span>`;
+        if (s.m === 0) popupContent += `<span style="background:#cfe2ff; color:#084298; padding:4px 8px; border-radius:4px; font-weight:bold; border:1px solid #084298;">Multi</span>`;
+        if (s.q === 0) popupContent += `<span style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:4px; font-weight:bold; border:1px solid #856404;">Mysse</span>`;
+        
         popupContent += `</div>`;
         
-        if (s.total === 0) popupContent += `<div style="margin-top:5px; color:#cc0000; font-size:0.9em;">Ei löytöjä lainkaan</div>`;
+        if (s.total === 0) popupContent += `<div style="margin-top:10px; color:#842029; background:#f8d7da; padding:5px; border-radius:4px; font-weight:bold; text-align:center; border:1px solid #f5c6cb;">Ei löytöjä lainkaan</div>`;
     }
     
-    popupContent += `<div style="margin-top:5px; font-size:0.9em;">Löydöt: T=${s.t}, M=${s.m}, ?=${s.q}</div>`;
+    popupContent += `<div style="margin-top:5px; font-size:0.9em; color:#333;">Löydöt: T=${s.t}, M=${s.m}, ?=${s.q}</div>`;
 
     // UUSI: PGC Linkki
     if (region) {
         const pgcLink = getPGCLink(pgcUser, name, region);
-        popupContent += `<a href="${pgcLink}" target="_blank" class="btn" style="display:block; font-size:0.8em; padding:5px; margin-top:10px; text-decoration:none; background-color:#585b70;">Avaa PGC Kartta ↗</a>`;
+        popupContent += `<a href="${pgcLink}" target="_blank" class="btn" style="display:block; font-size:0.8em; padding:5px; margin-top:10px; text-decoration:none; background-color:#585b70; color:white;">Avaa PGC Kartta ↗</a>`;
     }
 
     popupContent += `</div>`;
