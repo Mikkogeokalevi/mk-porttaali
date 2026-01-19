@@ -9,7 +9,23 @@ export const renderSettingsView = (content, db, user, app) => {
     const nickname = app.savedNickname || user.displayName || "Nimetön";
     const gcId = app.savedId || "";
     const email = user.email;
-    const plan = app.userPlan === 'premium' ? '💎 Premium' : 'Ilmainen';
+    
+    // --- UUSI LOGIIKKA TILAUKSEN NÄYTTÄMISEEN ---
+    let planDisplay = 'Ilmainen';
+    if (app.userPlan === 'premium') {
+        planDisplay = '💎 Premium';
+        
+        if (app.premiumExpires) {
+            const expDate = app.premiumExpires;
+            // Jos vuosi on yli 2090, näytetään "Toistaiseksi voimassa"
+            if (expDate.getFullYear() > 2090) {
+                planDisplay += ' <span style="font-size:0.8em; opacity:0.8; margin-left:5px;">(Toistaiseksi voimassa)</span>';
+            } else {
+                const dateStr = expDate.toLocaleDateString('fi-FI');
+                planDisplay += ` <br><span style="font-size:0.8em; opacity:0.7; margin-left:25px;">Päättyy: ${dateStr}</span>`;
+            }
+        }
+    }
 
     // Piilotetaan poistonappi Adminilta
     let dangerZoneHtml = '';
@@ -36,7 +52,7 @@ export const renderSettingsView = (content, db, user, app) => {
         <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-top:20px; border-left:4px solid var(--accent-color);">
             <h3 style="margin-top:0;">👤 Käyttäjätili</h3>
             <p><strong>Sähköposti:</strong> ${email}</p>
-            <p><strong>Tilaus:</strong> ${plan}</p>
+            <p><strong>Tilaus:</strong> ${planDisplay}</p>
             
             <div style="margin:15px 0; padding:10px; background:#181825; border:1px dashed #fab387; border-radius:6px;">
                 <p style="margin:0; font-size:0.8em; color:#fab387;">Sinun MK-tunnuksesi (Maksukoodi):</p>
@@ -79,10 +95,8 @@ export const renderSettingsView = (content, db, user, app) => {
     </div>
     `;
 
-    // Ladataan kaverit
     Auth.loadFriends(db, user.uid, 'friendListContainer', null);
 
-    // Tallennusfunktio
     window.app.saveSettings = async () => {
         const newNick = document.getElementById('setNick').value.trim();
         const newId = document.getElementById('setGcId').value.trim();
@@ -94,11 +108,8 @@ export const renderSettingsView = (content, db, user, app) => {
                 nickname: newNick,
                 gcId: newId
             });
-            
-            // Päivitetään paikallinen tila
             app.savedNickname = newNick;
             app.savedId = newId;
-            
             alert("Tiedot tallennettu! ✅");
         } catch(e) {
             console.error(e);
