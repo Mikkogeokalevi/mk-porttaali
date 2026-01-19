@@ -9,7 +9,7 @@ import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
-import { renderAdminView } from "./admin.js"; // <--- UUSI: Admin-näkymä
+import { renderAdminView } from "./admin.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -30,9 +30,9 @@ window.app = {
   savedNickname: null,
   savedId: null,
   friendsList: [],
-  userRole: 'guest', // 'guest', 'user', 'admin'
-  userPlan: 'free',  // 'free', 'premium'
-  shortId: '',       // Maksukoodia varten
+  userRole: 'guest', 
+  userPlan: 'free',  
+  shortId: '',       
 
   // --- NAVIGOINTI JA ROUTER ---
   router: (view) => {
@@ -40,8 +40,10 @@ window.app = {
     const nav = document.getElementById('mainNav');
     if(nav) nav.classList.remove('open');
 
-    // Tarkistetaan onko käyttäjä kirjautunut (suojatut sivut)
-    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin'];
+    // Määritellään sivut, jotka vaativat kirjautumisen
+    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator'];
+    
+    // Jos yritetään suojatulle sivulle ilman tunnuksia, heitetään login-ruutuun
     if (protectedViews.includes(view) && !window.app.currentUser) {
         window.app.router('login_view');
         return;
@@ -49,6 +51,29 @@ window.app = {
 
     switch(view) {
       case 'home':
+        // --- TÄMÄ ON UUSI TARKISTUS ---
+        // Jos ei ole kirjautunut, näytetään vain aloitusruutu
+        if (!window.app.currentUser) {
+            content.innerHTML = `
+              <div class="card" style="text-align:center; padding: 40px 20px;">
+                <div style="font-size:3em; margin-bottom:10px;">🔐</div>
+                <h1>MK Porttaali</h1>
+                <p>Kirjaudu sisään käyttääksesi työkaluja.</p>
+                <div style="margin-top:30px;">
+                    <button class="btn btn-primary" onclick="app.router('login_view')">Kirjaudu sisään</button>
+                    <p style="margin-top:15px; font-size:0.9em; opacity:0.7;">tai</p>
+                    <button class="btn" onclick="app.router('login_view')">Luo uusi tunnus</button>
+                </div>
+              </div>
+              <div class="card">
+                <h2>Tietoa sovelluksesta</h2>
+                <p>Tämä on geokätköilijöille tarkoitettu työkalu, joka sisältää mm. tilastoja, karttoja ja kuvageneraattorin.</p>
+              </div>
+            `;
+            return;
+        }
+
+        // --- JOS ON KIRJAUTUNUT, NÄYTETÄÄN DASHBOARD ---
         let adminButton = '';
         if (window.app.userRole === 'admin') {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
@@ -92,12 +117,10 @@ window.app = {
         `;
         break;
 
-      // --- ADMIN VIEW ---
       case 'admin':
         renderAdminView(content, db, window.app.currentUser);
         break;
 
-      // --- ACCOUNT PENDING VIEW ---
       case 'locked_view':
         content.innerHTML = `
             <div class="card" style="text-align:center;">
@@ -109,7 +132,7 @@ window.app = {
         `;
         break;
 
-      // --- TILASTOREITIT (PREMIUM LUKITUS) ---
+      // --- TILASTOREITIT ---
       case 'stats':
         if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app);
         break;
@@ -195,7 +218,6 @@ window.app = {
       Auth.handleRegister(auth, db, e, p, n, (v) => window.app.router(v));
   },
 
-  // Käyttäjän poisto (Settings-valikosta tai vastaavasta, nyt lisätään Help-sivulle tai profiiliin myöhemmin)
   deleteMyAccount: () => Auth.deleteMyAccount(auth, db),
 
   saveNickname: () => {
@@ -234,7 +256,6 @@ window.app = {
   generateStatImage: Gen.generateStatImage
 };
 
-// --- APUFUNKTIO: PREMIUM TARKISTUS ---
 function checkPremium(content) {
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') {
         return true;
@@ -264,8 +285,6 @@ function checkPremium(content) {
             </p>
 
             <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
-            <br><br>
-            <button class="btn" style="background:none; border:none; color:#f38ba8; font-size:0.8em;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini</button>
         </div>
     `;
     return false;
