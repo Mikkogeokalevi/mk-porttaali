@@ -1,174 +1,305 @@
 import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    signOut, 
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    deleteUser,
+    EmailAuthProvider,
+    reauthenticateWithCredential
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-const provider = new GoogleAuthProvider();
+import { 
+    doc, 
+    setDoc, 
+    getDoc, 
+    updateDoc, 
+    deleteDoc,
+    serverTimestamp,
+    collection,
+    query,
+    where,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-export function initAuth(auth, db, appState) {
-    onAuthStateChanged(auth, async (user) => {
-        appState.currentUser = user;
-        if (user) {
-            const profile = await getUserProfile(db, user.uid);
-            if (profile && profile.gc_nickname) {
-                appState.savedNickname = profile.gc_nickname;
-                // Tallennetaan myös oma ID jos se on olemassa
-                appState.savedId = profile.gc_id || null;
-            }
-        } else {
-            appState.savedNickname = null;
-            appState.savedId = null;
-        }
-        updateAuthUI(user);
-    });
+// --- APUFUNKTIOT ---
+
+// Luo lyhyt ID (esim. "K8J2M")
+function generateShortId() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Ei I, 1, O, 0 sekaannusten välttämiseksi
+    let result = "";
+    for (let i = 0; i < 5; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
 }
 
-function updateAuthUI(user) {
-    const authBtn = document.getElementById('authButton');
-    const userDisplay = document.getElementById('userNameDisplay');
-    if (authBtn) {
+// --- PÄÄFUNKTIOT ---
+
+export const initAuth = (auth, db, appState) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            authBtn.textContent = "Kirjaudu ulos";
-            authBtn.onclick = () => window.app.logout();
-            if(userDisplay) {
-                userDisplay.textContent = user.displayName || user.email;
-                userDisplay.classList.remove('hidden');
+            // 1. Haetaan käyttäjän tiedot kannasta
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                
+                // TARKISTETAAN ONKO TILI LUKITTU/ODOTTAA
+                if (data.status === 'pending' || data.status === 'blocked') {
+                    appState.currentUser = null;
+                    appState.userRole = 'guest';
+                    appState.router('locked_view'); // Ohjataan "Odottaa hyväksyntää" -sivulle
+                    return;
+                }
+
+                appState.currentUser = user;
+                appState.savedNickname = data.nickname || user.displayName;
+                appState.savedId = data.gcId || "";
+                appState.userRole = data.role || 'user'; // 'admin' tai 'user'
+                appState.userPlan = data.plan || 'free'; // 'free' tai 'premium'
+                appState.shortId = data.shortId; // Tärkeä maksuja varten
+
+                // Tarkistetaan onko Premium voimassa
+                if (data.premiumExpires) {
+                    const now = new Date();
+                    const expiry = data.premiumExpires.toDate();
+                    if (now > expiry && data.plan === 'premium') {
+                        // Premium vanhentunut -> palautetaan free
+                        await updateDoc(userRef, { plan: 'free' });
+                        appState.userPlan = 'free';
+                        alert("Premium-tilauksesi on päättynyt.");
+                    }
+                }
+
+                console.log(`Kirjautunut: ${appState.savedNickname} (${appState.userRole})`);
+                
+                // Ohjataan etusivulle jos ei olla siellä
+                const currentHash = window.location.hash.replace('#', '');
+                if (!currentHash || currentHash === 'login_view') {
+                    appState.router('home');
+                }
+                
+                updateUI(appState.savedNickname, true);
+            } else {
+                // Vanha käyttäjä ilman docia tai Google-kirjautuminen ekaa kertaa
+                // Luodaan doc oletusarvoilla
+                const shortId = generateShortId();
+                await setDoc(userRef, {
+                    email: user.email,
+                    nickname: user.displayName || "Nimetön",
+                    role: 'user',
+                    status: 'approved', // Google-kirjautujat oletuksena approved? Tai 'pending'
+                    plan: 'free',
+                    shortId: shortId,
+                    createdAt: serverTimestamp()
+                });
+                // Ladataan sivu uudestaan jotta tiedot päivittyvät
+                window.location.reload();
             }
         } else {
-            authBtn.textContent = "Kirjaudu";
-            authBtn.onclick = () => window.app.router('login_view');
-            if(userDisplay) userDisplay.classList.add('hidden');
+            appState.currentUser = null;
+            appState.savedNickname = null;
+            appState.userRole = 'guest';
+            console.log("Ei kirjautunutta käyttäjää");
+            updateUI("", false);
+            // Jos ollaan suojatulla sivulla, heitetään login-ruutuun
+            const currentHash = window.location.hash.replace('#', '');
+            if (['stats', 'generator'].includes(currentHash)) {
+                appState.router('login_view');
+            }
         }
+    });
+};
+
+function updateUI(name, isLoggedIn) {
+    const nameDisplay = document.getElementById('userNameDisplay');
+    const loginBtn = document.getElementById('authButton');
+    const logoutBtn = document.getElementById('logoutButton');
+
+    if (isLoggedIn) {
+        nameDisplay.textContent = name;
+        nameDisplay.classList.remove('hidden');
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+    } else {
+        nameDisplay.classList.add('hidden');
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
     }
 }
 
-export const loginGoogle = (auth, onSuccess) => {
-    signInWithPopup(auth, provider).then(() => onSuccess('home')).catch(e => alert(e.message));
-};
-
-export const handleEmailLogin = (auth, email, password, onError, onSuccess) => {
-    signInWithEmailAndPassword(auth, email, password).then(() => onSuccess('home')).catch(err => onError(err.message));
-};
-
-export const handleRegister = (auth, email, password, onError, onSuccess) => {
-    if(password.length < 6) return alert("Salasana liian lyhyt");
-    createUserWithEmailAndPassword(auth, email, password).then(() => { alert("Luotu!"); onSuccess('home'); }).catch(err => onError(err.message));
-};
-
-export const logout = (auth, onSuccess) => {
-    signOut(auth).then(() => onSuccess('home')).catch(e => console.error(e));
-};
-
-export const getUserProfile = async (db, userId) => {
-    if (!userId) return null;
+// --- REKISTERÖINTI (UUSI LOGIIKKA) ---
+export const handleRegister = async (auth, db, email, password, nickname, onSuccess) => {
     try {
-        const docSnap = await getDoc(doc(db, "users", userId));
-        return docSnap.exists() ? docSnap.data() : null;
-    } catch (e) { return null; }
-};
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const shortId = generateShortId();
 
-// PÄIVITETTY: Tallentaa nimen JA id:n
-export const saveGCNickname = async (db, userId, name, id) => {
-    if (!userId) return alert("Kirjaudu ensin!");
-    if (!name) return alert("Nimi ei voi olla tyhjä.");
-    try {
-        const data = { gc_nickname: name };
-        if (id) data.gc_id = id; // Tallenna ID jos annettu
-        
-        await setDoc(doc(db, "users", userId), data, { merge: true });
-        alert(`Tallennettu: ${name} (ID: ${id || '-'})`);
-        
-        if (window.app) {
-            window.app.savedNickname = name;
-            window.app.savedId = id;
+        // Haetaan järjestelmän asetukset (onko rekisteröinti lukossa?)
+        // Oletus: Jos asetusta ei ole, kaikki hyväksytään.
+        let initialStatus = 'approved';
+        try {
+            const settingsSnap = await getDoc(doc(db, "settings", "global"));
+            if (settingsSnap.exists() && settingsSnap.data().requireApproval) {
+                initialStatus = 'pending';
+            }
+        } catch(e) { console.log("Asetuksia ei löytynyt, käytetään oletusta."); }
+
+        // Tallennetaan käyttäjän tiedot Firestoreen
+        await setDoc(doc(db, "users", user.uid), {
+            email: email,
+            nickname: nickname || "Nimetön",
+            shortId: shortId,
+            role: 'user',
+            status: initialStatus, // 'pending' tai 'approved'
+            plan: 'free',
+            createdAt: serverTimestamp()
+        });
+
+        if (initialStatus === 'pending') {
+            alert("Tili luotu! Odottaa ylläpitäjän hyväksyntää.");
+        } else {
+            alert(`Tervetuloa! Sinun ID:si on ${shortId}`);
         }
-    } catch (e) { alert("Virhe: " + e.message); }
+        
+        if(onSuccess) onSuccess('home');
+
+    } catch (error) {
+        console.error(error);
+        alert("Rekisteröinti epäonnistui: " + error.message);
+    }
 };
 
-// PÄIVITETTY: Lataa kaverit ja tallentaa ne globaaliin muuttujaan
-export const loadFriends = async (db, userId, containerId, datalistId) => {
-    if (!userId) return;
+export const handleEmailLogin = async (auth, email, password, onError, onSuccess) => {
     try {
-        const data = await getUserProfile(db, userId);
-        const container = document.getElementById(containerId);
-        const datalist = document.getElementById(datalistId);
+        await signInWithEmailAndPassword(auth, email, password);
+        if(onSuccess) onSuccess('home');
+    } catch (error) {
+        if(onError) onError("Virhe: " + error.message);
+    }
+};
+
+export const loginGoogle = (auth, callback) => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+        .then(() => callback('home'))
+        .catch((error) => alert(error.message));
+};
+
+export const logout = (auth, callback) => {
+    signOut(auth).then(() => {
+        window.location.reload(); // Ladataan sivu uusiksi tyhjentämään muistit
+    });
+};
+
+// --- OMAN TILIN POISTO ---
+export const deleteMyAccount = async (auth, db) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const confirmDelete = confirm("Oletko varma? Tämä poistaa kaikki tietosi ja tilastosi pysyvästi. Tätä ei voi perua.");
+    if (!confirmDelete) return;
+
+    try {
+        // 1. Poistetaan tiedot Firestoresta
+        await deleteDoc(doc(db, "users", user.uid));
+        await deleteDoc(doc(db, "stats", user.uid)); // Jos on tilastoja
+
+        // 2. Poistetaan käyttäjä Authista
+        await deleteUser(user);
         
-        if (!container) return;
-        container.innerHTML = ''; 
-        if(datalist) datalist.innerHTML = '';
+        alert("Tili poistettu.");
+        window.location.reload();
+    } catch (error) {
+        console.error(error);
+        // Jos istunto on vanhentunut, vaaditaan uusi kirjautuminen ennen poistoa
+        if (error.code === 'auth/requires-recent-login') {
+            alert("Tietoturvasyistä kirjaudu sisään uudelleen ja yritä poistoa heti sen jälkeen.");
+            logout(auth, () => {});
+        } else {
+            alert("Virhe poistossa: " + error.message);
+        }
+    }
+};
+
+// --- KAVERILISTA (Pysyy samana) ---
+export const saveGCNickname = async (db, uid, nickname, gcId) => {
+    if(!uid) return alert("Kirjaudu ensin!");
+    try {
+        await updateDoc(doc(db, "users", uid), {
+            nickname: nickname,
+            gcId: gcId
+        });
+        alert("Tallennettu!");
+        window.location.reload();
+    } catch (e) { console.error(e); alert("Virhe tallennuksessa."); }
+};
+
+export const addFriend = async (db, uid, name, id, onSuccess) => {
+    if(!uid || !name) return;
+    try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        let friends = userSnap.data().friends || [];
         
-        // Tallennetaan kaverilista muistiin generaattoria varten
-        window.app.friendsList = [];
-
-        if (data && data.saved_usernames) {
-            // Järjestetään aakkosjärjestykseen
-            data.saved_usernames.sort((a, b) => {
-                const nameA = (typeof a === 'object' ? a.name : a).toLowerCase();
-                const nameB = (typeof b === 'object' ? b.name : b).toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
-
-            data.saved_usernames.forEach(item => {
-                // Käsitellään sekä vanhaa (string) että uutta (object) formaattia
-                const name = typeof item === 'object' ? item.name : item;
-                const id = typeof item === 'object' ? item.id : null;
-                
-                window.app.friendsList.push({ name, id });
-
-                // UI
-                const idText = id ? `<span style="font-size:0.8em; color:var(--accent-color); margin-left:5px;">(#${id})</span>` : '';
-                container.innerHTML += `
-                    <div class="friend-item">
-                        <div>
-                            <span>${name}</span>
-                            ${idText}
-                        </div>
-                        <button class="btn-delete" onclick="app.removeFriend('${name}')">✕</button>
-                    </div>`;
-                
-                if(datalist) datalist.innerHTML += `<option value="${name}"></option>`;
-            });
-        } else { 
-            container.innerHTML = '<p style="font-size:0.9em; opacity:0.7;">Ei tallennettuja kavereita.</p>'; 
+        // Estetään duplikaatit
+        if(!friends.find(f => f.name.toLowerCase() === name.toLowerCase())) {
+            friends.push({ name: name, id: id || "" });
+            await updateDoc(userRef, { friends: friends });
+            if(onSuccess) onSuccess();
+        } else {
+            alert("Kaveri on jo listalla.");
         }
     } catch (e) { console.error(e); }
 };
 
-// PÄIVITETTY: Lisää kaverin objektina {name, id}
-export const addFriend = async (db, userId, name, id, onSuccess) => {
-    if (!userId || !name) return;
+export const removeFriend = async (db, uid, name, onSuccess) => {
+    if(!uid) return;
     try {
-        const friendObj = { name: name, id: id || null };
-        await setDoc(doc(db, "users", userId), { saved_usernames: arrayUnion(friendObj) }, { merge: true });
-        onSuccess();
-    } catch (e) { alert(e.message); }
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        let friends = userSnap.data().friends || [];
+        friends = friends.filter(f => f.name !== name);
+        await updateDoc(userRef, { friends: friends });
+        if(onSuccess) onSuccess();
+    } catch (e) { console.error(e); }
 };
 
-// PÄIVITETTY: Poistaa kaverin (etsii nimen perusteella listasta)
-export const removeFriend = async (db, userId, nameToRemove, onSuccess) => {
-    if (!userId || !confirm(`Poista ${nameToRemove}?`)) return;
+export const loadFriends = async (db, uid, containerId, datalistId) => {
+    if (!uid) return;
     try {
-        // Koska arrayRemove vaatii tarkan objektin, meidän pitää ensin hakea se
-        const docRef = doc(db, "users", userId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const list = docSnap.data().saved_usernames || [];
-            // Etsitään poistettava (joko string tai objekti)
-            const itemToRemove = list.find(item => {
-                const n = typeof item === 'object' ? item.name : item;
-                return n === nameToRemove;
-            });
-
-            if (itemToRemove) {
-                await updateDoc(docRef, { saved_usernames: arrayRemove(itemToRemove) });
-                onSuccess();
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (userSnap.exists()) {
+            const friends = userSnap.data().friends || [];
+            window.app.friendsList = friends; // Tallennetaan globaalisti
+            
+            // Päivitetään UI jos elementit on olemassa
+            const container = document.getElementById(containerId);
+            const datalist = document.getElementById(datalistId);
+            
+            if (container) {
+                container.innerHTML = friends.length ? '' : '<span style="opacity:0.5; font-size:0.9em;">Ei tallennettuja kavereita.</span>';
+                friends.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'friend-item';
+                    div.innerHTML = `
+                        <span>${f.name} <span style="font-size:0.8em; opacity:0.6;">(${f.id || '-'})</span></span>
+                        <button class="btn-delete" onclick="app.removeFriend('${f.name}')">✕</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            if (datalist) {
+                datalist.innerHTML = '';
+                friends.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.name;
+                    datalist.appendChild(opt);
+                });
             }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Kaverilistan latausvirhe", e); }
 };
