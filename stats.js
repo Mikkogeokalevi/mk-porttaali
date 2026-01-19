@@ -208,7 +208,6 @@ export const loadAllStats = async (db, user, content) => {
                     const stats = fullData[kunta].s || [];
                     let foundList = "", notFoundList = "";
                     
-                    // Lasketaan yhteensä vain näytettävät
                     let displayTotal = 0;
 
                     CACHE_TYPES.forEach(type => {
@@ -221,7 +220,7 @@ export const loadAllStats = async (db, user, content) => {
                         }
                     });
 
-                    // --- PGC LINKIN LOGIIKKA (Fix Ahvenanmaa) ---
+                    // --- PGC LINKIN LOGIIKKA ---
                     let pgcCountry = "Finland";
                     let pgcRegion = maakunta;
                     let pgcCounty = kunta;
@@ -234,10 +233,6 @@ export const loadAllStats = async (db, user, content) => {
                             pgcCounty = "Mariehamn";
                         }
                     }
-
-                    // Kuntaliitoskorjaus (Jos Pertunmaa löytyy listalta, ohjataan Mäntyharjulle PGC:ssä jos halutaan, 
-                    // mutta PGC saattaa tukea vanhojakin. Pidetään yksinkertaisena ja käytetään nimeä sellaisenaan,
-                    // paitsi jos Ahvenanmaa.)
 
                     const pgcLink = `https://project-gc.com/Tools/MapCompare?player_prc_profileName=${encodeURIComponent(pgcUser)}&geocache_mc_show%5B%5D=found-none&geocache_crc_country=${encodeURIComponent(pgcCountry)}&geocache_crc_region=${encodeURIComponent(pgcRegion)}&geocache_crc_county=${encodeURIComponent(pgcCounty)}&submit=Filter`;
                     const gcfiLink = `https://www.geocache.fi/stat/other/jakauma.php?kuntalista=${kunta}`;
@@ -393,6 +388,10 @@ export const loadExternalStats = async (content) => {
         else if (window.app.currentUser.displayName) defaultUser = window.app.currentUser.displayName;
     }
 
+    // Luodaan datalist-optiot kavereista
+    let savedUsers = window.app.friendsList || [];
+    let options = savedUsers.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+
     content.innerHTML = `
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -401,43 +400,17 @@ export const loadExternalStats = async (content) => {
         </div>
         <div class="input-group" style="margin-top:15px;">
             <label style="flex:1;">Käyttäjä:</label>
-            <input type="text" id="statUser" list="statsFriendOptions" value="${defaultUser}" style="flex:3;">
+            <input type="text" id="statUser" list="statUserList" value="${defaultUser}" style="flex:3;">
+            <datalist id="statUserList">${options}</datalist>
             <button class="btn btn-primary" id="refreshStats" style="flex:1; margin:8px 0 16px;">Päivitä</button>
-            <button class="btn-icon" id="quickSaveIdBtn" title="Tallenna/Päivitä ID tälle nimimerkille" style="margin-left:5px; background-color:#313244; border:1px solid #45475a;">⚙️</button>
-        </div>
+            </div>
         <div style="font-size: 0.85em; color: var(--subtext-color); margin-bottom: 15px; text-align: right;">
             Geocache.fi ID: <span id="activeIdDisplay" style="color: var(--accent-color); font-weight: bold;">-</span>
         </div>
-        <datalist id="statsFriendOptions"></datalist>
     </div>
     
     <div id="statsContainer">Ladataan kuvia...</div>
     `;
-
-    // Täytetään lista
-    const datalist = document.getElementById('statsFriendOptions');
-    if (window.app.friendsList) {
-        window.app.friendsList.sort((a,b) => a.name.localeCompare(b.name)).forEach(f => {
-            const opt = document.createElement('option');
-            opt.value = f.name;
-            datalist.appendChild(opt);
-        });
-    }
-
-    // Asetusnappi (quick save)
-    document.getElementById('quickSaveIdBtn').onclick = () => {
-        const name = document.getElementById('statUser').value.trim();
-        if(!name) return;
-        const currentId = prompt(`Anna Geocache.fi ID käyttäjälle ${name}:`);
-        if(currentId) {
-            if(window.app.savedNickname === name) {
-                window.app.saveNickname(); 
-            } else {
-                alert("Käy Kuvageneraattorissa tallentamassa kaveri ja ID ⚙️-ikonin kautta.");
-                app.router('generator');
-            }
-        }
-    };
 
     // Funktio, joka renderöi kuvat
     const renderImages = (user) => {
