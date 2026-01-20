@@ -49,7 +49,7 @@ window.app = {
         return;
     }
 
-    // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli)
+    // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli: pyöristys + varjo)
     const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
 
     switch(view) {
