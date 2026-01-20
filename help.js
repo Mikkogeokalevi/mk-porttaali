@@ -13,6 +13,7 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>Linkkikirjasto:</strong> Linkit eriytetty omaksi, selkeäksi näkymäkseen.</li>
                 <li><strong>Uusi ilme:</strong> Logot lisätty etusivulle ja kirjautumiseen, värit viilattu.</li>
                 <li><strong>Kattavat ohjeet:</strong> Ohjesivu kirjoitettu kokonaan uusiksi.</li>
                 <li><strong>Admin-työkalut:</strong> Parannettu massamuokkaus ja käyttäjähallinta.</li>
@@ -120,8 +121,8 @@ export const renderHelp = (content, app) => {
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
-        <h3>🌐 6. Hyödylliset Linkit</h3>
-        <p>Linkit-sivulta löydät kootusti tärkeimmät ulkoiset palvelut:</p>
+        <h3>🌐 6. Linkkikirjasto</h3>
+        <p>Linkkikirjastosta löydät kootusti tärkeimmät ulkoiset palvelut:</p>
         <ul>
             <li><strong>Geocache.fi & Geocaching.com:</strong> Suorat linkit pääsivustoille.</li>
             <li><strong>Project-GC:</strong> Tilastot ja haasteet.</li>
