@@ -7,6 +7,7 @@ import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
+import { renderLinksView } from "./links.js"; // <--- UUSI IMPORT
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
 import { renderAdminView } from "./admin.js";
@@ -127,146 +128,7 @@ window.app = {
         break;
 
       case 'links':
-        content.innerHTML = `
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h1>Linkkikirjasto</h1>
-                    <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Takaisin</button>
-                </div>
-                
-                <style>
-                    .link-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-                    .link-category { margin: 25px 0 10px 0; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; color: var(--accent-color); font-size: 1.1em; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-                    
-                    .link-card {
-                        background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
-                        border-radius: 12px; padding: 15px; text-decoration: none; color: var(--text-color);
-                        display: flex; align-items: center; gap: 15px; transition: all 0.2s ease;
-                        position: relative; overflow: hidden;
-                    }
-                    .link-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); border-color: var(--accent-color); }
-                    
-                    .link-icon { font-size: 2em; opacity: 0.8; width: 40px; text-align: center; }
-                    .link-info { flex: 1; }
-                    .link-title { display: block; font-weight: bold; font-size: 1.1em; color: var(--text-color); margin-bottom: 3px; }
-                    .link-desc { display: block; font-size: 0.8em; opacity: 0.6; line-height: 1.3; }
-                    .link-arrow { opacity: 0.3; font-size: 1.2em; }
-                    .link-card:hover .link-arrow { opacity: 1; color: var(--accent-color); }
-                </style>
-
-                <div class="link-category"><span style="font-size:1.5em;">🌍</span> Viralliset & Yhteisö</div>
-                <div class="link-grid">
-                    <a href="https://www.geocaching.com/" target="_blank" class="link-card">
-                        <span class="link-icon">🟢</span>
-                        <div class="link-info">
-                            <span class="link-title">Geocaching.com</span>
-                            <span class="link-desc">Maailmanlaajuinen pääsivusto. Kätkökuvaukset ja loggaukset.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://www.geocache.fi/" target="_blank" class="link-card">
-                        <span class="link-icon">🇫🇮</span>
-                        <div class="link-info">
-                            <span class="link-title">Geocache.fi</span>
-                            <span class="link-desc">Suomen oma kätköilykeskus. Tilastot, foorumi ja kartat.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                </div>
-
-                <div class="link-category"><span style="font-size:1.5em;">📊</span> Tilastot & Kartat</div>
-                <div class="link-grid">
-                    <a href="https://project-gc.com/" target="_blank" class="link-card">
-                        <span class="link-icon">📈</span>
-                        <div class="link-info">
-                            <span class="link-title">Project-GC</span>
-                            <span class="link-desc">Syvälliset tilastot, haasteiden tarkistimet ja virtuaaliset työkalut.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://asiointi.maanmittauslaitos.fi/karttapaikka/" target="_blank" class="link-card">
-                        <span class="link-icon">🗺️</span>
-                        <div class="link-info">
-                            <span class="link-title">Karttapaikka</span>
-                            <span class="link-desc">Maanmittauslaitoksen tarkimmat maastokartat. Välttämätön maastossa.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                </div>
-
-                <div class="link-category"><span style="font-size:1.5em;">🧩</span> Mysteerinmurskaajat</div>
-                <div class="link-grid">
-                    <a href="https://www.geocachingtoolbox.com/" target="_blank" class="link-card">
-                        <span class="link-icon">🧰</span>
-                        <div class="link-info">
-                            <span class="link-title">Geocaching Toolbox</span>
-                            <span class="link-desc">Kaikki perusmuuntimet: koordinaatit, tekstit ja salakirjoitukset.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://www.dcode.fr/en" target="_blank" class="link-card">
-                        <span class="link-icon">🔓</span>
-                        <div class="link-info">
-                            <span class="link-title">dCode.fr</span>
-                            <span class="link-desc">Maailman kattavin salauksenpurkaja. Kun mikään muu ei auta.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://www.6123.fi/" target="_blank" class="link-card">
-                        <span class="link-icon">💡</span>
-                        <div class="link-info">
-                            <span class="link-title">6123 Tampere</span>
-                            <span class="link-desc">Legendaarinen suomalainen tietopankki mysteerien ratkontaan.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://xiit.dy.fi/gc/" target="_blank" class="link-card">
-                        <span class="link-icon">🔢</span>
-                        <div class="link-info">
-                            <span class="link-title">Geocalcing2</span>
-                            <span class="link-desc">Suomalainen klassikko koordinaattilaskuihin ja projektiolle.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                </div>
-
-                <div class="link-category"><span style="font-size:1.5em;">🛠️</span> Erikoistyökalut</div>
-                <div class="link-grid">
-                    <a href="https://gc.de/gc/reversewherigo/" target="_blank" class="link-card">
-                        <span class="link-icon">⏪</span>
-                        <div class="link-info">
-                            <span class="link-title">Reverse Wherigo</span>
-                            <span class="link-desc">Dekooderi käänteisille Wherigo-kaseteille.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://solvedjigidi.com/" target="_blank" class="link-card">
-                        <span class="link-icon">🧩</span>
-                        <div class="link-info">
-                            <span class="link-title">Solved Jigidi</span>
-                            <span class="link-desc">Tietokanta ratkaistuille Jigidi-palapeleille (tarkista säännöt).</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://geocheck.org/" target="_blank" class="link-card">
-                        <span class="link-icon">✅</span>
-                        <div class="link-info">
-                            <span class="link-title">GeoCheck</span>
-                            <span class="link-desc">Yleinen koordinaattien tarkistin (Checker).</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                    <a href="https://www.certitudes.org/" target="_blank" class="link-card">
-                        <span class="link-icon">🎯</span>
-                        <div class="link-info">
-                            <span class="link-title">Certitude</span>
-                            <span class="link-desc">Avainsana-pohjainen tarkistin, yleinen mysteereissä.</span>
-                        </div>
-                        <span class="link-arrow">↗</span>
-                    </a>
-                </div>
-            </div>
-        `;
+        renderLinksView(content); // <--- TÄMÄ LATAA NYT UUDEN TIEDOSTON
         break;
 
       case 'generator': renderGeneratorView(content); break;
