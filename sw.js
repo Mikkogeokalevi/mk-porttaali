@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v18'; // PÄIVITETTY: v17 -> v18
+const CACHE_NAME = 'mk-porttaali-v19'; // PÄIVITETTY: v18 -> v19
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
   './stats.js',
   './map.js',
   './map_all.js',
+  './links.js',          // <--- UUSI TIEDOSTO LISÄTTY
   './manifest.json',
   './muuntimet.html',
   './muuntimet_style.css',
@@ -28,7 +29,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets (v18)');
+      console.log('[SW] Caching assets (v19)');
       // Lisätty virheenkäsittely, jotta yksi puuttuva tiedosto ei kaada koko asennusta
       return Promise.all(
         ASSETS_TO_CACHE.map(url => {
@@ -57,7 +58,6 @@ self.addEventListener('activate', (event) => {
 });
 
 // Haku: Verkko ensin, sitten välimuisti (Network First strategy)
-// Tämä on paras kehitysvaiheessa, koska muutokset näkyvät heti jos netti toimii.
 self.addEventListener('fetch', (event) => {
   // Ohitetaan ulkoiset pyynnöt ja Firestore
   if (event.request.url.includes('firestore') || 
