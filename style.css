@@ -29,7 +29,7 @@ body {
 
 /* HEADER & NAVIGAATIO */
 header {
-  background-color: var(--card-bg);
+  background-color: #000000; /* KORJAUS: Musta tausta */
   border-bottom: 1px solid var(--border-color);
   padding: 10px 20px;
   position: sticky;
@@ -50,12 +50,45 @@ header {
   font-size: 1.2rem;
 }
 
+/* KORJAUS: Logon tyylit */
 .brand img {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--border-color);
+  height: 50px; /* Säädä korkeutta tarvittaessa */
+  width: auto;
+  margin-right: 0;
+  border-radius: 0; /* POISTETTU OVAALI */
+  border: none;     /* POISTETTU REUNUS */
+}
+
+/* KORJAUS: Hampurilaisvalikko näkyviin kaikilla laitteilla */
+.mobile-toggle {
+  display: block; 
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 5px;
+}
+
+/* KORJAUS: Navigointi aina "mobiilityylillä" */
+nav {
+  position: absolute;
+  top: 100%; 
+  left: 0; 
+  right: 0;
+  background-color: var(--card-bg); /* Valikon taustaväri */
+  border-bottom: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  display: none; /* Oletuksena piilossa */
+  flex-direction: column; 
+  padding: 15px;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+}
+
+/* Kun valikko avataan JS:llä */
+nav.open { 
+  display: flex; 
+  animation: slideDown 0.2s ease-out; 
 }
 
 nav ul {
@@ -63,21 +96,30 @@ nav ul {
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 5px;
+  flex-direction: column; /* Linkit allekkain */
+  gap: 10px;
+  width: 100%;
+}
+
+nav li {
+  width: 100%;
 }
 
 nav a, nav button.nav-btn {
   text-decoration: none;
   color: var(--text-color);
-  padding: 8px 12px;
+  padding: 12px;
   border-radius: var(--border-radius);
   transition: all 0.2s ease;
   cursor: pointer;
-  background: none;
+  background-color: var(--bg-color); /* Erotetaan taustasta */
   border: none;
   font-size: 1rem;
   font-family: inherit;
   font-weight: 500;
+  display: block; 
+  width: 100%; 
+  text-align: center;
 }
 
 nav a:hover, nav button.nav-btn:hover {
@@ -85,30 +127,24 @@ nav a:hover, nav button.nav-btn:hover {
   color: #fff;
 }
 
-nav a.active {
-  background-color: var(--button-bg);
-  color: var(--accent-color);
+/* Kirjautumispainike Navissa */
+#authContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
-/* Kirjautumispainike Navissa */
 #authButton {
   background-color: var(--accent-color);
   color: #1e1e2e;
   font-weight: bold;
-  margin-left: 15px;
+  margin-left: 0;
+  margin-top: 15px;
+  width: 100%; 
+  padding: 12px;
 }
 #authButton:hover {
   filter: brightness(1.1);
-}
-
-.mobile-toggle {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--text-color);
-  font-size: 1.8rem;
-  cursor: pointer;
-  padding: 5px;
 }
 
 /* SISÄLTÖALUE */
@@ -272,12 +308,6 @@ label {
 }
 .btn-icon:hover { background-color: var(--button-bg); }
 
-/* Erityinen tyyli info-ikonille, jos haluaa erottaa (valinnainen) */
-.info-icon {
-    color: var(--accent-color);
-    font-weight: bold;
-}
-
 /* Kaverilistan hallintapaneeli */
 #friendManager {
   background-color: rgba(0, 0, 0, 0.2);
@@ -314,7 +344,11 @@ label {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-direction: column; /* KORJAUS: Aina allekkain, kuten mobiilissa */
+  align-items: stretch;
 }
+.friend-add-row input { width: 100%; margin-bottom: 5px; }
+.friend-add-row button { width: 100%; margin-top: 5px; }
 
 /* --- TRIPLETTITILASTOT (Detail/Summary) --- */
 details {
@@ -435,162 +469,15 @@ summary {
     gap: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border-color);
+    flex-direction: column; /* KORJAUS: Allekkain mobiilityyliin */
 }
+.modal-footer button { width: 100%; margin-top: 5px; }
 
-/* --- TILASTOT DASHBOARD & MAAKUNTA-ACCORDION (UUSI) --- */
-
+/* --- TILASTOT DASHBOARD --- */
 .stats-dashboard-grid {
     display: grid;
     gap: 15px;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
-
-.region-accordion {
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    overflow: hidden;
-}
-
-.region-accordion summary {
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    font-weight: bold;
-    color: var(--accent-color);
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.region-accordion summary:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.region-accordion[open] summary {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.region-content {
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-/* --- KAIKKI LÖYDÖT: KUNTALAATIKKO --- */
-.municipality-box {
-    margin-bottom: 15px;
-    padding: 15px;
-    border: 1px solid var(--border-color);
-    background-color: rgba(24, 24, 37, 0.8);
-    border-radius: 8px;
-}
-.municipality-box:last-child { margin-bottom: 0; }
-
-.municipality-box h3 {
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
-    font-size: 1.1rem;
-    display: flex;
-    justify-content: space-between;
-    color: var(--accent-color);
-}
-
-.municipality-box h4 {
-    margin-top: 15px;
-    margin-bottom: 8px;
-    font-size: 0.9em;
-    color: var(--subtext-color);
-    border-bottom: 1px dotted var(--border-color);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Kätköikonilista */
-.cache-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.cache-list li {
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-    background-color: rgba(255,255,255,0.05);
-    padding: 4px 8px;
-    border-radius: 4px;
-}
-
-.cache-list img {
-    margin-right: 8px;
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-}
-
-/* Mobiiliresponsiivisuus */
-@media (max-width: 768px) {
-  .mobile-toggle { display: block; }
-  
-  nav {
-    position: absolute;
-    top: 100%; left: 0; right: 0;
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    border-top: 1px solid var(--border-color);
-    display: none; 
-    flex-direction: column; 
-    padding: 15px;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.3);
-  }
-  
-  nav.open { display: flex; animation: slideDown 0.2s ease-out; }
-  
-  nav ul { flex-direction: column; width: 100%; gap: 10px; }
-  nav li { width: 100%; }
-  
-  nav a, nav button.nav-btn { 
-    display: block; 
-    width: 100%; 
-    text-align: center; 
-    padding: 12px;
-    background-color: var(--bg-color);
-  }
-  
-  #authButton { margin-left: 0; margin-top: 15px; width: 100%; padding: 12px; }
-  
-  main { padding: 15px; }
-
-  .modal-footer { flex-direction: column; }
-  .modal-footer button { width: 100%; margin-top: 5px; }
-  
-  /* Mobiilissa napit allekkain */
-  .stats-dashboard-grid {
-      grid-template-columns: 1fr;
-  }
-
-  /* KORJAUS: Kaverin lisäysrivi allekkain mobiilissa */
-  .friend-add-row {
-      flex-direction: column;
-      align-items: stretch;
-  }
-  
-  .friend-add-row input {
-      width: 100%;
-      margin-bottom: 5px;
-  }
-  
-  .friend-add-row button {
-      width: 100%;
-      margin-top: 5px;
-  }
+    grid-template-columns: 1fr; /* KORJAUS: Yksi sarake mobiilityyliin */
 }
 
 @keyframes fadeIn {
