@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// Tuodaan moduulit
 import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
@@ -35,14 +34,11 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
-    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
-    if (nav && nav.classList.contains('open')) {
-        nav.classList.remove('open');
-    }
+    if (nav && nav.classList.contains('open')) nav.classList.remove('open');
 
     const content = document.getElementById('appContent');
-    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings'];
+    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters'];
     
     if (protectedViews.includes(view) && !window.app.currentUser) {
         window.app.router('login_view');
@@ -62,8 +58,7 @@ window.app = {
                     <p style="margin-top:15px; font-size:0.9em; opacity:0.7;">tai</p>
                     <button class="btn" onclick="app.router('login_view')">Luo uusi tunnus</button>
                 </div>
-              </div>
-            `;
+              </div>`;
             return;
         }
 
@@ -72,13 +67,9 @@ window.app = {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
         }
         
-        // --- PÄIVITETTY BADGE-LOGIIKKA (Admin > Premium) ---
         let statusBadge = '';
-        if (window.app.userRole === 'admin') {
-            statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
-        } else if (window.app.userPlan === 'premium') {
-            statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
-        }
+        if (window.app.userRole === 'admin') statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
+        else if (window.app.userPlan === 'premium') statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
 
         content.innerHTML = `
           <div class="card">
@@ -87,14 +78,13 @@ window.app = {
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <a href="muuntimet.html" class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; text-decoration:none; display:flex; align-items:center; justify-content:center;">Muuntimet ↗</a>
+                    <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
                     <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
                 </div>
                 <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet</button>
                 ${adminButton}
             </div>
-          </div>
-        `;
+          </div>`;
         break;
 
       case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
@@ -108,6 +98,13 @@ window.app = {
       case 'stats_all': if (checkPremium(content)) Stats.loadAllStats(db, window.app.currentUser, content); break;
       case 'stats_top': if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content); break;
       case 'stats_external': if (checkPremium(content)) Stats.loadExternalStats(content); break;
+      
+      // UUSI: Muuntimet reitittimen kautta (premium check)
+      case 'converters': 
+        if (checkPremium(content)) {
+            window.location.href = 'muuntimet.html';
+        }
+        break;
 
       case 'generator': renderGeneratorView(content); break;
       case 'help': renderHelp(content, window.app); break;
@@ -201,19 +198,56 @@ window.app = {
   generateStatImage: Gen.generateStatImage
 };
 
+// --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
 function checkPremium(content) {
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
+    
     const idCode = window.app.shortId || "VIRHE";
+    const nick = window.app.savedNickname || "Nimetön";
+
     content.innerHTML = `
-        <div class="card" style="text-align:center; padding:40px 20px;">
-            <div style="font-size:3em; margin-bottom:10px;">💎</div>
-            <h2>Premium-ominaisuus</h2>
-            <p>Tilastot ja kartat vaativat aktiivisen Premium-tilauksen.</p>
-            <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
-                <p style="margin:0; font-size:0.9em; opacity:0.8;">Sinun MK-tunnuksesi:</p>
-                <h3 style="margin:5px 0; letter-spacing:2px; color:#fab387; font-size:1.5em;">${idCode}</h3>
+        <div class="card" style="text-align:center; padding:30px 20px;">
+            <div style="font-size:3.5em; margin-bottom:10px; filter: drop-shadow(0 0 10px rgba(250, 179, 135, 0.3));">💎</div>
+            <h2 style="color:#fab387; margin-top:0;">Premium-ominaisuus</h2>
+            <p style="opacity:0.8; margin-bottom:25px;">Tämä toiminto vaatii aktiivisen Premium-tilauksen.</p>
+            
+            <div style="text-align:left; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:20px;">
+                <strong style="display:block; margin-bottom:10px; color:#cdd6f4;">Mitä saat Premiumilla?</strong>
+                <ul style="margin:0; padding-left:20px; line-height:1.6; color:#a6adc8;">
+                    <li>🗺️ <strong>Interaktiiviset kartat</strong> (Tripletti, kunnat)</li>
+                    <li>📊 <strong>Tarkat tilastot</strong> (Top-listat, puutteet)</li>
+                    <li>🧮 <strong>Laajat koordinaattimuuntimet</strong></li>
+                    <li>💾 <strong>Omien löytöjen tuonti</strong></li>
+                </ul>
             </div>
-            <p style="font-size:0.9em;">Maksa MobilePaylla ja kirjoita viestiin koodisi <strong>${idCode}</strong>.</p>
+
+            <h3 style="margin-bottom:10px;">Hinnasto</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89b4fa;">
+                    <div style="font-weight:bold; color:#89b4fa;">3 KK</div>
+                    <div style="font-size:1.2em;">3 €</div>
+                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-3KK</div>
+                </div>
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #a6e3a1;">
+                    <div style="font-weight:bold; color:#a6e3a1;">6 KK</div>
+                    <div style="font-size:1.2em;">5 €</div>
+                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-6KK</div>
+                </div>
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #fab387; grid-column: span 2;">
+                    <div style="font-weight:bold; color:#fab387;">12 KK (Vuosi)</div>
+                    <div style="font-size:1.2em;">10 €</div>
+                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1V</div>
+                </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
+                <p style="margin:0 0 10px 0; font-size:0.9em; opacity:0.8;">Maksa MobilePaylla ja kirjoita viestiin:</p>
+                <div style="background:#181825; padding:10px; border-radius:4px; font-family:monospace; font-size:1.1em; color:#fab387;">
+                    ${nick} ${idCode} [TUOTEKOODI]
+                </div>
+                <p style="margin:5px 0 0 0; font-size:0.8em; opacity:0.5;">Esim: ${nick} ${idCode} T-1V</p>
+            </div>
+            
             <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
         </div>
     `;
