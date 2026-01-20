@@ -54,12 +54,12 @@ window.app = {
 
     switch(view) {
       case 'home':
-        // GUEST VIEW (KIRJAUTUMATON) - PALAUTETTU LUKKO JA TEKSTI
+        // GUEST VIEW (KIRJAUTUMATON)
         if (!window.app.currentUser) {
             content.innerHTML = `
               <div class="card" style="text-align:center; padding: 40px 20px;">
-                <div style="font-size:3em; margin-bottom:10px;">🔐</div>
-                <h1>MK Porttaali</h1>
+                <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
+                <div style="font-size:3em; margin: 10px 0;">🔐</div>
                 <p>Kirjaudu sisään käyttääksesi työkaluja.</p>
                 <div style="margin-top:30px;">
                     <button class="btn btn-primary" onclick="app.router('login_view')">Kirjaudu sisään</button>
@@ -71,7 +71,7 @@ window.app = {
             return;
         }
 
-        // LOGGED IN VIEW (KIRJAUTUNUT) - TÄSSÄ NÄKYY LOGO
+        // LOGGED IN VIEW (KIRJAUTUNUT)
         let adminButton = '';
         if (window.app.userRole === 'admin') {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
