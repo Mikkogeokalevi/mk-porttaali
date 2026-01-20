@@ -7,7 +7,7 @@ import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
-import { renderLinksView } from "./links.js"; // <--- UUSI IMPORT
+import { renderLinksView } from "./links.js"; 
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
 import { renderAdminView } from "./admin.js";
@@ -96,7 +96,7 @@ window.app = {
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
-                    <button class="btn" style="background-color: #89dceb; color:#1e1e2e; font-weight:bold;" onclick="app.router('links')">Linkit 🌐</button>
+                    <button class="btn" style="background-color: #89dceb; color:#1e1e2e; font-weight:bold;" onclick="app.router('links')">Linkkikirjasto 🌐</button>
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -128,7 +128,7 @@ window.app = {
         break;
 
       case 'links':
-        renderLinksView(content); // <--- TÄMÄ LATAA NYT UUDEN TIEDOSTON
+        renderLinksView(content); 
         break;
 
       case 'generator': renderGeneratorView(content); break;
