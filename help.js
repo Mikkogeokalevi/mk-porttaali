@@ -108,7 +108,7 @@ export const renderHelp = (content, app) => {
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
         <h3>🧮 5. Muuntimet & Työkalut <span style="font-size:0.7em; background:#fab387; color:#1e1e2e; padding:2px 5px; border-radius:4px;">PREMIUM</span></h3>
-        <p>Kattava paketti työkaluja mysteerien ratkointiin ja kenttätyöskentelyyn. Työkalut toimivat offline-tilassa, kun sovellus on ladattu.</p>
+        <p>Sisältää <strong>yli 20 erilaista työkalua</strong> ja satoja yksiköitä mysteerien ratkointiin ja kenttätyöskentelyyn. Työkalut toimivat myös offline-tilassa.</p>
         
         <ul style="line-height:1.6; padding-left:20px;">
             <li><strong>Koordinaattimuuntimet:</strong> Muunna WGS84, EUREF-FIN ja YKJ -koordinaattien välillä.</li>
@@ -150,7 +150,11 @@ export const renderHelp = (content, app) => {
                 <li>Suorita maksu <strong>MobilePaylla</strong> numeroon <strong>[NUMERO PUUTTUU]</strong>.</li>
                 <li>Kirjoita viestikenttään: <code>${nick} ${mkCode} [TUOTEKOODI]</code></li>
             </ol>
-            <p style="font-size:0.8em;">Kun ylläpito on käsitellyt maksun, Premium-ominaisuudet aukeavat automaattisesti.</p>
+            
+            <div style="margin-top:15px; padding-top:10px; border-top:1px solid #45475a; font-size:0.9em; opacity:0.8; display:flex; gap:10px; align-items:start;">
+                <span style="font-size:1.2em;">ℹ️</span>
+                <span>Huomioithan, että maksut tarkistetaan ja aktivoidaan manuaalisesti. Ominaisuudet kytkeytyvät päälle heti, kun ylläpito on ehtinyt käsitellä suorituksen.</span>
+            </div>
         </div>
     </div>
     `;
