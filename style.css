@@ -85,14 +85,18 @@ nav {
 }
 
 /* KORJAUS: Työpöytänäkymä (yli 768px) - Kompakti valikko oikeaan reunaan */
+/* TIETOKONE / TABLETTI (Leveämmät ruudut) */
 @media (min-width: 768px) {
   nav {
-    left: auto;       /* Vapautetaan vasen reuna */
-    right: 20px;      /* Kiinnitetään oikealle */
-    width: 300px;     /* Kiinteä, kompakti leveys */
-    border-radius: 12px; /* Pyöristetyt kulmat */
+    /* TÄRKEÄT MUUTOKSET: */
+    left: auto !important;   /* Pakottaa valikon irti vasemmasta reunasta */
+    right: 0;                /* Kiinnittää valikon oikeaan reunaan */
+    margin-right: 20px;      /* Jättää pienen välin reunaan */
+    
+    width: 300px;            /* Pitää valikon kapeana */
+    border-radius: 12px;     
     border: 1px solid var(--border-color);
-    top: 75px;        /* Hieman irti yläpalkista */
+    top: 75px;               /* Asettaa korkeuden sopivaksi headerin alle */
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   }
 }
