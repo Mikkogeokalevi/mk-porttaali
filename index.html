@@ -9,8 +9,7 @@
   <link rel="icon" type="image/png" href="mikkokalevi.png">
   
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e1e2e">
-  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000"> <meta name="mobile-web-app-capable" content="yes">
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,13 +21,17 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+  <style>
+    header, nav { background-color: #000000 !important; border-bottom: 1px solid #333; }
+    .brand img { max-height: 50px; width: auto; } /* Säädä tätä jos logo on liian iso/pieni */
+  </style>
+
 </head>
 <body>
 
   <header>
     <a href="#" class="brand" onclick="app.router('home'); return false;">
-      <img src="mikkokalevi.png" alt="MK Logo">
-      <span>MK Porttaali</span>
+      <img src="mklogo.png" alt="MK Porttaali">
     </a>
     <button class="mobile-toggle" onclick="app.toggleMenu()">☰</button>
     <nav id="mainNav">
@@ -36,6 +39,7 @@
         <li><button class="nav-btn" onclick="app.router('home')">Etusivu</button></li>
         <li><button class="nav-btn" onclick="app.router('generator')">Kuvageneraattori</button></li>
         <li><button class="nav-btn" onclick="app.router('stats')">Tilastot</button></li>
+        <li><button class="nav-btn" onclick="app.router('links')">Linkit</button></li>
         <li><button class="nav-btn" onclick="app.router('help')">Ohjeet & Admin</button></li>
       </ul>
       <div id="authContainer">
