@@ -73,14 +73,32 @@ window.app = {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
         }
         
+        // Luodaan status-badge (Admin/Premium)
         let statusBadge = '';
-        if (window.app.userRole === 'admin') statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
-        else if (window.app.userPlan === 'premium') statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
+        if (window.app.userRole === 'admin') {
+            statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.5em; font-weight:bold; vertical-align:middle; margin-left:5px;">ADMIN</span>';
+        } else if (window.app.userPlan === 'premium') {
+            statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.5em; font-weight:bold; vertical-align:middle; margin-left:5px;">PREMIUM</span>';
+        }
 
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.6 ${statusBadge}</h1>
-            <div style="display:grid; gap:10px; margin-top:15px;">
+            
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #45475a;">
+                <img src="logo.png" alt="Logo" style="height:50px; max-width:150px; object-fit:contain;">
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                    <div style="font-family:sans-serif; font-weight:900; font-size:1.6em; letter-spacing:1px; line-height:1;
+                                background: linear-gradient(90deg, #cba6f7, #89b4fa); -webkit-background-clip: text;
+                                -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(203, 166, 247, 0.2);">
+                        PORTTAALI
+                    </div>
+                    <div style="font-size:0.7em; color:#a6adc8; letter-spacing:2px; margin-top:2px;">
+                        v2.6 ${statusBadge}
+                    </div>
+                </div>
+            </div>
+            <div style="display:grid; gap:10px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
                 
@@ -117,7 +135,7 @@ window.app = {
         }
         break;
 
-      // --- LINKIT NÄKYMÄ ---
+      // --- UUSI: LINKIT NÄKYMÄ ---
       case 'links':
         content.innerHTML = `
             <div class="card">
@@ -125,15 +143,25 @@ window.app = {
                     <h1>Hyödylliset Linkit</h1>
                     <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Takaisin</button>
                 </div>
+                <style>
+                    .link-btn {
+                        display: flex; justify-content: space-between; align-items: center;
+                        background: #313244; color: #cdd6f4; text-decoration: none;
+                        padding: 15px; border-radius: 8px; border: 1px solid #45475a;
+                        transition: background 0.2s;
+                    }
+                    .link-btn:hover { background: #45475a; border-color: #89b4fa; }
+                    .new-window-icon { opacity: 0.5; font-size: 0.8em; }
+                </style>
                 <div style="display:grid; gap:10px;">
-                    <a href="https://www.geocaching.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocaching.com ↗</a>
-                    <a href="https://www.geocache.fi/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocache.fi ↗</a>
-                    <a href="https://project-gc.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Project-GC ↗</a>
-                    <a href="https://www.geocachingtoolbox.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocaching Toolbox ↗</a>
-                    <a href="https://www.dcode.fr/en" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">dCode.fr ↗</a>
-                    <a href="https://xiit.dy.fi/gc/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocalcing2 ↗</a>
-                    <a href="https://gc.de/gc/reversewherigo/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Reverse Wherigo Solver ↗</a>
-                    <a href="https://solvedjigidi.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Solved Jigidi ↗</a>
+                    <a href="https://www.geocaching.com/" target="_blank" class="link-btn">Geocaching.com <span class="new-window-icon">↗</span></a>
+                    <a href="https://www.geocache.fi/" target="_blank" class="link-btn">Geocache.fi <span class="new-window-icon">↗</span></a>
+                    <a href="https://project-gc.com/" target="_blank" class="link-btn">Project-GC <span class="new-window-icon">↗</span></a>
+                    <a href="https://www.geocachingtoolbox.com/" target="_blank" class="link-btn">Geocaching Toolbox <span class="new-window-icon">↗</span></a>
+                    <a href="https://www.dcode.fr/en" target="_blank" class="link-btn">dCode.fr <span class="new-window-icon">↗</span></a>
+                    <a href="https://xiit.dy.fi/gc/" target="_blank" class="link-btn">Geocalcing2 <span class="new-window-icon">↗</span></a>
+                    <a href="https://gc.de/gc/reversewherigo/" target="_blank" class="link-btn">Reverse Wherigo Solver <span class="new-window-icon">↗</span></a>
+                    <a href="https://solvedjigidi.com/" target="_blank" class="link-btn">Solved Jigidi <span class="new-window-icon">↗</span></a>
                 </div>
             </div>
         `;
@@ -231,8 +259,10 @@ window.app = {
   generateStatImage: Gen.generateStatImage
 };
 
+// --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
 function checkPremium(content) {
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
+    
     const idCode = window.app.shortId || "VIRHE";
     const nick = window.app.savedNickname || "Nimetön";
 
