@@ -86,7 +86,7 @@ export const initAuth = (auth, db, appState) => {
                     data.shortId = newShortId;
                 }
 
-                // --- UUSI LISÄYS: TALLENNETAAN VIIMEISIN KIRJAUTUMINEN ---
+                // --- PÄIVITYS: TALLENNETAAN VIIMEISIN KIRJAUTUMINEN ---
                 await updateDoc(userRef, { 
                     lastLogin: serverTimestamp() 
                 });
@@ -132,7 +132,7 @@ export const initAuth = (auth, db, appState) => {
                     shortId: shortId,
                     saved_usernames: [],
                     createdAt: serverTimestamp(),
-                    lastLogin: serverTimestamp() // Lisätään myös luonnissa
+                    lastLogin: serverTimestamp() // Lisätään myös uuden käyttäjän luonnissa
                 });
                 window.location.reload();
             }
