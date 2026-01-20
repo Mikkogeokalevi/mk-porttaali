@@ -35,7 +35,7 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
-    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA JA NYT MYÖS DESKTOPILLA
+    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
     if (nav && nav.classList.contains('open')) {
         nav.classList.remove('open');
@@ -425,46 +425,4 @@ function renderGeneratorView(content) {
 }
 
 Auth.initAuth(auth, db, window.app);
-
-// --- TÄMÄ UUSI OSA MUOKKAA YLÄPALKKIA ILMAN INDEX.HTML:N MUOKKAUSTA ---
-document.addEventListener('DOMContentLoaded', () => { 
-    app.router('home'); 
-
-    // Etsitään yläpalkki (yleensä <nav> tai .navbar)
-    // TÄRKEÄÄ: Tämä olettaa, että index.html:ssä on <nav id="mainNav"> tai vastaava
-    const navBar = document.getElementById('mainNav') || document.querySelector('nav');
-    
-    if (navBar) {
-        // 1. Muutetaan yläpalkki mustaksi
-        navBar.style.backgroundColor = "#000000";
-        navBar.style.borderBottom = "1px solid #333";
-
-        // 2. Etsitään "MK Porttaali" -teksti ja vaihdetaan se kuvaksi
-        // Etsitään yleisimmillä luokilla/tageilla
-        const brandLink = navBar.querySelector('.navbar-brand') || navBar.querySelector('a');
-        
-        if (brandLink) {
-            brandLink.innerHTML = `<img src="mklogo.png" alt="MK Porttaali" style="height:40px; vertical-align:middle;">`;
-            brandLink.style.display = 'flex';
-            brandLink.style.alignItems = 'center';
-        }
-    }
-
-    // 3. Lisätään CSS, joka pakottaa "hampurilaisvalikon" (mobiilinäkymän) myös tietokoneelle
-    // ja piilottaa ne tekstilinkit yläpalkista
-    const style = document.createElement('style');
-    style.innerHTML = `
-        /* Piilota desktop-linkit (oletetaan yleisiä luokkia, säädä jos ei toimi) */
-        nav ul.desktop-menu, nav .nav-links { display: none !important; }
-        
-        /* Pakota hampurilaisvalikko-nappi näkyviin */
-        nav .nav-toggle, #menuButton, .hamburger { display: block !important; }
-        
-        /* Jos logo on liian iso mobiilissa */
-        nav img { max-height: 40px; }
-        
-        /* Varmistetaan että tausta on musta */
-        nav, header, .navbar { background-color: #000000 !important; }
-    `;
-    document.head.appendChild(style);
-});
+document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
