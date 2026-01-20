@@ -2,9 +2,11 @@ import {
     collection, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, query, orderBy, limit, Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+// --- TUOTEHALLINTA ---
 const PRODUCTS = [
     { code: 'T-1VK',  name: 'Testi (1 vko)',   days: 7,     price: '1 €',  color: '#89dceb' },
     { code: 'T-3KK',  name: 'Jakso (3 kk)',    days: 90,    price: '3 €',  color: '#89b4fa' },
+    { code: 'T-6KK',  name: 'Kausi (6 kk)',    days: 180,   price: '5 €',  color: '#a6e3a1' },
     { code: 'T-1V',   name: 'Vuosi (12 kk)',   days: 365,   price: '10 €', color: '#fab387' },
     { code: 'LIFE',   name: '👑 Frendi / Ikuinen', days: 36500, price: '0 €',  color: '#cba6f7' }
 ];
@@ -122,7 +124,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         const container = document.getElementById('usersContainer');
         container.innerHTML = 'Ladataan uusimmat 100 käyttäjää...';
         try {
-            // Rajoitetaan kysely 100 uusimpaan, jotta UI ei tukkeudu
+            // Rajoitetaan kysely 100 uusimpaan
             const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(100));
             const snapshot = await getDocs(q);
             
@@ -131,7 +133,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                 users.push({ id: docSnap.id, ...docSnap.data() });
             });
 
-            // Renderöintifunktio
+            // Renderöintifunktio (kutsutaan myös haussa)
             const renderList = (filterText = "") => {
                 let html = '';
                 const lowerFilter = filterText.toLowerCase();
@@ -144,10 +146,12 @@ export const renderAdminView = async (content, db, currentUser) => {
                     let statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
                     let planBadge = '';
 
+                    // --- ADMIN BADGE LOGIIKKA ---
                     if (u.role === 'admin') {
                         planBadge = `<span class="badge badge-admin">ADMIN 🛠️</span>`;
                     } else {
                         planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
+                        
                         if (u.plan === 'premium' && u.premiumExpires) {
                             const expDate = u.premiumExpires.toDate();
                             const isLife = expDate.getFullYear() > 2090;
@@ -159,7 +163,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                     // PÄIVÄMÄÄRÄT
                     const joined = u.createdAt ? u.createdAt.toDate().toLocaleDateString('fi-FI') + " " + u.createdAt.toDate().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}) : '-';
                     
-                    // Viimeksi paikalla (uusi kenttä)
+                    // Viimeksi paikalla (lastLogin)
                     let lastSeen = '-';
                     let lastSeenColor = '#aaa';
                     
@@ -213,10 +217,12 @@ export const renderAdminView = async (content, db, currentUser) => {
         } catch (e) { container.innerHTML = `<p style="color:red">Virhe: ${e.message}</p>`; }
     };
 
-    // --- PROSESSOI DATA + RAPORTTI ---
+    // --- PROSESSOI DATA (ÄLYKÄS LOGIIKKA + RAPORTTI) ---
     document.getElementById('processBtn').onclick = async () => {
         const raw = document.getElementById('statInput').value;
         const log = document.getElementById('processLog');
+        
+        // Luetaan asetukset
         const idxTradi = parseInt(document.getElementById('colTradi').value) - 1;
         const idxMulti = parseInt(document.getElementById('colMulti').value) - 1;
         const idxMysse = parseInt(document.getElementById('colMysse').value) - 1;
@@ -227,6 +233,8 @@ export const renderAdminView = async (content, db, currentUser) => {
             const result = {};
             let count = 0;
             const sortedRegions = [...SUOMEN_MAAKUNNAT].sort((a, b) => b.length - a.length);
+            
+            // Tilastot raporttia varten
             const stats = { trip: 0, tradi: 0, none: 0 };
             let firstRowStats = null;
             let firstRowName = "";
@@ -234,8 +242,11 @@ export const renderAdminView = async (content, db, currentUser) => {
             lines.forEach(line => {
                 let clean = line.trim();
                 if(!clean || clean.startsWith("Paikkakunta") || clean.length < 5) return;
+
                 let kunta = "", numsPart = "";
                 let found = false;
+
+                // 1. Etsitään maakunta tekstin seasta
                 for(const r of sortedRegions) {
                     const idx = clean.indexOf(r);
                     if(idx > 0) {
@@ -245,6 +256,8 @@ export const renderAdminView = async (content, db, currentUser) => {
                         break;
                     }
                 }
+
+                // 2. Varasuunnitelma tab
                 if(!found && clean.includes('\t')) {
                     const parts = clean.split('\t');
                     if(parts.length > 4) {
@@ -254,16 +267,23 @@ export const renderAdminView = async (content, db, currentUser) => {
                         found = true;
                     }
                 }
+
                 if(found) {
                     kunta = kunta.replace(/^\d+\s+/, ''); 
                     const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
                     const allStats = numStrings.map(s => parseInt(s) || 0);
+
                     result[kunta] = { s: allStats };
                     count++;
+
+                    // Tallennetaan eka rivi tarkistusta varten
                     if(!firstRowStats) { firstRowStats = allStats; firstRowName = kunta; }
+
+                    // Lasketaan tilastot
                     const t = allStats[idxTradi] || 0;
                     const m = allStats[idxMulti] || 0;
                     const q = allStats[idxMysse] || 0;
+
                     if(t > 0 && m > 0 && q > 0) stats.trip++;
                     else if(t > 0 && m === 0 && q === 0) stats.tradi++;
                     else if(t === 0 && m === 0 && q === 0) stats.none++;
@@ -274,9 +294,11 @@ export const renderAdminView = async (content, db, currentUser) => {
             
             await setDoc(doc(db, "stats", currentUser.uid), { municipalities: result, updatedAt: Timestamp.now() });
             
+            // --- RAPORTIN RAKENTAMINEN ---
             let reportHtml = `
             <div style="background:rgba(166, 227, 161, 0.1); border:1px solid #a6e3a1; padding:15px; border-radius:8px;">
                 <h3 style="margin:0 0 10px 0; color:#a6e3a1;">✅ Tallennettu onnistuneesti!</h3>
+                
                 <div class="stat-summary">
                     <div class="stat-box">Kunnat <span>${count}</span></div>
                     <div class="stat-box" style="border-color:#a6e3a1; color:#a6e3a1;">Triplettikunnat <span>${stats.trip}</span></div>
@@ -291,12 +313,16 @@ export const renderAdminView = async (content, db, currentUser) => {
                     <span style="color:#a6e3a1">Tradi (${firstRowStats[idxTradi]})</span> | 
                     <span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | 
                     <span style="color:#f38ba8">Mysse (${firstRowStats[idxMysse]})</span></p>
+                    
                     <div class="debug-grid">`;
+                
                 firstRowStats.forEach((v, i) => {
                     reportHtml += `<div class="debug-item"><span style="display:block; color:#aaa; margin-bottom:2px;">${i}</span><span class="col-val">${v}</span></div>`;
                 });
+                
                 reportHtml += `</div></div>`;
             }
+            
             reportHtml += `</div>`;
             log.innerHTML = reportHtml;
 
