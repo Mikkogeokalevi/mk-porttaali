@@ -49,6 +49,9 @@ window.app = {
         return;
     }
 
+    // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli)
+    const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
+
     switch(view) {
       case 'home':
         if (!window.app.currentUser) {
@@ -73,12 +76,16 @@ window.app = {
         }
         
         let statusBadge = '';
-        if (window.app.userRole === 'admin') statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.6em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
-        else if (window.app.userPlan === 'premium') statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.6em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
+        if (window.app.userRole === 'admin') statusBadge = '<div style="background:#cba6f7; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">ADMIN</div>';
+        else if (window.app.userPlan === 'premium') statusBadge = '<div style="background:#fab387; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">PREMIUM</div>';
 
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.6 ${statusBadge}</h1>
+            <div style="text-align:center; padding: 10px 0 20px 0;">
+                <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
+                <br>
+                ${statusBadge}
+            </div>
             
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
@@ -153,22 +160,26 @@ window.app = {
 
       case 'login_view':
         content.innerHTML = `
-          <div class="card" style="max-width: 400px; margin: 0 auto;">
-            <h1 id="authTitle">Kirjaudu</h1>
-            <input type="email" id="email" placeholder="Sähköposti" style="margin-bottom:10px;">
-            <input type="password" id="password" placeholder="Salasana" style="margin-bottom:10px;">
-            <div id="registerFields" class="hidden">
-                <input type="text" id="regNick" placeholder="Nimimerkki" style="margin-bottom:10px; border-color:var(--accent-color);">
+          <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+            <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle} margin-top:10px;">
+            <h1 id="authTitle" style="margin-bottom:20px;">Kirjaudu</h1>
+            
+            <div style="text-align:left;">
+                <input type="email" id="email" placeholder="Sähköposti" style="margin-bottom:10px;">
+                <input type="password" id="password" placeholder="Salasana" style="margin-bottom:10px;">
+                <div id="registerFields" class="hidden">
+                    <input type="text" id="regNick" placeholder="Nimimerkki" style="margin-bottom:10px; border-color:var(--accent-color);">
+                </div>
+                <button id="btnLogin" class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
+                <button id="btnRegister" class="btn hidden" style="background-color:#a6e3a1; color:#1e1e2e;" onclick="app.handleRegister()">Luo uusi tili</button>
+                <div id="loginError" class="error-msg"></div>
+                <div class="divider"><span>TAI</span></div>
+                <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
+                <p style="text-align:center; margin-top:20px; font-size:0.9em;">
+                    <span id="toggleText">Eikö sinulla ole tiliä?</span> 
+                    <a href="#" onclick="app.toggleAuthMode()" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
+                </p>
             </div>
-            <button id="btnLogin" class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
-            <button id="btnRegister" class="btn hidden" style="background-color:#a6e3a1; color:#1e1e2e;" onclick="app.handleRegister()">Luo uusi tili</button>
-            <div id="loginError" class="error-msg"></div>
-            <div class="divider"><span>TAI</span></div>
-            <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
-            <p style="text-align:center; margin-top:20px; font-size:0.9em;">
-                <span id="toggleText">Eikö sinulla ole tiliä?</span> 
-                <a href="#" onclick="app.toggleAuthMode()" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
-            </p>
           </div>
         `;
         break;
