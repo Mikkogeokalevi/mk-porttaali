@@ -35,14 +35,13 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
-    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
+    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA JA NYT MYÖS DESKTOPILLA
     const nav = document.getElementById('mainNav');
     if (nav && nav.classList.contains('open')) {
         nav.classList.remove('open');
     }
 
     const content = document.getElementById('appContent');
-    // Lisätty 'links' suojattujen näkymien listalle
     const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links'];
     
     if (protectedViews.includes(view) && !window.app.currentUser) {
@@ -73,32 +72,15 @@ window.app = {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
         }
         
-        // Luodaan status-badge (Admin/Premium)
         let statusBadge = '';
-        if (window.app.userRole === 'admin') {
-            statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.5em; font-weight:bold; vertical-align:middle; margin-left:5px;">ADMIN</span>';
-        } else if (window.app.userPlan === 'premium') {
-            statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.5em; font-weight:bold; vertical-align:middle; margin-left:5px;">PREMIUM</span>';
-        }
+        if (window.app.userRole === 'admin') statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.6em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
+        else if (window.app.userPlan === 'premium') statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.6em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
 
         content.innerHTML = `
           <div class="card">
+            <h1>MK Porttaali v2.6 ${statusBadge}</h1>
             
-            <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #45475a;">
-                <img src="logo.png" alt="Logo" style="height:50px; max-width:150px; object-fit:contain;">
-                
-                <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                    <div style="font-family:sans-serif; font-weight:900; font-size:1.6em; letter-spacing:1px; line-height:1;
-                                background: linear-gradient(90deg, #cba6f7, #89b4fa); -webkit-background-clip: text;
-                                -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(203, 166, 247, 0.2);">
-                        PORTTAALI
-                    </div>
-                    <div style="font-size:0.7em; color:#a6adc8; letter-spacing:2px; margin-top:2px;">
-                        v2.6 ${statusBadge}
-                    </div>
-                </div>
-            </div>
-            <div style="display:grid; gap:10px;">
+            <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
                 
@@ -135,7 +117,6 @@ window.app = {
         }
         break;
 
-      // --- UUSI: LINKIT NÄKYMÄ ---
       case 'links':
         content.innerHTML = `
             <div class="card">
@@ -262,7 +243,6 @@ window.app = {
 // --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
 function checkPremium(content) {
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
-    
     const idCode = window.app.shortId || "VIRHE";
     const nick = window.app.savedNickname || "Nimetön";
 
@@ -445,4 +425,46 @@ function renderGeneratorView(content) {
 }
 
 Auth.initAuth(auth, db, window.app);
-document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
+
+// --- TÄMÄ UUSI OSA MUOKKAA YLÄPALKKIA ILMAN INDEX.HTML:N MUOKKAUSTA ---
+document.addEventListener('DOMContentLoaded', () => { 
+    app.router('home'); 
+
+    // Etsitään yläpalkki (yleensä <nav> tai .navbar)
+    // TÄRKEÄÄ: Tämä olettaa, että index.html:ssä on <nav id="mainNav"> tai vastaava
+    const navBar = document.getElementById('mainNav') || document.querySelector('nav');
+    
+    if (navBar) {
+        // 1. Muutetaan yläpalkki mustaksi
+        navBar.style.backgroundColor = "#000000";
+        navBar.style.borderBottom = "1px solid #333";
+
+        // 2. Etsitään "MK Porttaali" -teksti ja vaihdetaan se kuvaksi
+        // Etsitään yleisimmillä luokilla/tageilla
+        const brandLink = navBar.querySelector('.navbar-brand') || navBar.querySelector('a');
+        
+        if (brandLink) {
+            brandLink.innerHTML = `<img src="mklogo.png" alt="MK Porttaali" style="height:40px; vertical-align:middle;">`;
+            brandLink.style.display = 'flex';
+            brandLink.style.alignItems = 'center';
+        }
+    }
+
+    // 3. Lisätään CSS, joka pakottaa "hampurilaisvalikon" (mobiilinäkymän) myös tietokoneelle
+    // ja piilottaa ne tekstilinkit yläpalkista
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Piilota desktop-linkit (oletetaan yleisiä luokkia, säädä jos ei toimi) */
+        nav ul.desktop-menu, nav .nav-links { display: none !important; }
+        
+        /* Pakota hampurilaisvalikko-nappi näkyviin */
+        nav .nav-toggle, #menuButton, .hamburger { display: block !important; }
+        
+        /* Jos logo on liian iso mobiilissa */
+        nav img { max-height: 40px; }
+        
+        /* Varmistetaan että tausta on musta */
+        nav, header, .navbar { background-color: #000000 !important; }
+    `;
+    document.head.appendChild(style);
+});
