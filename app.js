@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+// Tuodaan moduulit
 import * as Auth from "./auth.js";
 import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
@@ -34,11 +35,15 @@ window.app = {
   shortId: '',       
 
   router: (view) => {
+    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
-    if (nav && nav.classList.contains('open')) nav.classList.remove('open');
+    if (nav && nav.classList.contains('open')) {
+        nav.classList.remove('open');
+    }
 
     const content = document.getElementById('appContent');
-    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters'];
+    // Lisätty 'links' suojattujen näkymien listalle
+    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links'];
     
     if (protectedViews.includes(view) && !window.app.currentUser) {
         window.app.router('login_view');
@@ -58,7 +63,8 @@ window.app = {
                     <p style="margin-top:15px; font-size:0.9em; opacity:0.7;">tai</p>
                     <button class="btn" onclick="app.router('login_view')">Luo uusi tunnus</button>
                 </div>
-              </div>`;
+              </div>
+            `;
             return;
         }
 
@@ -77,14 +83,20 @@ window.app = {
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
+                
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
-                    <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
+                    <button class="btn" style="background-color: #89dceb; color:#1e1e2e; font-weight:bold;" onclick="app.router('links')">Linkit 🌐</button>
                 </div>
-                <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet</button>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
+                    <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet</button>
+                </div>
                 ${adminButton}
             </div>
-          </div>`;
+          </div>
+        `;
         break;
 
       case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
@@ -99,11 +111,32 @@ window.app = {
       case 'stats_top': if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content); break;
       case 'stats_external': if (checkPremium(content)) Stats.loadExternalStats(content); break;
       
-      // UUSI: Muuntimet reitittimen kautta (premium check)
       case 'converters': 
         if (checkPremium(content)) {
             window.location.href = 'muuntimet.html';
         }
+        break;
+
+      // --- LINKIT NÄKYMÄ ---
+      case 'links':
+        content.innerHTML = `
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h1>Hyödylliset Linkit</h1>
+                    <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Takaisin</button>
+                </div>
+                <div style="display:grid; gap:10px;">
+                    <a href="https://www.geocaching.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocaching.com ↗</a>
+                    <a href="https://www.geocache.fi/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocache.fi ↗</a>
+                    <a href="https://project-gc.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Project-GC ↗</a>
+                    <a href="https://www.geocachingtoolbox.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocaching Toolbox ↗</a>
+                    <a href="https://www.dcode.fr/en" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">dCode.fr ↗</a>
+                    <a href="https://xiit.dy.fi/gc/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Geocalcing2 ↗</a>
+                    <a href="https://gc.de/gc/reversewherigo/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Reverse Wherigo Solver ↗</a>
+                    <a href="https://solvedjigidi.com/" target="_blank" class="btn" style="background:#313244; text-align:left; text-decoration:none; color:white;">Solved Jigidi ↗</a>
+                </div>
+            </div>
+        `;
         break;
 
       case 'generator': renderGeneratorView(content); break;
@@ -198,10 +231,8 @@ window.app = {
   generateStatImage: Gen.generateStatImage
 };
 
-// --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
 function checkPremium(content) {
     if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
-    
     const idCode = window.app.shortId || "VIRHE";
     const nick = window.app.savedNickname || "Nimetön";
 
