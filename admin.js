@@ -24,6 +24,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         return;
     }
 
+    // --- LISÄTTY ADMIN-BADGE OTSIKKOON ---
     content.innerHTML = `
     <style>
         .stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
@@ -44,7 +45,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         .badge-approved { background:#a6e3a1; color:#1e1e2e; }
         .badge-blocked { background:#f38ba8; color:#1e1e2e; }
         .badge-premium { background:#fab387; color:#1e1e2e; }
-        .badge-admin { background:#cba6f7; color:#1e1e2e; } /* UUSI ADMIN VÄRI (Violetti) */
+        .badge-admin { background:#cba6f7; color:#1e1e2e; } /* UUSI: Violetti Admin */
         .badge-free { background:#bac2de; color:#1e1e2e; }
         .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
         .modal-overlay.open { display:flex; }
@@ -53,7 +54,7 @@ export const renderAdminView = async (content, db, currentUser) => {
 
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h1>Ylläpito 🛠️</h1>
+            <h1>Ylläpito <span style="font-size:0.5em; background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; vertical-align:middle;">ADMIN</span></h1>
             <button class="btn" onclick="app.router('home')">⬅ Etusivulle</button>
         </div>
         <div class="tabs" style="margin-top:20px; border-bottom:1px solid #444; display:flex; gap:10px;">
@@ -127,7 +128,6 @@ export const renderAdminView = async (content, db, currentUser) => {
                     planBadge = `<span class="badge badge-admin">ADMIN 🛠️</span>`;
                 } else {
                     planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
-                    
                     if (u.plan === 'premium' && u.premiumExpires) {
                         const expDate = u.premiumExpires.toDate();
                         const isLife = expDate.getFullYear() > 2090;
@@ -165,8 +165,6 @@ export const renderAdminView = async (content, db, currentUser) => {
     document.getElementById('processBtn').onclick = async () => {
         const raw = document.getElementById('statInput').value;
         const log = document.getElementById('processLog');
-        
-        // Luetaan asetukset (1-based -> 0-based)
         const idxTradi = parseInt(document.getElementById('colTradi').value) - 1;
         const idxMulti = parseInt(document.getElementById('colMulti').value) - 1;
         const idxMysse = parseInt(document.getElementById('colMysse').value) - 1;
@@ -177,8 +175,6 @@ export const renderAdminView = async (content, db, currentUser) => {
             const result = {};
             let count = 0;
             const sortedRegions = [...SUOMEN_MAAKUNNAT].sort((a, b) => b.length - a.length);
-            
-            // Tilastot raporttia varten
             const stats = { trip: 0, tradi: 0, none: 0 };
             let firstRowStats = null;
             let firstRowName = "";
@@ -186,10 +182,8 @@ export const renderAdminView = async (content, db, currentUser) => {
             lines.forEach(line => {
                 let clean = line.trim();
                 if(!clean || clean.startsWith("Paikkakunta") || clean.length < 5) return;
-
                 let kunta = "", numsPart = "";
                 let found = false;
-
                 for(const r of sortedRegions) {
                     const idx = clean.indexOf(r);
                     if(idx > 0) {
@@ -199,7 +193,6 @@ export const renderAdminView = async (content, db, currentUser) => {
                         break;
                     }
                 }
-
                 if(!found && clean.includes('\t')) {
                     const parts = clean.split('\t');
                     if(parts.length > 4) {
@@ -209,21 +202,16 @@ export const renderAdminView = async (content, db, currentUser) => {
                         found = true;
                     }
                 }
-
                 if(found) {
                     kunta = kunta.replace(/^\d+\s+/, ''); 
                     const numStrings = numsPart.replace(/\s+/g, ' ').trim().split(' ');
                     const allStats = numStrings.map(s => parseInt(s) || 0);
-
                     result[kunta] = { s: allStats };
                     count++;
-
                     if(!firstRowStats) { firstRowStats = allStats; firstRowName = kunta; }
-
                     const t = allStats[idxTradi] || 0;
                     const m = allStats[idxMulti] || 0;
                     const q = allStats[idxMysse] || 0;
-
                     if(t > 0 && m > 0 && q > 0) stats.trip++;
                     else if(t > 0 && m === 0 && q === 0) stats.tradi++;
                     else if(t === 0 && m === 0 && q === 0) stats.none++;
