@@ -86,6 +86,12 @@ export const initAuth = (auth, db, appState) => {
                     data.shortId = newShortId;
                 }
 
+                // --- UUSI LISÄYS: TALLENNETAAN VIIMEISIN KIRJAUTUMINEN ---
+                await updateDoc(userRef, { 
+                    lastLogin: serverTimestamp() 
+                });
+                // -------------------------------------------------------
+
                 appState.currentUser = user;
                 appState.savedNickname = data.nickname || "";
                 appState.savedId = data.gcId || "";
@@ -125,7 +131,8 @@ export const initAuth = (auth, db, appState) => {
                     plan: 'free',
                     shortId: shortId,
                     saved_usernames: [],
-                    createdAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    lastLogin: serverTimestamp() // Lisätään myös luonnissa
                 });
                 window.location.reload();
             }
@@ -167,7 +174,8 @@ export const handleRegister = async (auth, db, email, password, nickname, onSucc
             status: initialStatus,
             plan: 'free',
             saved_usernames: [],
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp()
         });
 
         if (initialStatus === 'pending') {
