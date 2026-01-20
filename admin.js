@@ -44,6 +44,7 @@ export const renderAdminView = async (content, db, currentUser) => {
         .badge-approved { background:#a6e3a1; color:#1e1e2e; }
         .badge-blocked { background:#f38ba8; color:#1e1e2e; }
         .badge-premium { background:#fab387; color:#1e1e2e; }
+        .badge-admin { background:#cba6f7; color:#1e1e2e; } /* UUSI ADMIN VÄRI (Violetti) */
         .badge-free { background:#bac2de; color:#1e1e2e; }
         .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
         .modal-overlay.open { display:flex; }
@@ -107,16 +108,54 @@ export const renderAdminView = async (content, db, currentUser) => {
         event.target.classList.add('active');
     };
 
-    const loadUsers = async () => { /* ... (sama kuin ennen) ... */ 
-        const container = document.getElementById('adminTabUsers'); container.innerHTML = 'Ladataan...';
+    const loadUsers = async () => {
+        const container = document.getElementById('adminTabUsers');
+        container.innerHTML = 'Ladataan...';
         try {
-            const q = query(collection(db, "users"), orderBy("createdAt", "desc")); const snapshot = await getDocs(q); let html = '';
+            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            let html = '';
             snapshot.forEach(docSnap => {
-                const u = docSnap.data(); const uid = docSnap.id;
+                const u = docSnap.data();
+                const uid = docSnap.id;
+                
                 let statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
-                let planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
-                if (u.plan === 'premium' && u.premiumExpires) { const isLife = u.premiumExpires.toDate().getFullYear() > 2090; planBadge += ` <span style="font-size:0.8em;">(-> ${isLife ? "Toistaiseksi" : u.premiumExpires.toDate().toLocaleDateString()})</span>`; }
-                html += `<div class="user-row"><div class="user-header"><span>${u.nickname} <span style="color:var(--accent-color);">[${u.shortId || '-'}]</span></span><div>${statusBadge} ${planBadge}</div></div><div class="user-meta"><span>📧 ${u.email}</span><span>📅 ${u.createdAt ? u.createdAt.toDate().toLocaleDateString() : '-'}</span></div><div class="user-actions"><select onchange="app.adminChangeStatus('${uid}', this.value)" style="padding:5px;"><option value="pending" ${u.status==='pending'?'selected':''}>Pending</option><option value="approved" ${u.status==='approved'?'selected':''}>Approved</option><option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option></select><button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button><button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button></div></div>`;
+                let planBadge = '';
+
+                // --- UUSI LOGIIKKA: Admin-status yliajaa Premiumin ---
+                if (u.role === 'admin') {
+                    planBadge = `<span class="badge badge-admin">ADMIN 🛠️</span>`;
+                } else {
+                    planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
+                    
+                    if (u.plan === 'premium' && u.premiumExpires) {
+                        const expDate = u.premiumExpires.toDate();
+                        const isLife = expDate.getFullYear() > 2090;
+                        const dateStr = isLife ? "∞ Ikuinen" : expDate.toLocaleDateString();
+                        planBadge += ` <span style="font-size:0.8em;">(-> ${dateStr})</span>`;
+                    }
+                }
+
+                html += `
+                <div class="user-row">
+                    <div class="user-header">
+                        <span>${u.nickname} <span style="color:var(--accent-color);">[${u.shortId || '-'}]</span></span>
+                        <div>${statusBadge} ${planBadge}</div>
+                    </div>
+                    <div class="user-meta">
+                        <span>📧 ${u.email}</span>
+                        <span>📅 ${u.createdAt ? u.createdAt.toDate().toLocaleDateString() : '-'}</span>
+                    </div>
+                    <div class="user-actions">
+                        <select onchange="app.adminChangeStatus('${uid}', this.value)" style="padding:5px;">
+                            <option value="pending" ${u.status==='pending'?'selected':''}>Pending</option>
+                            <option value="approved" ${u.status==='approved'?'selected':''}>Approved</option>
+                            <option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option>
+                        </select>
+                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
+                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
+                    </div>
+                </div>`;
             });
             container.innerHTML = html || '<p>Ei käyttäjiä.</p>';
         } catch (e) { container.innerHTML = `<p style="color:red">Virhe: ${e.message}</p>`; }
@@ -179,10 +218,8 @@ export const renderAdminView = async (content, db, currentUser) => {
                     result[kunta] = { s: allStats };
                     count++;
 
-                    // Tallennetaan eka rivi tarkistusta varten
                     if(!firstRowStats) { firstRowStats = allStats; firstRowName = kunta; }
 
-                    // Lasketaan tilastot
                     const t = allStats[idxTradi] || 0;
                     const m = allStats[idxMulti] || 0;
                     const q = allStats[idxMysse] || 0;
@@ -197,11 +234,9 @@ export const renderAdminView = async (content, db, currentUser) => {
             
             await setDoc(doc(db, "stats", currentUser.uid), { municipalities: result, updatedAt: Timestamp.now() });
             
-            // --- RAPORTIN RAKENTAMINEN ---
             let reportHtml = `
             <div style="background:rgba(166, 227, 161, 0.1); border:1px solid #a6e3a1; padding:15px; border-radius:8px;">
                 <h3 style="margin:0 0 10px 0; color:#a6e3a1;">✅ Tallennettu onnistuneesti!</h3>
-                
                 <div class="stat-summary">
                     <div class="stat-box">Kunnat <span>${count}</span></div>
                     <div class="stat-box" style="border-color:#a6e3a1; color:#a6e3a1;">Triplettikunnat <span>${stats.trip}</span></div>
@@ -216,7 +251,6 @@ export const renderAdminView = async (content, db, currentUser) => {
                     <span style="color:#a6e3a1">Tradi (${firstRowStats[idxTradi]})</span> | 
                     <span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | 
                     <span style="color:#f38ba8">Mysse (${firstRowStats[idxMysse]})</span></p>
-                    
                     <div class="debug-grid">`;
                 
                 firstRowStats.forEach((v, i) => {
