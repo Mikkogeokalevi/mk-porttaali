@@ -72,16 +72,20 @@ window.app = {
             adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
         }
         
-        let planBadge = window.app.userPlan === 'premium' 
-            ? '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.8em; font-weight:bold; margin-left:5px;">PREMIUM</span>' 
-            : '';
+        // --- PÄIVITETTY BADGE-LOGIIKKA (Admin > Premium) ---
+        let statusBadge = '';
+        if (window.app.userRole === 'admin') {
+            statusBadge = '<span style="background:#cba6f7; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">ADMIN</span>';
+        } else if (window.app.userPlan === 'premium') {
+            statusBadge = '<span style="background:#fab387; color:#1e1e2e; padding:2px 6px; border-radius:4px; font-size:0.7em; font-weight:bold; margin-left:5px; vertical-align:middle;">PREMIUM</span>';
+        }
 
         content.innerHTML = `
           <div class="card">
-            <h1>MK Porttaali v2.6 ${planBadge}</h1>
+            <h1>MK Porttaali v2.6 ${statusBadge}</h1>
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
-                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' ? '🔒' : ''}</button>
+                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <a href="muuntimet.html" class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; text-decoration:none; display:flex; align-items:center; justify-content:center;">Muuntimet ↗</a>
                     <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
