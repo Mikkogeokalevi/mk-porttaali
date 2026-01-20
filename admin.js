@@ -1,5 +1,5 @@
 import { 
-    collection, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, query, orderBy, Timestamp 
+    collection, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, query, orderBy, limit, Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const PRODUCTS = [
@@ -24,7 +24,6 @@ export const renderAdminView = async (content, db, currentUser) => {
         return;
     }
 
-    // --- LISÄTTY ADMIN-BADGE OTSIKKOON ---
     content.innerHTML = `
     <style>
         .stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
@@ -38,18 +37,25 @@ export const renderAdminView = async (content, db, currentUser) => {
         .tab-btn.active { color:#fff; border-bottom:2px solid var(--accent-color); }
         .user-row { background:rgba(255,255,255,0.05); padding:10px; margin-bottom:10px; border-radius:6px; display:flex; flex-direction:column; gap:5px; }
         .user-header { display:flex; justify-content:space-between; font-weight:bold; }
-        .user-meta { font-size:0.85em; opacity:0.7; display:flex; gap:15px; }
+        .user-meta { font-size:0.85em; opacity:0.8; display:flex; flex-direction: column; gap:2px; margin: 5px 0; color: #ccc; }
+        .user-meta div { display: flex; align-items: center; gap: 8px; }
         .user-actions { display:flex; gap:10px; margin-top:5px; flex-wrap:wrap; }
         .badge { padding:2px 6px; border-radius:4px; font-size:0.8em; font-weight:bold; }
         .badge-pending { background:#f9e2af; color:#1e1e2e; }
         .badge-approved { background:#a6e3a1; color:#1e1e2e; }
         .badge-blocked { background:#f38ba8; color:#1e1e2e; }
         .badge-premium { background:#fab387; color:#1e1e2e; }
-        .badge-admin { background:#cba6f7; color:#1e1e2e; } /* UUSI: Violetti Admin */
+        .badge-admin { background:#cba6f7; color:#1e1e2e; }
         .badge-free { background:#bac2de; color:#1e1e2e; }
         .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
         .modal-overlay.open { display:flex; }
         .product-btn { padding:15px; border:none; border-radius:8px; font-weight:bold; color:#1e1e2e; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+        
+        #userSearch {
+            width: 100%; padding: 10px; margin-bottom: 15px; 
+            background: #181825; border: 1px solid #45475a; 
+            color: #fff; border-radius: 4px; font-size: 1em;
+        }
     </style>
 
     <div class="card">
@@ -63,7 +69,10 @@ export const renderAdminView = async (content, db, currentUser) => {
             <button class="tab-btn" onclick="app.adminSwitchTab('settings')">Asetukset</button>
         </div>
 
-        <div id="adminTabUsers" class="admin-tab-content" style="margin-top:20px;"><p>Ladataan...</p></div>
+        <div id="adminTabUsers" class="admin-tab-content" style="margin-top:20px;">
+            <input type="text" id="userSearch" placeholder="🔍 Etsi käyttäjää nimellä tai sähköpostilla...">
+            <div id="usersContainer"><p>Ladataan...</p></div>
+        </div>
 
         <div id="adminTabData" class="admin-tab-content hidden" style="margin-top:20px;">
             <h3>Datan päivitys (Geocache.fi)</h3>
@@ -110,54 +119,97 @@ export const renderAdminView = async (content, db, currentUser) => {
     };
 
     const loadUsers = async () => {
-        const container = document.getElementById('adminTabUsers');
-        container.innerHTML = 'Ladataan...';
+        const container = document.getElementById('usersContainer');
+        container.innerHTML = 'Ladataan uusimmat 100 käyttäjää...';
         try {
-            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+            // Rajoitetaan kysely 100 uusimpaan, jotta UI ei tukkeudu
+            const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(100));
             const snapshot = await getDocs(q);
-            let html = '';
+            
+            const users = [];
             snapshot.forEach(docSnap => {
-                const u = docSnap.data();
-                const uid = docSnap.id;
-                
-                let statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
-                let planBadge = '';
-
-                // --- UUSI LOGIIKKA: Admin-status yliajaa Premiumin ---
-                if (u.role === 'admin') {
-                    planBadge = `<span class="badge badge-admin">ADMIN 🛠️</span>`;
-                } else {
-                    planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
-                    if (u.plan === 'premium' && u.premiumExpires) {
-                        const expDate = u.premiumExpires.toDate();
-                        const isLife = expDate.getFullYear() > 2090;
-                        const dateStr = isLife ? "∞ Ikuinen" : expDate.toLocaleDateString();
-                        planBadge += ` <span style="font-size:0.8em;">(-> ${dateStr})</span>`;
-                    }
-                }
-
-                html += `
-                <div class="user-row">
-                    <div class="user-header">
-                        <span>${u.nickname} <span style="color:var(--accent-color);">[${u.shortId || '-'}]</span></span>
-                        <div>${statusBadge} ${planBadge}</div>
-                    </div>
-                    <div class="user-meta">
-                        <span>📧 ${u.email}</span>
-                        <span>📅 ${u.createdAt ? u.createdAt.toDate().toLocaleDateString() : '-'}</span>
-                    </div>
-                    <div class="user-actions">
-                        <select onchange="app.adminChangeStatus('${uid}', this.value)" style="padding:5px;">
-                            <option value="pending" ${u.status==='pending'?'selected':''}>Pending</option>
-                            <option value="approved" ${u.status==='approved'?'selected':''}>Approved</option>
-                            <option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option>
-                        </select>
-                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
-                        <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
-                    </div>
-                </div>`;
+                users.push({ id: docSnap.id, ...docSnap.data() });
             });
-            container.innerHTML = html || '<p>Ei käyttäjiä.</p>';
+
+            // Renderöintifunktio
+            const renderList = (filterText = "") => {
+                let html = '';
+                const lowerFilter = filterText.toLowerCase();
+                
+                users.forEach(u => {
+                    const searchStr = `${u.nickname} ${u.email} ${u.shortId}`.toLowerCase();
+                    if (filterText && !searchStr.includes(lowerFilter)) return;
+
+                    const uid = u.id;
+                    let statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
+                    let planBadge = '';
+
+                    if (u.role === 'admin') {
+                        planBadge = `<span class="badge badge-admin">ADMIN 🛠️</span>`;
+                    } else {
+                        planBadge = `<span class="badge badge-${u.plan}">${u.plan.toUpperCase()}</span>`;
+                        if (u.plan === 'premium' && u.premiumExpires) {
+                            const expDate = u.premiumExpires.toDate();
+                            const isLife = expDate.getFullYear() > 2090;
+                            const dateStr = isLife ? "∞ Ikuinen" : expDate.toLocaleDateString();
+                            planBadge += ` <span style="font-size:0.8em;">(-> ${dateStr})</span>`;
+                        }
+                    }
+
+                    // PÄIVÄMÄÄRÄT
+                    const joined = u.createdAt ? u.createdAt.toDate().toLocaleDateString('fi-FI') + " " + u.createdAt.toDate().toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'}) : '-';
+                    
+                    // Viimeksi paikalla (uusi kenttä)
+                    let lastSeen = '-';
+                    let lastSeenColor = '#aaa';
+                    
+                    if (u.lastLogin) {
+                        const d = u.lastLogin.toDate();
+                        lastSeen = d.toLocaleDateString('fi-FI') + " " + d.toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+                        
+                        // Korostetaan jos on ollut paikalla tänään
+                        const today = new Date();
+                        if (d.toDateString() === today.toDateString()) {
+                            lastSeen = "Tänään " + d.toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'});
+                            lastSeenColor = '#a6e3a1'; // Vihreä
+                        }
+                    }
+
+                    html += `
+                    <div class="user-row">
+                        <div class="user-header">
+                            <span>${u.nickname} <span style="color:var(--accent-color);">[${u.shortId || '-'}]</span></span>
+                            <div>${statusBadge} ${planBadge}</div>
+                        </div>
+                        <div class="user-meta">
+                            <div>📧 ${u.email}</div>
+                            <div>📅 Liittyi: ${joined}</div>
+                            <div style="color:${lastSeenColor}">👁️ Viimeksi: ${lastSeen}</div>
+                        </div>
+                        <div class="user-actions">
+                            <select onchange="app.adminChangeStatus('${uid}', this.value)" style="padding:5px;">
+                                <option value="pending" ${u.status==='pending'?'selected':''}>Pending</option>
+                                <option value="approved" ${u.status==='approved'?'selected':''}>Approved</option>
+                                <option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option>
+                            </select>
+                            <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
+                            <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
+                        </div>
+                    </div>`;
+                });
+                
+                if (html === '') html = '<p style="opacity:0.6; text-align:center;">Ei tuloksia.</p>';
+                container.innerHTML = html;
+            };
+
+            // Alustus
+            renderList();
+
+            // Hakukentän kuuntelija
+            document.getElementById('userSearch').addEventListener('input', (e) => {
+                renderList(e.target.value);
+            });
+
         } catch (e) { container.innerHTML = `<p style="color:red">Virhe: ${e.message}</p>`; }
     };
 
@@ -240,14 +292,11 @@ export const renderAdminView = async (content, db, currentUser) => {
                     <span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | 
                     <span style="color:#f38ba8">Mysse (${firstRowStats[idxMysse]})</span></p>
                     <div class="debug-grid">`;
-                
                 firstRowStats.forEach((v, i) => {
                     reportHtml += `<div class="debug-item"><span style="display:block; color:#aaa; margin-bottom:2px;">${i}</span><span class="col-val">${v}</span></div>`;
                 });
-                
                 reportHtml += `</div></div>`;
             }
-            
             reportHtml += `</div>`;
             log.innerHTML = reportHtml;
 
