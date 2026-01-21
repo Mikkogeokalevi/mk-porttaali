@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MK Muuntimet</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="muuntimet_style.css">
     
     <style>
@@ -12,12 +13,12 @@
         }
         /* Yläpalkki joka jäljittelee MK Porttaalin tyyliä */
         .mk-app-header {
-            background-color: #313244; /* Porttaalin kortti-tausta */
-            border-bottom: 1px solid #45475a;
+            background-color: var(--card-bg, #313244); /* Porttaalin kortti-tausta */
+            border-bottom: 1px solid var(--border-color, #45475a);
             padding: 15px 20px;
             display: flex;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow, 0 4px 6px rgba(0, 0, 0, 0.3));
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             position: sticky;
             top: 0;
@@ -25,7 +26,7 @@
         }
         .mk-back-btn {
             text-decoration: none;
-            color: #89b4fa; /* Porttaalin accent-väri */
+            color: var(--accent-color, #89b4fa); /* Porttaalin accent-väri */
             font-weight: bold;
             font-size: 1.1rem;
             display: flex;
@@ -74,7 +75,7 @@
         <div class="teksti-alue">
             <div class="header-flex-container">
                 <div class="header-left">
-                    <img src="https://img.geocaching.com:443/84454fa6-e23a-4aad-a8a4-612b77f23abe.png" alt="Oma logo" class="logo" />
+                    <img src="mklogo.png" alt="MK Porttaali" class="logo" />
                     <h3 class="paaotsikko">MK Muuntimet</h3>
                 </div>
                  <button id="mobile-menu-toggle">

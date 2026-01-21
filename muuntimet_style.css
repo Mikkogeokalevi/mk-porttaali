@@ -1,8 +1,15 @@
 /* MK Muuntimet, Versio 11.0 - Sanasto-haku ja selitteet muuntimissa */
 :root {
-    --color-bg: #212529; --color-surface: #343A40; --color-card: #495057; 
-    --color-border: #6c757d; --color-text-primary: #F8F9FA; --color-text-secondary: #adb5bd; 
-    --color-accent-green: #90EE90; --color-accent-yellow: #FFD700; --color-accent-blue: #0d6efd;
+    /* Peilataan porttaalin palettia ja tarjotaan varavärit standalone-käyttöön */
+    --color-bg: var(--bg-color, #1e1e2e);
+    --color-surface: var(--card-bg, #313244);
+    --color-card: var(--card-bg, #313244);
+    --color-border: var(--border-color, #45475a);
+    --color-text-primary: var(--text-color, #cdd6f4);
+    --color-text-secondary: var(--subtext-color, #a6adc8);
+    --color-accent-green: var(--success-color, #a6e3a1);
+    --color-accent-yellow: var(--accent-color, #89b4fa);
+    --color-accent-blue: var(--accent-color, #89b4fa);
 }
 html, body {
     background-color: var(--color-bg);
@@ -10,11 +17,11 @@ html, body {
     margin: 0; padding: 0;
     color: var(--color-text-primary);
 }
-.sisalto-laatikko { max-width: 700px; margin: 20px auto; padding: 10px; background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+.sisalto-laatikko { max-width: 700px; margin: 20px auto; padding: 10px; background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: var(--shadow, 0 8px 30px rgba(0,0,0,0.2)); }
 .teksti-alue { padding: 10px; }
 .header-flex-container { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 10px; }
 .header-left { display: flex; align-items: center; gap: 15px; }
-.logo { width: 60px; height: 60px; border: 3px solid var(--color-border); border-radius: 50%; }
+.logo { width: 68px; height: 68px; border: 2px solid var(--color-border); border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); background: #000; object-fit: cover; }
 .paaotsikko { color: var(--color-accent-green); text-align: left; margin: 0; font-size: 1.6em; font-weight: 300; }
 .huomio-laatikko { background-color: var(--color-card); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid var(--color-border); }
 .valilehdet { display: flex; border-bottom: 1px solid var(--color-border); margin-bottom: 20px; flex-wrap: wrap; }
