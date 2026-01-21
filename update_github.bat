@@ -26,7 +26,7 @@ git pull --rebase origin main
 if %errorlevel% neq 0 goto :error
 
 echo.
-echo Lähetetään muutokset GitHubiin...
+echo Valmis pullaamaan, lähetetään muutokset GitHubiin...
 git push origin master:main
 if %errorlevel% neq 0 goto :error
 
