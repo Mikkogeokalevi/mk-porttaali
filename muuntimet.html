@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MK Muuntimet</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="muuntimet_style.css">
+    
+    <style>
+        body {
+            margin: 0; /* Poistetaan oletusmarginaalit jotta header istuu ylös */
+        }
+        /* Yläpalkki joka jäljittelee MK Porttaalin tyyliä */
+        .mk-app-header {
+            background-color: var(--card-bg, #313244); /* Porttaalin kortti-tausta */
+            border-bottom: 1px solid var(--border-color, #45475a);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow, 0 4px 6px rgba(0, 0, 0, 0.3));
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .mk-back-btn {
+            text-decoration: none;
+            color: var(--accent-color, #89b4fa); /* Porttaalin accent-väri */
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: color 0.2s;
+        }
+        .mk-back-btn:hover {
+            color: #b4befe;
+        }
+        .mk-back-btn span {
+            font-size: 1.4em;
+            line-height: 1;
+        }
+        
+        /* Hienosäätö muuntimen alkuperäiselle laatikolle, jotta se istuu nätisti headerin alle */
+        .sisalto-laatikko {
+            margin-top: 20px !important; 
+        }
+        
+        /* Mobiilissa poistetaan pyöristykset ja marginaalit */
+        @media screen and (max-width: 800px) {
+            .mk-app-header {
+                padding: 12px 15px;
+            }
+            .sisalto-laatikko {
+                margin: 0 auto !important;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                border-top: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="mk-app-header">
+        <a href="index.html" class="mk-back-btn">
+            <span>⬅</span> Takaisin Porttaaliin
+        </a>
+    </div>
+
+    <div class="sisalto-laatikko">
+        <div class="teksti-alue">
+            <div class="header-flex-container">
+                <div class="header-left">
+                    <img src="mklogo.png" alt="MK Porttaali" class="logo" />
+                    <h3 class="paaotsikko">Muuntimet</h3>
+                </div>
+                 <button id="mobile-menu-toggle">
+                    <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                </button>
+            </div>
+
+            <div class="huomio-laatikko" style="padding: 0;">
+                <div class="valilehdet">
+                    <button class="valilehti-nappi aktiivinen" data-valilehti="koordinaatit">Koordinaatit</button>
+                    <button class="valilehti-nappi" data-valilehti="paivamaarat">Päivämäärät</button>
+                    <button class="valilehti-nappi" data-valilehti="teksti">Teksti</button>
+                    <button class="valilehti-nappi" data-valilehti="aika">Aika</button>
+                    <button class="valilehti-nappi" data-valilehti="pituus">Pituus</button>
+                    <button class="valilehti-nappi" data-valilehti="nopeus">Nopeus</button>
+                    <button class="valilehti-nappi" data-valilehti="massa">Massa</button>
+                    <button class="valilehti-nappi" data-valilehti="pinta-ala">Pinta-ala</button>
+                    <button class="valilehti-nappi" data-valilehti="tilavuus">Tilavuus</button>
+                    <button class="valilehti-nappi" data-valilehti="voima">Voima</button>
+                    <button class="valilehti-nappi" data-valilehti="apteekkari_massa">Apteekkarin mitat</button>
+                    <button class="valilehti-nappi" data-valilehti="polttoaine">Polttoaine</button>
+                    <button class="valilehti-nappi" data-valilehti="typografia">Typografia</button>
+                    <button class="valilehti-nappi" data-valilehti="paine">Paine</button>
+                    <button class="valilehti-nappi" data-valilehti="energia">Energia</button>
+                    <button class="valilehti-nappi" data-valilehti="teho">Teho</button>
+                    <button class="valilehti-nappi" data-valilehti="data">Data</button>
+                    <button class="valilehti-nappi" data-valilehti="kulma">Kulma</button>
+                    <button class="valilehti-nappi" data-valilehti="sahko">Sähkö</button>
+                    <button class="valilehti-nappi" data-valilehti="sateily">Säteily</button>
+                    <button class="valilehti-nappi" data-valilehti="valo">Valo</button>
+                    <button class="valilehti-nappi" data-valilehti="lampotila">Lämpötila</button>
+                    <button class="valilehti-nappi" data-valilehti="roomalaiset">Roomalaiset</button>
+                    <button class="valilehti-nappi" data-valilehti="luvut">Lukujärjestelmät</button>
+                    <button class="valilehti-nappi" data-valilehti="ruoanlaitto">Ruoanlaitto</button>
+                    <button class="valilehti-nappi" data-valilehti="verensokeri">Verensokeri</button>
+                    <button class="valilehti-nappi" data-valilehti="bmi">Painoindeksi</button>
+                    <button class="valilehti-nappi" data-valilehti="prosentti">Prosenttilaskuri</button>
+                    <button class="valilehti-nappi" data-valilehti="kalorit">Kalorilaskuri</button>
+                    <button class="valilehti-nappi" data-valilehti="numerot">Numerotyökalut</button>
+                    <button class="valilehti-nappi" data-valilehti="vastus">Vastuskoodi</button>
+                    <button class="valilehti-nappi" data-valilehti="varit">Värimuunnin</button>
+                    <button class="valilehti-nappi" data-valilehti="yksikkosanasto">Yksikkösanasto</button>
+                </div>
+
+                <div class="valilehti-sisalto">
+                    <div id="koordinaatit" class="valilehti-paneeli aktiivinen"></div>
+                    <div id="paivamaarat" class="valilehti-paneeli"></div>
+                    <div id="teksti" class="valilehti-paneeli"></div>
+                    <div id="aika" class="valilehti-paneeli"></div>
+                    <div id="pituus" class="valilehti-paneeli"></div>
+                    <div id="nopeus" class="valilehti-paneeli"></div>
+                    <div id="massa" class="valilehti-paneeli"></div>
+                    <div id="pinta-ala" class="valilehti-paneeli"></div>
+                    <div id="tilavuus" class="valilehti-paneeli"></div>
+                    <div id="voima" class="valilehti-paneeli"></div>
+                    <div id="apteekkari_massa" class="valilehti-paneeli"></div>
+                    <div id="polttoaine" class="valilehti-paneeli"></div>
+                    <div id="typografia" class="valilehti-paneeli"></div>
+                    <div id="paine" class="valilehti-paneeli"></div>
+                    <div id="energia" class="valilehti-paneeli"></div>
+                    <div id="teho" class="valilehti-paneeli"></div>
+                    <div id="data" class="valilehti-paneeli"></div>
+                    <div id="kulma" class="valilehti-paneeli"></div>
+                    <div id="sahko" class="valilehti-paneeli"></div>
+                    <div id="sateily" class="valilehti-paneeli"></div>
+                    <div id="valo" class="valilehti-paneeli"></div>
+                    <div id="lampotila" class="valilehti-paneeli"></div>
+                    <div id="roomalaiset" class="valilehti-paneeli"></div>
+                    <div id="luvut" class="valilehti-paneeli"></div>
+                    <div id="ruoanlaitto" class="valilehti-paneeli"></div>
+                    <div id="verensokeri" class="valilehti-paneeli"></div>
+                    <div id="bmi" class="valilehti-paneeli"></div>
+                    <div id="prosentti" class="valilehti-paneeli"></div>
+                    <div id="kalorit" class="valilehti-paneeli"></div>
+                    <div id="numerot" class="valilehti-paneeli"></div>
+                    <div id="vastus" class="valilehti-paneeli"></div>
+                    <div id="varit" class="valilehti-paneeli"></div>
+                    <div id="yksikkosanasto" class="valilehti-paneeli"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="muuntimet_script.js" defer></script>
+</body>
+</html>

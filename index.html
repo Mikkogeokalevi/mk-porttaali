@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <title>MK Porttaali v2.6</title>
+  
+  <link rel="icon" type="image/png" href="mklogo.png">
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MK Porttaali">
+  <link rel="apple-touch-icon" href="mklogo.png">
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+</head>
+<body>
+
+  <header>
+    <a href="#" class="brand" onclick="app.router('home'); return false;">
+      <img src="mklogo.png" alt="MK Porttaali">
+    </a>
+    <button class="mobile-toggle" onclick="app.toggleMenu()">☰</button>
+    <nav id="mainNav">
+      <ul>
+        <li><button class="nav-btn" onclick="app.router('home')">Etusivu</button></li>
+        <li><button class="nav-btn" onclick="app.router('generator')">Kuvageneraattori</button></li>
+        <li><button class="nav-btn" onclick="app.router('stats')">Tilastot</button></li>
+        <li><button class="nav-btn" onclick="app.router('links')">Linkkikirjasto</button></li>
+        <li><button class="nav-btn" onclick="app.router('help')">Ohjeet & Admin</button></li>
+      </ul>
+      <div id="authContainer">
+        <span id="userNameDisplay" class="user-info hidden"></span>
+        <button id="authButton" class="nav-btn" onclick="app.router('login_view')">Kirjaudu</button>
+        <button id="logoutButton" class="nav-btn hidden" onclick="app.logout()">Ulos</button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="appContent">
+    <div style="text-align: center; margin-top: 50px;">Ladataan sovellusta...</div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker rekisteröity: ', reg.scope))
+          .catch(err => console.log('Service Worker virhe: ', err));
+      });
+    }
+  </script>
+</body>
+</html>
