@@ -21,6 +21,11 @@ git commit -m "%commit_message%"
 if %errorlevel% neq 0 goto :error
 
 echo.
+echo Haetaan viimeisimmät muutokset GitHubista (pull)...
+git pull --rebase origin main
+if %errorlevel% neq 0 goto :error
+
+echo.
 echo Lähetetään muutokset GitHubiin...
 git push origin master:main
 if %errorlevel% neq 0 goto :error
