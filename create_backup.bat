@@ -4,16 +4,8 @@ set "sourcedir=c:\Users\Tompe\Documents\mk-porttaali-main"
 REM Haetaan nykyinen päivämäärä ja kellonaika YYYY-MM-DD_HH-MM-SS muotoon
 for /f "tokens=1-4 delims=/ " %%a in ('date /t') do set CDATE=%%c-%%a-%%b
 for /f "tokens=1-3 delims=:." %%a in ('time /t') do set CTIME=%%a-%%b-%%c
-
-set "backup_folder_name=mk-porttaali-main_backup_%CDATE%_%CTIME%"
-set "base_backup_path=c:\Users\Tompe\Documents\mk-porttaali-main_backup"
-set "destinationdir=%base_backup_path%\%backup_folder_name%"
-
-REM Varmistetaan, että päävarmuuskansiopolku on olemassa
-if not exist "%base_backup_path%" (
-    mkdir "%base_backup_path%"
-    echo Luotiin päävarmuuskansiopolku: %base_backup_path%
-)
+set "backupdir_name=mk-porttaali-main_backup_%CDATE%_%CTIME%"
+set "destinationdir=%sourcedir%\..\%backupdir_name%"
 
 REM Tarkistetaan, onko kohdekansio olemassa ja luodaan se, jos ei ole
 if not exist "%destinationdir%" (
