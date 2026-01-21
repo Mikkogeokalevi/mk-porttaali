@@ -290,10 +290,6 @@ function checkPremium(content) {
             </div>
 
             <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
-  111|
-  112|      case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
-  113|      case 'admin': renderAdminView(content, db, window.app.currentUser); break;
-  114|      case 'locked_view': content.innerHTML = `<div class="card" style="text-align:center;"><h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1><button class="btn" onclick="app.logout()">Kirjaudu ulos</button></div>`; break;
   115|
   116|      case 'stats': if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app); break;
   117|      case 'stats_triplet': if (checkPremium(content)) Stats.loadTripletData(db, window.app.currentUser, content); break;
