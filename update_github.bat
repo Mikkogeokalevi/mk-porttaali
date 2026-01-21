@@ -22,7 +22,7 @@ if %errorlevel% neq 0 goto :error
 
 echo.
 echo Lähetetään muutokset GitHubiin...
-git push
+git push origin master:main
 if %errorlevel% neq 0 goto :error
 
 echo.
