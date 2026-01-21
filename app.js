@@ -312,9 +312,9 @@ function checkPremium(content) {
   134|      case 'generator': renderGeneratorView(content); break;
   135|      case 'help': renderHelp(content, window.app); break;
   136|
-  137|      case 'login_view':
-  138|        content.innerHTML = `
-  139|          <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+      case 'login_view':
+        content.innerHTML = `
+          <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
   140|            <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle} margin-top:10px;">
   141|            <h1 id="authTitle" style="margin-bottom:20px;">Kirjaudu</h1>
   142|            
