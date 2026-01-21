@@ -7,7 +7,7 @@ function formatDate(input) {
 }
 
 export const handleTypeChange = () => {
-    const type = document.getElementById('genType').value;
+    const type = window.app.currentGenTypeValue || 'matrix'; // Lue arvo globaalista tilasta, oletus 'matrix'
     const yearFilters = document.getElementById('yearSpecificFilters');
     if (type === 'year') {
         yearFilters.classList.remove('hidden');
