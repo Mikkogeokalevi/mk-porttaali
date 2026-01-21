@@ -20,15 +20,16 @@ html, body {
 .sisalto-laatikko { max-width: 700px; margin: 20px auto; padding: 10px; background-color: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; box-shadow: var(--shadow, 0 8px 30px rgba(0,0,0,0.2)); }
 .teksti-alue { padding: 10px; }
 .header-flex-container { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-bottom: 10px; }
-.header-left { display: flex; align-items: center; gap: 15px; }
+.header-left { display: flex; align-items: center; gap: 16px; }
 .logo {
-    width: 64px;
-    height: 64px;
-    border: 1px solid var(--color-border);
-    border-radius: 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    width: 84px;
+    height: 84px;
+    border: none;          /* ei “laatikkoa” */
+    border-radius: 18px;   /* app-icon fiilis */
+    box-shadow: none;      /* pois kehys/korostus */
     background: transparent;
-    object-fit: contain; /* älä leikkaa logoa */
+    object-fit: contain;
+    display: block;
 }
 .paaotsikko { color: var(--color-accent-green); text-align: left; margin: 0; font-size: 1.6em; font-weight: 300; }
 .huomio-laatikko { background-color: var(--color-card); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid var(--color-border); }
