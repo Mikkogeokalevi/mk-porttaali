@@ -290,42 +290,6 @@ function checkPremium(content) {
             </div>
 
             <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
-   75|        <!-- LOGGED IN VIEW (KIRJAUTUNUT)
-   76|        let adminButton = '';
-   77|        if (window.app.userRole === 'admin') {
-   78|            adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
-   79|        }
-   80|        
-   81|        let statusBadge = '';
-   82|        if (window.app.userRole === 'admin') statusBadge = '<div style="background:#cba6f7; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">ADMIN</div>';
-   83|        else if (window.app.userPlan === 'premium') statusBadge = '<div style="background:#fab387; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">PREMIUM</div>';
-   84|
-   85|        content.innerHTML = `
-   86|          <div class="card">
-   87|            <div style="text-align:center; padding: 10px 0 20px 0;">
-   88|                <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
-   89|                <br>
-   90|                ${statusBadge}
-   91|            </div>
-   92|            
-   93|            <div style="display:grid; gap:10px; margin-top:15px;">
-   94|                <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
-   95|                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
-   96|                
-   97|                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-   98|                    <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
-   99|                    <button class="btn" style="background-color: #89dceb; color:#1e1e2e; font-weight:bold;" onclick="app.router('links')">Linkkikirjasto 🌐</button>
-  100|                </div>
-  101|
-  102|                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-  103|                    <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
-  104|                    <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet</button>
-  105|                </div>
-  106|                ${adminButton}
-  107|            </div>
-  108|          </div>
-  109|        `;
-  110|        break;
   111|
   112|      case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
   113|      case 'admin': renderAdminView(content, db, window.app.currentUser); break;
