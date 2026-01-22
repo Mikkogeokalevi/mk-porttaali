@@ -224,7 +224,8 @@ window.app = {
   confirmMunicipalities: Gen.confirmMunicipalities,
   updateProfileLink: Gen.updateProfileLink,
   toggleTimeFields: Gen.toggleTimeFields,
-  generateStatImage: Gen.generateStatImage
+  generateStatImage: Gen.generateStatImage,
+  initGeneratorAccordions: Gen.initGeneratorAccordions
 };
 
 // --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
@@ -319,22 +320,44 @@ function renderGeneratorView(content) {
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
         <label>Kuvan tyyppi:</label>
-        <select id="genType" onchange="app.handleTypeChange()">
-          <option value="matrix">T/D-taulukko</option>
-          <option value="kunta">Kuntakartta</option>
-          <option value="year">Vuosikalenteri</option>
-          <option value="ftfkunta">FTF kuntakartta</option>
-          <option value="hiddenday">Jasmer</option>
-          <option value="saari">Saarilöydöt</option>
-        </select>
+        <div class="gen-accordion-field">
+          <select id="genType" onchange="app.handleTypeChange()">
+            <option value="matrix">T/D-taulukko</option>
+            <option value="kunta">Kuntakartta</option>
+            <option value="year">Vuosikalenteri</option>
+            <option value="ftfkunta">FTF kuntakartta</option>
+            <option value="hiddenday">Jasmer</option>
+            <option value="saari">Saarilöydöt</option>
+          </select>
+          <div class="gen-accordion" data-select="genType">
+            <button type="button" class="gen-accordion-toggle">
+              <span class="gen-accordion-label">Valitse</span>
+              <span class="gen-accordion-caret">▾</span>
+            </button>
+            <div class="gen-accordion-panel">
+              <ul class="gen-accordion-options"></ul>
+            </div>
+          </div>
+        </div>
         
         <div id="yearSpecificFilters" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
             <label>Sijainnin tyyppi:</label>
-            <select id="genLocType" onchange="app.handleLocTypeChange()">
-                <option value="none">Ei rajoitusta</option>
-                <option value="pkunta">Paikkakunta</option>
-                <option value="mkunta">Maakunta</option>
-            </select>
+            <div class="gen-accordion-field">
+              <select id="genLocType" onchange="app.handleLocTypeChange()">
+                  <option value="none">Ei rajoitusta</option>
+                  <option value="pkunta">Paikkakunta</option>
+                  <option value="mkunta">Maakunta</option>
+              </select>
+              <div class="gen-accordion" data-select="genLocType">
+                <button type="button" class="gen-accordion-toggle">
+                  <span class="gen-accordion-label">Valitse</span>
+                  <span class="gen-accordion-caret">▾</span>
+                </button>
+                <div class="gen-accordion-panel">
+                  <ul class="gen-accordion-options"></ul>
+                </div>
+              </div>
+            </div>
             <div style="position:relative;">
                 <div class="input-group" style="margin-top:5px;">
                     <input type="text" id="genLocValue" placeholder="Valitse tyyppi ensin" disabled>
@@ -346,15 +369,48 @@ function renderGeneratorView(content) {
         </div>
 
         <label>Aikarajaus:</label>
-        <select id="genTimeSelect" onchange="app.toggleTimeFields()">
-          <option value="ei">Ei aikarajausta</option>
-          <option value="kylla">Valitse aikaväli</option>
-        </select>
+        <div class="gen-accordion-field">
+          <select id="genTimeSelect" onchange="app.toggleTimeFields()">
+            <option value="ei">Ei aikarajausta</option>
+            <option value="kylla">Valitse aikaväli</option>
+          </select>
+          <div class="gen-accordion" data-select="genTimeSelect">
+            <button type="button" class="gen-accordion-toggle">
+              <span class="gen-accordion-label">Valitse</span>
+              <span class="gen-accordion-caret">▾</span>
+            </button>
+            <div class="gen-accordion-panel">
+              <ul class="gen-accordion-options"></ul>
+            </div>
+          </div>
+        </div>
 
         <div id="timeFields" class="hidden">
-          <div style="display:flex; gap:10px;">
-              <select id="genYear" style="flex:1;">${yearOptions}</select>
-              <select id="genMonth" style="flex:1;">${monthOptions}</select>
+          <div class="gen-accordion-row">
+              <div class="gen-accordion-field">
+                <select id="genYear">${yearOptions}</select>
+                <div class="gen-accordion" data-select="genYear">
+                  <button type="button" class="gen-accordion-toggle">
+                    <span class="gen-accordion-label">— Vuosi —</span>
+                    <span class="gen-accordion-caret">▾</span>
+                  </button>
+                  <div class="gen-accordion-panel">
+                    <ul class="gen-accordion-options"></ul>
+                  </div>
+                </div>
+              </div>
+              <div class="gen-accordion-field">
+                <select id="genMonth">${monthOptions}</select>
+                <div class="gen-accordion" data-select="genMonth">
+                  <button type="button" class="gen-accordion-toggle">
+                    <span class="gen-accordion-label">— Kk —</span>
+                    <span class="gen-accordion-caret">▾</span>
+                  </button>
+                  <div class="gen-accordion-panel">
+                    <ul class="gen-accordion-options"></ul>
+                  </div>
+                </div>
+              </div>
           </div>
           <label>Tai tarkka väli:</label>
           <div style="display:flex; gap:10px;">
@@ -364,20 +420,31 @@ function renderGeneratorView(content) {
         </div>
 
         <label>Kätkötyyppi:</label>
-        <select id="genCacheType">
-          <option value="">— Kaikki —</option>
-          <option value="1">Traditional Cache</option>
-          <option value="2">Multi-cache</option>
-          <option value="3">Unknown Cache</option>
-          <option value="4">Letterbox Hybrid</option>
-          <option value="5">Event Cache</option>
-          <option value="6">Earthcache</option>
-          <option value="7">Virtual Cache</option>
-          <option value="8">Webcam Cache</option>
-          <option value="9">Wherigo Cache</option>
-          <option value="98">Muut paitsi tradit</option>
-          <option value="99">Kaikki event-tyypit</option>
-        </select>
+        <div class="gen-accordion-field">
+          <select id="genCacheType">
+            <option value="">— Kaikki —</option>
+            <option value="1">Traditional Cache</option>
+            <option value="2">Multi-cache</option>
+            <option value="3">Unknown Cache</option>
+            <option value="4">Letterbox Hybrid</option>
+            <option value="5">Event Cache</option>
+            <option value="6">Earthcache</option>
+            <option value="7">Virtual Cache</option>
+            <option value="8">Webcam Cache</option>
+            <option value="9">Wherigo Cache</option>
+            <option value="98">Muut paitsi tradit</option>
+            <option value="99">Kaikki event-tyypit</option>
+          </select>
+          <div class="gen-accordion" data-select="genCacheType">
+            <button type="button" class="gen-accordion-toggle">
+              <span class="gen-accordion-label">— Kaikki —</span>
+              <span class="gen-accordion-caret">▾</span>
+            </button>
+            <div class="gen-accordion-panel">
+              <ul class="gen-accordion-options"></ul>
+            </div>
+          </div>
+        </div>
 
         <button class="btn btn-primary" onclick="app.generateStatImage()">Luo kuva</button>
       </div>
@@ -426,6 +493,7 @@ function renderGeneratorView(content) {
     
     app.loadFriends();
     app.updateProfileLink();
+    app.initGeneratorAccordions();
 }
 
 Auth.initAuth(auth, db, window.app);

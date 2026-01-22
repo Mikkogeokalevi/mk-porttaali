@@ -228,3 +228,84 @@ export const generateStatImage = () => {
 
     document.getElementById('resultArea').classList.remove('hidden');
 };
+
+export const initGeneratorAccordions = () => {
+    const accordions = Array.from(document.querySelectorAll('.gen-accordion'));
+    if (!accordions.length) return;
+
+    const closeAll = (except) => {
+        accordions.forEach(acc => {
+            if (acc !== except) acc.classList.remove('open');
+        });
+    };
+
+    const buildAccordion = (acc) => {
+        const selectId = acc.dataset.select;
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        const toggle = acc.querySelector('.gen-accordion-toggle');
+        const label = acc.querySelector('.gen-accordion-label');
+        const list = acc.querySelector('.gen-accordion-options');
+
+        const syncLabel = () => {
+            const selected = select.options[select.selectedIndex];
+            label.textContent = selected ? selected.textContent : 'Valitse';
+        };
+
+        const updateActive = () => {
+            list.querySelectorAll('.gen-accordion-option').forEach(button => {
+                button.classList.toggle('active', button.dataset.value === select.value);
+            });
+        };
+
+        const renderOptions = () => {
+            list.innerHTML = '';
+            Array.from(select.options).forEach(option => {
+                const item = document.createElement('li');
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'gen-accordion-option';
+                button.dataset.value = option.value;
+                button.textContent = option.textContent;
+                if (option.value === select.value) button.classList.add('active');
+
+                button.addEventListener('click', () => {
+                    select.value = option.value;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncLabel();
+                    updateActive();
+                    acc.classList.remove('open');
+                });
+
+                item.appendChild(button);
+                list.appendChild(item);
+            });
+        };
+
+        toggle.addEventListener('click', () => {
+            if (acc.classList.contains('open')) {
+                acc.classList.remove('open');
+                return;
+            }
+            closeAll(acc);
+            renderOptions();
+            acc.classList.add('open');
+        });
+
+        select.addEventListener('change', () => {
+            syncLabel();
+            updateActive();
+        });
+
+        syncLabel();
+        updateActive();
+    };
+
+    accordions.forEach(buildAccordion);
+
+    document.addEventListener('click', (event) => {
+        const within = event.target.closest('.gen-accordion');
+        if (!within) closeAll();
+    });
+};
