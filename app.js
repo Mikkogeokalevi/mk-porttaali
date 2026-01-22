@@ -252,6 +252,11 @@ function checkPremium(content) {
 
             <h3 style="margin-bottom:10px;">Hinnasto</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89dceb;">
+                    <div style="font-weight:bold; color:#89dceb;">1 KK</div>
+                    <div style="font-size:1.2em;">2 €</div>
+                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1KK</div>
+                </div>
                 <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89b4fa;">
                     <div style="font-weight:bold; color:#89b4fa;">3 KK</div>
                     <div style="font-size:1.2em;">3 €</div>
@@ -262,7 +267,7 @@ function checkPremium(content) {
                     <div style="font-size:1.2em;">5 €</div>
                     <div style="font-size:0.7em; opacity:0.6;">Koodi: T-6KK</div>
                 </div>
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #fab387; grid-column: span 2;">
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #fab387;">
                     <div style="font-weight:bold; color:#fab387;">12 KK (Vuosi)</div>
                     <div style="font-size:1.2em;">10 €</div>
                     <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1V</div>

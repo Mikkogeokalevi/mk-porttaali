@@ -19,6 +19,7 @@ export const renderHelp = (content, app) => {
                 <li><strong>Admin-työkalut:</strong> Parannettu massamuokkaus ja käyttäjähallinta.</li>
                 <li><strong>Suorituskyky:</strong> Koodia optimoitu nopeammaksi.</li>
                 <li><strong>Premium:</strong> Selkeytetty ominaisuuksien näkyvyyttä.</li>
+                <li><strong>Kuvageneraattori:</strong> Mobiilivalikon ulkoasu parannettu.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
@@ -138,6 +139,7 @@ export const renderHelp = (content, app) => {
             <h4 style="margin-top:0; color:#fab387;">Hinnasto</h4>
             <ul style="list-style:none; padding:0; margin:0; line-height:1.8;">
                 <li>• <strong>Testi (1 vko):</strong> 1 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-1VK)</span></li>
+                <li>• <strong>Jakso (1 kk):</strong> 2 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-1KK)</span></li>
                 <li>• <strong>Jakso (3 kk):</strong> 3 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-3KK)</span></li>
                 <li>• <strong>Kausi (6 kk):</strong> 5 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-6KK)</span></li>
                 <li>• <strong>Vuosi (12 kk):</strong> 10 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-1V)</span></li>
