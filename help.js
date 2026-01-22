@@ -13,18 +13,20 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>22.1.2026:</strong> Linkkikirjasto sai uusia geokätkölinkkejä (kartat, sovellukset, Wherigo).</li>
                 <li><strong>Linkkikirjasto:</strong> Linkit eriytetty omaksi, selkeäksi näkymäkseen.</li>
                 <li><strong>Uusi ilme:</strong> Logot lisätty etusivulle ja kirjautumiseen, värit viilattu.</li>
                 <li><strong>Kattavat ohjeet:</strong> Ohjesivu kirjoitettu kokonaan uusiksi.</li>
                 <li><strong>Admin-työkalut:</strong> Parannettu massamuokkaus ja käyttäjähallinta.</li>
-                <li><strong>Suorituskyky:</strong> Koodia optimoitu nopeammaksi.</li>
-                <li><strong>Premium:</strong> Selkeytetty ominaisuuksien näkyvyyttä.</li>
-                <li><strong>Kuvageneraattori:</strong> Mobiilivalikon ulkoasu parannettu.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
                 <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
+                    <strong>v2.6 (lisäpäivitykset)</strong><br>
+                    - Suorituskyky: Koodia optimoitu nopeammaksi.<br>
+                    - Premium: Selkeytetty ominaisuuksien näkyvyyttä.<br>
+                    - Kuvageneraattori: Mobiilivalikon ulkoasu parannettu.<br><br>
                     <strong>v2.5</strong><br>
                     - Kuvageneraattoriin lisätty vuosifiltterit.<br>
                     - Karttojen latausnopeutta parannettu.<br><br>
