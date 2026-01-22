@@ -228,3 +228,72 @@ export const generateStatImage = () => {
 
     document.getElementById('resultArea').classList.remove('hidden');
 };
+
+export const initTypePicker = () => {
+    const select = document.getElementById('genType');
+    const openButton = document.getElementById('genTypeOpen');
+    const label = document.getElementById('genTypeLabel');
+    const modal = document.getElementById('genTypeModal');
+    const closeButton = document.getElementById('genTypeClose');
+    const optionsContainer = document.getElementById('genTypeOptions');
+
+    if (!select || !openButton || !label || !modal || !closeButton || !optionsContainer) return;
+
+    const syncLabel = () => {
+        const selected = select.options[select.selectedIndex];
+        label.textContent = selected ? selected.textContent : 'Valitse';
+    };
+
+    const renderOptions = () => {
+        optionsContainer.innerHTML = '';
+        Array.from(select.options).forEach(option => {
+            const li = document.createElement('li');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'gen-type-option';
+            button.dataset.value = option.value;
+            button.textContent = option.textContent;
+            if (option.value === select.value) button.classList.add('active');
+
+            button.addEventListener('click', () => {
+                select.value = option.value;
+                syncLabel();
+                updateActive();
+                handleTypeChange();
+                modal.style.display = 'none';
+            });
+
+            li.appendChild(button);
+            optionsContainer.appendChild(li);
+        });
+    };
+
+    const updateActive = () => {
+        optionsContainer.querySelectorAll('.gen-type-option').forEach(button => {
+            button.classList.toggle('active', button.dataset.value === select.value);
+        });
+    };
+
+    const openModal = () => {
+        renderOptions();
+        modal.style.display = 'flex';
+    };
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    openButton.addEventListener('click', openModal);
+    closeButton.addEventListener('click', closeModal);
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
+    });
+
+    select.addEventListener('change', () => {
+        syncLabel();
+        updateActive();
+    });
+
+    syncLabel();
+    updateActive();
+};
