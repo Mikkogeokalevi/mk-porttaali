@@ -224,8 +224,7 @@ window.app = {
   confirmMunicipalities: Gen.confirmMunicipalities,
   updateProfileLink: Gen.updateProfileLink,
   toggleTimeFields: Gen.toggleTimeFields,
-  generateStatImage: Gen.generateStatImage,
-  initTypePicker: Gen.initTypePicker
+  generateStatImage: Gen.generateStatImage
 };
 
 // --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
@@ -320,12 +319,6 @@ function renderGeneratorView(content) {
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
         <label>Kuvan tyyppi:</label>
-        <div class="gen-type-picker">
-            <button type="button" id="genTypeOpen" class="btn gen-type-button">
-                <span id="genTypeLabel">Valitse</span>
-                <span class="gen-type-caret">▾</span>
-            </button>
-        </div>
         <select id="genType" onchange="app.handleTypeChange()">
           <option value="matrix">T/D-taulukko</option>
           <option value="kunta">Kuntakartta</option>
@@ -433,7 +426,6 @@ function renderGeneratorView(content) {
     
     app.loadFriends();
     app.updateProfileLink();
-    app.initTypePicker();
 }
 
 Auth.initAuth(auth, db, window.app);
