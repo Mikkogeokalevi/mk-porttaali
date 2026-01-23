@@ -281,6 +281,7 @@ function checkPremium(content) {
                 </div>
                 <p style="margin:5px 0 0 0; font-size:0.8em; opacity:0.5;">Esim: ${nick} ${idCode} T-1V</p>
             </div>
+            <p style="font-size:0.85em; opacity:0.7; margin-top:5px;">Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</p>
             
             <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
         </div>

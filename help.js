@@ -13,11 +13,11 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>22.1.2026:</strong> Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.</li>
                 <li><strong>22.1.2026:</strong> Linkkikirjasto sai uusia geokätkölinkkejä (kartat, sovellukset, Wherigo).</li>
                 <li><strong>Linkkikirjasto:</strong> Linkit eriytetty omaksi, selkeäksi näkymäkseen.</li>
                 <li><strong>Uusi ilme:</strong> Logot lisätty etusivulle ja kirjautumiseen, värit viilattu.</li>
                 <li><strong>Kattavat ohjeet:</strong> Ohjesivu kirjoitettu kokonaan uusiksi.</li>
-                <li><strong>Admin-työkalut:</strong> Parannettu massamuokkaus ja käyttäjähallinta.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
@@ -26,7 +26,8 @@ export const renderHelp = (content, app) => {
                     <strong>v2.6 (lisäpäivitykset)</strong><br>
                     - Suorituskyky: Koodia optimoitu nopeammaksi.<br>
                     - Premium: Selkeytetty ominaisuuksien näkyvyyttä.<br>
-                    - Kuvageneraattori: Mobiilivalikon ulkoasu parannettu.<br><br>
+                    - Kuvageneraattori: Mobiilivalikon ulkoasu parannettu.<br>
+                    - Admin-työkalut: Parannettu massamuokkaus ja käyttäjähallinta.<br><br>
                     <strong>v2.5</strong><br>
                     - Kuvageneraattoriin lisätty vuosifiltterit.<br>
                     - Karttojen latausnopeutta parannettu.<br><br>
@@ -134,6 +135,15 @@ export const renderHelp = (content, app) => {
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
+        <h3>⚠️ Vastuuvapaus & Käyttöehdot</h3>
+        <p>MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua tai olla tilapäisesti pois käytöstä ilman ennakkoilmoitusta.</p>
+        <ul style="line-height:1.6; padding-left:20px;">
+            <li>En vastaa palvelun keskeytyksistä, virheistä tai tietojen puutteista.</li>
+            <li>Premium-tilaukset ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</li>
+        </ul>
+
+        <hr style="border-color:var(--border-color); margin:20px 0;">
+
         <h3>💎 Premium-tilaus</h3>
         <p>MK Porttaalin kehitys ja ylläpito vaatii resursseja. Premium-tilauksella tuet palvelua ja saat käyttöösi kaikki tehotyökalut.</p>
         
@@ -159,6 +169,9 @@ export const renderHelp = (content, app) => {
             <div style="margin-top:15px; padding-top:10px; border-top:1px solid #45475a; font-size:0.9em; opacity:0.8; display:flex; gap:10px; align-items:start;">
                 <span style="font-size:1.2em;">ℹ️</span>
                 <span>Huomioithan, että maksut tarkistetaan ja aktivoidaan manuaalisesti. Ominaisuudet kytkeytyvät päälle heti, kun ylläpito on ehtinyt käsitellä suorituksen.</span>
+            </div>
+            <div style="margin-top:10px; font-size:0.9em; opacity:0.8;">
+                Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.
             </div>
         </div>
     </div>
