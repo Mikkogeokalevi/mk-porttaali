@@ -11,6 +11,8 @@
 - Kieli: kommunikoi suomeksi; koodin kielilinja pidetaan ennallaan.
 - `help.js`: Ohjetta ja versiotietoja ei saa tiivistaa, lyhentaa tai poistaa ilman erillista pyyntoa.
 - `help.js`: Jos paivitys vaikuttaa ohjeisiin tai versiotietoihin, lisaa uusi tieto ohjeeseen (ilman tiivistamista).
+- `help.js`: Kysy aina kuluva paivamaara ennen uusien paivityskohtien lisaamista.
+- `help.js`: Vain uudet lisaykset saavat uuden paivamaaran; vanhat paivat pidetaan ennallaan.
 - `help.js`: Kun versio pysyy samana, lisaa paivitykselle paivays versiohistoriaan.
 - `help.js`: "Uutta versiossa" -listassa pidetaan vain 5 uusinta; vanhemmat saman version kohdat siirretaan aiempaan historiaan.
 - `app.js` ja `index.html`: Ohje-nakyma nimetaan yhtenaeisesti "Ohjeet & Tuki".

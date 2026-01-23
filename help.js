@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>22.1.2026:</strong> Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.</li>
+                <li><strong>23.1.2026:</strong> Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.</li>
                 <li><strong>22.1.2026:</strong> Linkkikirjasto sai uusia geokätkölinkkejä (kartat, sovellukset, Wherigo).</li>
                 <li><strong>Linkkikirjasto:</strong> Linkit eriytetty omaksi, selkeäksi näkymäkseen.</li>
                 <li><strong>Uusi ilme:</strong> Logot lisätty etusivulle ja kirjautumiseen, värit viilattu.</li>
@@ -136,7 +136,7 @@ export const renderHelp = (content, app) => {
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
         <h3>⚠️ Vastuuvapaus & Käyttöehdot</h3>
-        <p>MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua tai olla tilapäisesti pois käytöstä ilman ennakkoilmoitusta.</p>
+        <p>MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua, olla tilapäisesti pois käytöstä tai päättyä kokonaan ilman ennakkoilmoitusta.</p>
         <ul style="line-height:1.6; padding-left:20px;">
             <li>En vastaa palvelun keskeytyksistä, virheistä tai tietojen puutteista.</li>
             <li>Premium-tilaukset ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</li>

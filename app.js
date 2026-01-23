@@ -252,6 +252,11 @@ function checkPremium(content) {
 
             <h3 style="margin-bottom:10px;">Hinnasto</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #94e2d5;">
+                    <div style="font-weight:bold; color:#94e2d5;">1 VKO</div>
+                    <div style="font-size:1.2em;">1 €</div>
+                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1VK</div>
+                </div>
                 <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89dceb;">
                     <div style="font-weight:bold; color:#89dceb;">1 KK</div>
                     <div style="font-size:1.2em;">2 €</div>
@@ -281,7 +286,7 @@ function checkPremium(content) {
                 </div>
                 <p style="margin:5px 0 0 0; font-size:0.8em; opacity:0.5;">Esim: ${nick} ${idCode} T-1V</p>
             </div>
-            <p style="font-size:0.85em; opacity:0.7; margin-top:5px;">Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</p>
+            <p style="font-size:0.85em; opacity:0.7; margin-top:5px;">MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua, olla tilapäisesti pois käytöstä tai päättyä kokonaan ilman ennakkoilmoitusta. Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</p>
             
             <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
         </div>
