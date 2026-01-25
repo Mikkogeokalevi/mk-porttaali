@@ -13,17 +13,18 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>25.1.2026:</strong> Kartat: paikannus on valinnainen ja kuntanimet näkyvät zoomilla.</li>
                 <li><strong>25.1.2026:</strong> Mobiilinäkymän päivitys ja takaisin-navigointi korjattu.</li>
                 <li><strong>23.1.2026:</strong> Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.</li>
                 <li><strong>22.1.2026:</strong> Linkkikirjasto sai uusia geokätkölinkkejä (kartat, sovellukset, Wherigo).</li>
                 <li><strong>Linkkikirjasto:</strong> Linkit eriytetty omaksi, selkeäksi näkymäkseen.</li>
-                <li><strong>Uusi ilme:</strong> Logot lisätty etusivulle ja kirjautumiseen, värit viilattu.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
                 <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
                     <strong>v2.6 (lisäpäivitykset)</strong><br>
+                    - Kartat: Paikannus toggle ja kuntanimet zoomilla.<br>
                     - Kattavat ohjeet: Ohjesivu kirjoitettu kokonaan uusiksi.<br>
                     - Suorituskyky: Koodia optimoitu nopeammaksi.<br>
                     - Premium: Selkeytetty ominaisuuksien näkyvyyttä.<br>
