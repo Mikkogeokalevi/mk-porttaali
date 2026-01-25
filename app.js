@@ -50,10 +50,13 @@ window.app = {
     }
 
     if (window.app.currentView) {
-        sessionStorage.setItem(`mk_scroll_${window.app.currentView}`, String(window.scrollY || 0));
+        const scrollValue = String(window.scrollY || 0);
+        sessionStorage.setItem(`mk_scroll_${window.app.currentView}`, scrollValue);
+        localStorage.setItem(`mk_scroll_${window.app.currentView}`, scrollValue);
     }
 
     sessionStorage.setItem('mk_last_view', targetView);
+    localStorage.setItem('mk_last_view', targetView);
 
     // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
@@ -184,8 +187,8 @@ window.app = {
     }
 
     window.app.currentView = targetView;
-    const storedScroll = sessionStorage.getItem(`mk_scroll_${targetView}`);
-    if (storedScroll) {
+    const storedScroll = sessionStorage.getItem(`mk_scroll_${targetView}`) || localStorage.getItem(`mk_scroll_${targetView}`);
+    if (storedScroll !== null) {
         requestAnimationFrame(() => window.scrollTo(0, parseInt(storedScroll, 10) || 0));
     } else {
         window.scrollTo(0, 0);
@@ -533,7 +536,7 @@ function renderGeneratorView(content) {
 Auth.initAuth(auth, db, window.app);
 document.addEventListener('DOMContentLoaded', () => {
     const hashView = window.location.hash.replace('#', '');
-    const storedView = sessionStorage.getItem('mk_last_view');
+    const storedView = sessionStorage.getItem('mk_last_view') || localStorage.getItem('mk_last_view');
     if (hashView) {
         app.router(hashView, { fromHash: true });
     } else if (storedView) {
