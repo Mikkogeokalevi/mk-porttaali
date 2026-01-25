@@ -116,9 +116,16 @@ export const initAuth = (auth, db, appState) => {
                 // PÄIVITETÄÄN UI HETI KIRJAUTUMISEN JÄLKEEN
                 updateUI(user, appState);
 
+                const postLoginView = sessionStorage.getItem('mk_post_login_view');
+                if (postLoginView) {
+                    sessionStorage.removeItem('mk_post_login_view');
+                    appState.router(postLoginView, { replaceHash: true });
+                    return;
+                }
+
                 const currentHash = window.location.hash.replace('#', '');
                 if (!currentHash || currentHash === 'login_view') {
-                    appState.router('home');
+                    appState.router('home', { replaceHash: true });
                 }
             } else {
                 // Uusi käyttäjä ilman tietokantamerkintää (esim. Google-login ekaa kertaa)
@@ -144,7 +151,7 @@ export const initAuth = (auth, db, appState) => {
             
             const currentHash = window.location.hash.replace('#', '');
             if (['stats', 'generator', 'settings', 'admin'].includes(currentHash)) {
-                appState.router('login_view');
+                appState.router('login_view', { replaceHash: true });
             }
         }
     });

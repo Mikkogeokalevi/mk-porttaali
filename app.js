@@ -34,8 +34,27 @@ window.app = {
   userRole: 'guest', 
   userPlan: 'free',  
   shortId: '',       
+  currentView: null,
 
-  router: (view) => {
+  router: (view, options = {}) => {
+    const { fromHash = false, replaceHash = false } = options;
+    const targetView = view || 'home';
+
+    if (!fromHash) {
+        const hashValue = `#${targetView}`;
+        if (replaceHash) {
+            history.replaceState(null, '', hashValue);
+        } else if (location.hash !== hashValue) {
+            location.hash = targetView;
+        }
+    }
+
+    if (window.app.currentView) {
+        sessionStorage.setItem(`mk_scroll_${window.app.currentView}`, String(window.scrollY || 0));
+    }
+
+    sessionStorage.setItem('mk_last_view', targetView);
+
     // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
     if (nav && nav.classList.contains('open')) {
@@ -45,15 +64,16 @@ window.app = {
     const content = document.getElementById('appContent');
     const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links'];
     
-    if (protectedViews.includes(view) && !window.app.currentUser) {
-        window.app.router('login_view');
+    if (protectedViews.includes(targetView) && !window.app.currentUser) {
+        sessionStorage.setItem('mk_post_login_view', targetView);
+        window.app.router('login_view', { replaceHash: true });
         return;
     }
 
     // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli: pyöristys + varjo)
     const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
 
-    switch(view) {
+    switch(targetView) {
       case 'home':
         // GUEST VIEW (KIRJAUTUMATON)
         if (!window.app.currentUser) {
@@ -161,6 +181,14 @@ window.app = {
         break;
 
       default: content.innerHTML = '<div class="card"><h1>404</h1></div>';
+    }
+
+    window.app.currentView = targetView;
+    const storedScroll = sessionStorage.getItem(`mk_scroll_${targetView}`);
+    if (storedScroll) {
+        requestAnimationFrame(() => window.scrollTo(0, parseInt(storedScroll, 10) || 0));
+    } else {
+        window.scrollTo(0, 0);
     }
   },
 
@@ -503,4 +531,24 @@ function renderGeneratorView(content) {
 }
 
 Auth.initAuth(auth, db, window.app);
-document.addEventListener('DOMContentLoaded', () => { app.router('home'); });
+document.addEventListener('DOMContentLoaded', () => {
+    const hashView = window.location.hash.replace('#', '');
+    const storedView = sessionStorage.getItem('mk_last_view');
+    if (hashView) {
+        app.router(hashView, { fromHash: true });
+    } else if (storedView) {
+        app.router(storedView, { replaceHash: true });
+    } else {
+        app.router('home', { replaceHash: true });
+    }
+});
+
+window.addEventListener('hashchange', () => {
+    const view = window.location.hash.replace('#', '');
+    if (!view) {
+        history.replaceState(null, '', '#home');
+        app.router('home', { fromHash: true });
+        return;
+    }
+    app.router(view, { fromHash: true });
+});
