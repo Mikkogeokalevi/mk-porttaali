@@ -72,15 +72,39 @@ export const renderTripletMap = async (content, db, user, app) => {
     }).addTo(map);
 
     const userMarker = L.layerGroup().addTo(map);
-    function locateUser() { map.locate({ setView: true, maxZoom: 9, timeout: 10000 }); }
+    const locateBtn = document.getElementById('locateBtn');
+    let locateEnabled = false;
+
+    function updateLocateButton() {
+        if (!locateBtn) return;
+        locateBtn.style.backgroundColor = locateEnabled ? '#a6e3a1' : '#f38ba8';
+        locateBtn.style.color = '#1e1e2e';
+    }
+
+    function locateUser() {
+        map.locate({ setView: true, maxZoom: 9, timeout: 10000 });
+    }
     
     map.on('locationfound', (e) => {
+        if (!locateEnabled) return;
         userMarker.clearLayers();
         L.circle(e.latlng, e.accuracy / 2, { color: '#89b4fa', fillOpacity: 0.1 }).addTo(userMarker);
         L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0077cc', fillOpacity: 1 }).addTo(userMarker).bindPopup("Olet tässä").openPopup();
     });
-    locateUser();
-    document.getElementById('locateBtn').onclick = locateUser;
+
+    if (locateBtn) {
+        updateLocateButton();
+        locateBtn.onclick = () => {
+            locateEnabled = !locateEnabled;
+            updateLocateButton();
+            if (locateEnabled) {
+                locateUser();
+            } else {
+                map.stopLocate();
+                userMarker.clearLayers();
+            }
+        };
+    }
 
     let geoData = null;
     for (const url of GEOJSON_URLS) {
@@ -95,10 +119,37 @@ export const renderTripletMap = async (content, db, user, app) => {
     if (geoData) {
         const pgcUser = window.app.savedNickname || user.displayName || 'user';
         
-        L.geoJSON(geoData, {
+        const geoLayer = L.geoJSON(geoData, {
             style: (feature) => getStyle(feature, statsData),
             onEachFeature: (feature, layer) => onEachFeature(feature, layer, statsData, pgcUser)
         }).addTo(map);
+
+        const labelLayer = L.layerGroup().addTo(map);
+
+        const refreshLabels = () => {
+            labelLayer.clearLayers();
+            geoLayer.eachLayer(layer => {
+                if (!layer.getBounds) return;
+                const bounds = layer.getBounds();
+                const sw = map.latLngToLayerPoint(bounds.getSouthWest());
+                const ne = map.latLngToLayerPoint(bounds.getNorthEast());
+                const width = Math.abs(ne.x - sw.x);
+                const height = Math.abs(sw.y - ne.y);
+                if (width < 80 || height < 24) return;
+                const name = getMunicipalityName(layer.feature);
+                const center = bounds.getCenter();
+                L.marker(center, {
+                    icon: L.divIcon({
+                        className: 'map-label',
+                        html: `<div>${name}</div>`
+                    }),
+                    interactive: false
+                }).addTo(labelLayer);
+            });
+        };
+
+        refreshLabels();
+        map.on('zoomend moveend', refreshLabels);
     } else {
         document.getElementById('map').innerHTML = `<div style="padding:20px; color:black; background:white;">Kartan lataus epäonnistui.</div>`;
     }
