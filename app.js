@@ -65,7 +65,7 @@ window.app = {
     }
 
     const content = document.getElementById('appContent');
-    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links'];
+    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
     
     if (protectedViews.includes(targetView) && !window.app.currentUser) {
         sessionStorage.setItem('mk_post_login_view', targetView);
@@ -98,7 +98,10 @@ window.app = {
         // LOGGED IN VIEW (KIRJAUTUNUT)
         let adminButton = '';
         if (window.app.userRole === 'admin') {
-            adminButton = `<button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>`;
+            adminButton = `
+                <button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>
+                <button class="btn" style="background-color:#94e2d5; color:#1e1e2e; font-weight:bold;" onclick="app.router('reissuapuri')">🧭 Reissuapuri</button>
+            `;
         }
         
         let statusBadge = '';
@@ -134,6 +137,14 @@ window.app = {
 
       case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
       case 'admin': renderAdminView(content, db, window.app.currentUser); break;
+      case 'reissuapuri':
+        if (window.app.userRole !== 'admin') { app.router('home'); break; }
+        content.innerHTML = `
+          <div class="card" style="padding:0; overflow:hidden;">
+            <iframe src="reissuapuri.html" title="MK Reissuapuri" style="width:100%; height:90vh; border:0;"></iframe>
+          </div>
+        `;
+        break;
       case 'locked_view': content.innerHTML = `<div class="card" style="text-align:center;"><h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1><button class="btn" onclick="app.logout()">Kirjaudu ulos</button></div>`; break;
 
       case 'stats': if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app); break;
