@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getDatabase, ref, set, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 
 // --- ASETUKSET ---
@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+        console.warn("Reissuapuri auth persistence setup failed:", error);
+    });
     const database = getDatabase(app);
     
     const pgcProfileNameInput = document.getElementById('pgcProfileName');
@@ -707,6 +710,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return didChange;
     };
     
+    let started = false;
+    let authNoticeEl = null;
+
+    const showAuthNotice = () => {
+        if (authNoticeEl) return;
+        authNoticeEl = document.createElement('div');
+        authNoticeEl.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.85); color:#fff; display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; text-align:center; font-family:sans-serif;";
+        authNoticeEl.innerHTML = '<div><p style="margin:0 0 10px 0;">Kirjaudu MK Porttaaliin käyttääksesi Reissuapuria.</p><a href="index.html#home" style="color:#94e2d5; font-weight:bold; text-decoration:none;">Avaa MK Porttaali</a></div>';
+        document.body.appendChild(authNoticeEl);
+    };
+
+    const clearAuthNotice = () => {
+        if (!authNoticeEl) return;
+        authNoticeEl.remove();
+        authNoticeEl = null;
+    };
+
     const startApp = (uid) => {
         FIREBASE_PATH = `reissuapuri/${uid}/${LIST_NAME}`;
         OFFLINE_KEY = `georeissu-offline-${uid}-${LIST_NAME}`;
@@ -1430,9 +1450,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     onAuthStateChanged(auth, (user) => {
         if (!user) {
-            document.body.innerHTML = '<div style="color:#fff; padding:20px; font-family: sans-serif;">Kirjaudu MK Porttaaliin käyttääksesi Reissuapuria.</div>';
+            showAuthNotice();
             return;
         }
+        clearAuthNotice();
+        if (started) return;
+        started = true;
         startApp(user.uid);
     });
 });
