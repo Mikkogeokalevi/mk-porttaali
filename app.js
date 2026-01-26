@@ -557,7 +557,12 @@ function renderGeneratorView(content) {
 Auth.initAuth(auth, db, window.app);
 document.addEventListener('DOMContentLoaded', () => {
     const hashView = window.location.hash.replace('#', '');
-    const storedView = sessionStorage.getItem('mk_last_view') || localStorage.getItem('mk_last_view');
+    let storedView = sessionStorage.getItem('mk_last_view') || localStorage.getItem('mk_last_view');
+    if (storedView === 'converters') {
+        storedView = 'home';
+        sessionStorage.setItem('mk_last_view', 'home');
+        localStorage.setItem('mk_last_view', 'home');
+    }
     if (hashView) {
         app.router(hashView, { fromHash: true });
     } else if (storedView) {
