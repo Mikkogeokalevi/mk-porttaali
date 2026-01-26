@@ -98,6 +98,7 @@ export const initAuth = (auth, db, appState) => {
                 appState.userRole = data.role || 'user';
                 appState.userPlan = data.plan || 'free';
                 appState.shortId = data.shortId;
+                appState.reissuapuriEnabled = !!data.reissuapuriEnabled;
                 
                 // Tallennetaan premium-päättymispäivä muistiin asetuksia varten
                 appState.premiumExpires = data.premiumExpires ? data.premiumExpires.toDate() : null;

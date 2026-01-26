@@ -38,6 +38,7 @@ window.app = {
   userPlan: 'free',  
   shortId: '',       
   currentView: null,
+  reissuapuriEnabled: false,
 
   router: (view, options = {}) => {
     const { fromHash = false, replaceHash = false } = options;
@@ -103,8 +104,12 @@ window.app = {
         if (window.app.userRole === 'admin') {
             adminButton = `
                 <button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>
-                <button class="btn" style="background-color:#94e2d5; color:#1e1e2e; font-weight:bold;" onclick="app.router('reissuapuri')">🧭 Reissuapuri</button>
             `;
+        }
+
+        let reissuapuriButton = '';
+        if (window.app.userRole === 'admin' || window.app.reissuapuriEnabled) {
+            reissuapuriButton = `<button class="btn" style="background-color:#94e2d5; color:#1e1e2e; font-weight:bold;" onclick="app.router('reissuapuri')">🧭 Reissuapuri</button>`;
         }
         
         let statusBadge = '';
@@ -132,6 +137,7 @@ window.app = {
                     <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
                     <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet & Tuki</button>
                 </div>
+                ${reissuapuriButton}
                 ${adminButton}
             </div>
           </div>
@@ -141,7 +147,7 @@ window.app = {
       case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
       case 'admin': renderAdminView(content, db, window.app.currentUser); break;
       case 'reissuapuri':
-        if (window.app.userRole !== 'admin') { app.router('home'); break; }
+        if (!(window.app.userRole === 'admin' || window.app.reissuapuriEnabled)) { app.router('home'); break; }
         content.innerHTML = `
           <div class="card" style="padding:0; overflow:hidden;">
             <iframe src="reissuapuri.html" title="MK Reissuapuri" style="width:100%; height:90vh; border:0;"></iframe>

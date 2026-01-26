@@ -196,6 +196,10 @@ export const renderAdminView = async (content, db, currentUser) => {
                                 <option value="approved" ${u.status==='approved'?'selected':''}>Approved</option>
                                 <option value="blocked" ${u.status==='blocked'?'selected':''}>Blocked</option>
                             </select>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.85em;">
+                                <input type="checkbox" ${u.reissuapuriEnabled ? 'checked' : ''} onchange="app.adminToggleReissuapuri('${uid}', this.checked)">
+                                Reissuapuri
+                            </label>
                             <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#fab387; color:black;" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
                             <button class="btn" style="padding:5px 10px; font-size:0.8em; background:#f38ba8; color:black;" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
                         </div>
@@ -334,6 +338,7 @@ export const renderAdminView = async (content, db, currentUser) => {
     document.getElementById('saveSettingsBtn').onclick = async () => { await setDoc(settingsRef, { requireApproval: document.getElementById('settingRequireApproval').checked }, { merge: true }); alert("Asetukset tallennettu."); };
     
     window.app.adminChangeStatus = async (uid, newStatus) => { await updateDoc(doc(db, "users", uid), { status: newStatus }); loadUsers(); };
+    window.app.adminToggleReissuapuri = async (uid, enabled) => { await updateDoc(doc(db, "users", uid), { reissuapuriEnabled: enabled }); loadUsers(); };
     window.app.adminOpenPremium = (uid, name) => {
         document.getElementById('premiumTargetUser').textContent = `Lisätään käyttäjälle: ${name}`;
         const list = document.getElementById('productList'); list.innerHTML = '';
