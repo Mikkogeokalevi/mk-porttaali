@@ -148,6 +148,9 @@ export const initAuth = (auth, db, appState) => {
             appState.currentUser = null;
             appState.userRole = 'guest';
             updateUI(null, appState);
+            sessionStorage.removeItem('mk_post_login_view');
+            sessionStorage.setItem('mk_last_view', 'home');
+            localStorage.setItem('mk_last_view', 'home');
             
             const currentHash = window.location.hash.replace('#', '');
             if (['stats', 'generator', 'settings', 'admin'].includes(currentHash)) {
