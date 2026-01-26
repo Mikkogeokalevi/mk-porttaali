@@ -59,8 +59,9 @@ window.app = {
         localStorage.setItem(`mk_scroll_${window.app.currentView}`, scrollValue);
     }
 
-    sessionStorage.setItem('mk_last_view', targetView);
-    localStorage.setItem('mk_last_view', targetView);
+    const persistView = targetView === 'converters' ? 'home' : targetView;
+    sessionStorage.setItem('mk_last_view', persistView);
+    localStorage.setItem('mk_last_view', persistView);
 
     // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
     const nav = document.getElementById('mainNav');
