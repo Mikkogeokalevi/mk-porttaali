@@ -125,7 +125,7 @@ export const initAuth = (auth, db, appState) => {
                 }
 
                 const currentHash = window.location.hash.replace('#', '');
-                if (!currentHash || currentHash === 'login_view') {
+                if (!currentHash || currentHash === 'login_view' || currentHash === 'home') {
                     appState.router('home', { replaceHash: true });
                 }
             } else {

@@ -17,6 +17,6 @@
 - `help.js`: "Uutta versiossa" -listassa pidetaan vain 5 uusinta; vanhemmat saman version kohdat siirretaan aiempaan historiaan.
 - `app.js` ja `index.html`: Ohje-nakyma nimetaan yhtenaeisesti "Ohjeet & Tuki".
 - `sw.js`: Kun nakyviin tulee muutoksia mobiilissa, paivita `CACHE_NAME` jotta uusi versio latautuu.
-- Reissuapuri integroidaan MK Porttaaliin SPA-nakymana ja naytetaan vain kayttajille, joilla on Firestoressa reissuapuriEnabled=true (admin voi myos).
+- Reissuapuri integroidaan MK Porttaaliin SPA-nakymana ja naytetaan kayttajille, joilla on Firestoressa reissuapuriEnabled=true (admin voi myos kytkea).
 - Reissuapurin data tallennetaan RTDB-polkuun reissuapuri/{uid}/... (kayttajakohtainen).
 - AiRules: Paivita ai_rules.md automaattisesti aina, kun tehdään paatoksia joita tulee muistaa jatkossa.
