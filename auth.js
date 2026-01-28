@@ -131,11 +131,18 @@ export const initAuth = (auth, db, appState) => {
             } else {
                 // Uusi käyttäjä ilman tietokantamerkintää (esim. Google-login ekaa kertaa)
                 const shortId = generateShortId();
+                let initialStatus = 'approved';
+                try {
+                    const settingsSnap = await getDoc(doc(db, "settings", "global"));
+                    if (settingsSnap.exists() && settingsSnap.data().requireApproval) {
+                        initialStatus = 'pending';
+                    }
+                } catch(e) {}
                 await setDoc(userRef, {
                     email: user.email,
                     nickname: user.displayName || "Nimetön",
                     role: 'user',
-                    status: 'approved',
+                    status: initialStatus,
                     plan: 'free',
                     shortId: shortId,
                     saved_usernames: [],
