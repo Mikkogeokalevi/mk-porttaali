@@ -197,7 +197,7 @@ window.app = {
                 <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
                 <p style="text-align:center; margin-top:20px; font-size:0.9em;">
                     <span id="toggleText">Eikö sinulla ole tiliä?</span> 
-                    <a href="#" onclick="app.toggleAuthMode()" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
+                    <a href="#" onclick="app.toggleAuthMode(); return false;" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
                 </p>
             </div>
           </div>
