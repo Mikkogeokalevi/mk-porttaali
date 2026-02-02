@@ -31,17 +31,30 @@ async function initializeMuuntimet(yksikot) {
 async function createConverterHTML(yksikot) {
     let html = '';
     
-    // Etäisyysmuunnin
-    html += createDistanceConverter(yksikot.etäisyys);
+    // Etäisyysmuunnin (käytetään "pituus"-avainta)
+    if (yksikot.pituus && Array.isArray(yksikot.pituus)) {
+        html += createDistanceConverter(yksikot.pituus);
+    }
     
-    // Lämpötilamuunnin
-    html += createTemperatureConverter(yksikot.lämpötila);
+    // Painomuunnin (käytetään "paine"-avainta)
+    if (yksikot.paine && Array.isArray(yksikot.paine)) {
+        html += createPressureConverter(yksikot.paine);
+    }
     
-    // Painomuunnin
-    html += createPressureConverter(yksikot.paine);
+    // Nopeusmuunnin (käytetään "nopeus"-avainta)
+    if (yksikot.nopeus && Array.isArray(yksikot.nopeus)) {
+        html += createSpeedConverter(yksikot.nopeus);
+    }
     
-    // Nopeusmuunnin
-    html += createSpeedConverter(yksikot.nopeus);
+    // Jos ei löytynyt yhtään konverttia, näytetään virheilmoitus
+    if (!html) {
+        html = `
+            <div class="converter-section">
+                <div class="converter-title">❌ Virhe</div>
+                <p>Muuntimien dataa ei löytynyt. Tarkista yksikot.json-tiedosto.</p>
+            </div>
+        `;
+    }
     
     return html;
 }
@@ -53,12 +66,12 @@ function createDistanceConverter(units) {
             <div class="converter-input-group">
                 <input type="number" id="dist-input" class="converter-input" value="1" step="any">
                 <select id="dist-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
                 <div class="converter-arrow">→</div>
                 <input type="text" id="dist-to" class="converter-result" readonly>
                 <select id="dist-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -72,12 +85,12 @@ function createTemperatureConverter(units) {
             <div class="converter-input-group">
                 <input type="number" id="temp-input" class="converter-input" value="20" step="any">
                 <select id="temp-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.nimi}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.name}">${unit.name}</option>`).join('')}
                 </select>
                 <div class="converter-arrow">→</div>
                 <input type="text" id="temp-to" class="converter-result" readonly>
                 <select id="temp-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.nimi}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.name}">${unit.name}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -91,12 +104,12 @@ function createPressureConverter(units) {
             <div class="converter-input-group">
                 <input type="number" id="pressure-input" class="converter-input" value="1013" step="any">
                 <select id="pressure-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
                 <div class="converter-arrow">→</div>
                 <input type="text" id="pressure-to" class="converter-result" readonly>
                 <select id="pressure-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -110,12 +123,12 @@ function createSpeedConverter(units) {
             <div class="converter-input-group">
                 <input type="number" id="speed-input" class="converter-input" value="5" step="any">
                 <select id="speed-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
                 <div class="converter-arrow">→</div>
                 <input type="text" id="speed-to" class="converter-result" readonly>
                 <select id="speed-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.nimi}</option>`).join('')}
+                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
             </div>
         </div>
@@ -144,40 +157,7 @@ function initializeEventListeners(yksikot) {
         updateDistance();
     }
     
-    // Lämpötilamuunnin
-    const tempInput = document.getElementById('temp-input');
-    const tempFrom = document.getElementById('temp-from');
-    const tempTo = document.getElementById('temp-to-unit');
-    const tempResult = document.getElementById('temp-to');
-    
-    if (tempInput && tempFrom && tempTo && tempResult) {
-        const updateTemperature = () => {
-            const value = parseFloat(tempInput.value) || 0;
-            const fromUnit = tempFrom.value;
-            const toUnit = tempTo.value;
-            
-            // Muunnos Celsius-asteiksi
-            let celsius = value;
-            if (fromUnit === 'Fahrenheit') celsius = (value - 32) * 5/9;
-            else if (fromUnit === 'Kelvin') celsius = value - 273.15;
-            else if (fromUnit === 'Rankine') celsius = (value - 491.67) * 5/9;
-            
-            // Muunnos kohdeyksikköön
-            let result = celsius;
-            if (toUnit === 'Fahrenheit') result = celsius * 9/5 + 32;
-            else if (toUnit === 'Kelvin') result = celsius + 273.15;
-            else if (toUnit === 'Rankine') result = (celsius + 273.15) * 9/5;
-            
-            tempResult.value = result.toFixed(2).replace(/\.?0+$/, '');
-        };
-        
-        tempInput.addEventListener('input', updateTemperature);
-        tempFrom.addEventListener('change', updateTemperature);
-        tempTo.addEventListener('change', updateTemperature);
-        updateTemperature();
-    }
-    
-    // Painemuunnin
+    // Painomuunnin
     const pressureInput = document.getElementById('pressure-input');
     const pressureFrom = document.getElementById('pressure-from');
     const pressureTo = document.getElementById('pressure-to-unit');
