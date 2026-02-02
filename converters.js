@@ -1,4 +1,6 @@
 // Muuntimet-moduuli MK Porttaaliin
+import './converters_extended.js';
+
 export function renderConvertersView(content) {
     content.innerHTML = `
         <div class="card">
@@ -28,6 +30,21 @@ export function renderConvertersView(content) {
                     <button class="tab-btn" data-tab="apteekkari_massa">💊 Apteekkari</button>
                     <button class="tab-btn" data-tab="ruoanlaitto">🍳 Ruoanlaitto</button>
                     <button class="tab-btn" data-tab="typografia">📝 Typografia</button>
+                    <button class="tab-btn" data-tab="koordinaatit">📍 Koordinaatit</button>
+                    <button class="tab-btn" data-tab="paivamaarat">📅 Päivämäärät</button>
+                    <button class="tab-btn" data-tab="teksti">📝 Teksti</button>
+                    <button class="tab-btn" data-tab="lampotila">🌡️ Lämpötila</button>
+                    <button class="tab-btn" data-tab="roomalaiset">🏛️ Roomalaiset</button>
+                    <button class="tab-btn" data-tab="luvut">🔢 Lukujärjestelmät</button>
+                    <button class="tab-btn" data-tab="verensokeri">🩸 Verensokeri</button>
+                    <button class="tab-btn" data-tab="bmi">⚖️ Painoindeksi</button>
+                    <button class="tab-btn" data-tab="polttoaine">⛽ Polttoaine</button>
+                    <button class="tab-btn" data-tab="sanasto">📚 Sanasto</button>
+                    <button class="tab-btn" data-tab="numerot">🔢 Numerotyökalut</button>
+                    <button class="tab-btn" data-tab="vastuskoodi">📊 Vastuskoodi</button>
+                    <button class="tab-btn" data-tab="varit">🎨 Värimuunnin</button>
+                    <button class="tab-btn" data-tab="prosentti">📊 Prosenttilaskuri</button>
+                    <button class="tab-btn" data-tab="kalori">🔥 Kalorilaskuri</button>
                 </div>
             </div>
             
@@ -211,16 +228,6 @@ function initializeTabs(units) {
 function showConverter(tabName, units) {
     const container = document.getElementById('convertersContainer');
     
-    if (!units[tabName] || !Array.isArray(units[tabName])) {
-        container.innerHTML = `
-            <div class="converter-section">
-                <div class="converter-title">❌ Virhe</div>
-                <p>Muuntimen "${tabName}" dataa ei löytynyt.</p>
-            </div>
-        `;
-        return;
-    }
-    
     const categoryNames = {
         'pituus': '📏 Pituus',
         'massa': '⚖️ Massa',
@@ -239,10 +246,128 @@ function showConverter(tabName, units) {
         'data': '💾 Data',
         'apteekkari_massa': '💊 Apteekkarin mitat',
         'ruoanlaitto': '🍳 Ruoanlaitto',
-        'typografia': '📝 Typografia'
+        'typografia': '📝 Typografia',
+        'koordinaatit': '📍 Koordinaatit',
+        'paivamaarat': '📅 Päivämäärät',
+        'teksti': '📝 Teksti',
+        'lampotila': '🌡️ Lämpötila',
+        'roomalaiset': '🏛️ Roomalaiset',
+        'luvut': '🔢 Lukujärjestelmät',
+        'verensokeri': '🩸 Verensokeri',
+        'bmi': '⚖️ Painoindeksi',
+        'polttoaine': '⛽ Polttoaine',
+        'sanasto': '📚 Sanasto',
+        'numerot': '🔢 Numerotyökalut',
+        'vastuskoodi': '📊 Vastuskoodi',
+        'varit': '🎨 Värimuunnin',
+        'prosentti': '📊 Prosenttilaskuri',
+        'kalori': '🔥 Kalorilaskuri'
     };
     
     const categoryName = categoryNames[tabName] || tabName;
+    
+    // Erikoistapaukset, jotka eivät tule JSON-datasta
+    if (tabName === 'koordinaatit') {
+        container.innerHTML = createCoordinateConverter();
+        initializeCoordinateConverter();
+        return;
+    }
+    
+    if (tabName === 'paivamaarat') {
+        container.innerHTML = createDateCalculator();
+        initializeDateCalculator();
+        return;
+    }
+    
+    if (tabName === 'teksti') {
+        container.innerHTML = createTextConverter();
+        initializeTextConverter();
+        return;
+    }
+    
+    if (tabName === 'lampotila') {
+        container.innerHTML = createTemperatureConverter();
+        initializeTemperatureConverter();
+        return;
+    }
+    
+    if (tabName === 'roomalaiset') {
+        container.innerHTML = createRomanConverter();
+        initializeRomanConverter();
+        return;
+    }
+    
+    if (tabName === 'luvut') {
+        container.innerHTML = createNumberSystemConverter();
+        initializeNumberSystemConverter();
+        return;
+    }
+    
+    if (tabName === 'verensokeri') {
+        container.innerHTML = createBloodSugarConverter();
+        initializeBloodSugarConverter();
+        return;
+    }
+    
+    if (tabName === 'bmi') {
+        container.innerHTML = createBMICalculator();
+        initializeBMICalculator();
+        return;
+    }
+    
+    if (tabName === 'polttoaine') {
+        container.innerHTML = createFuelConverter();
+        initializeFuelConverter();
+        return;
+    }
+    
+    if (tabName === 'sanasto') {
+        container.innerHTML = createUnitDictionary(units);
+        initializeUnitDictionary(units);
+        return;
+    }
+    
+    if (tabName === 'numerot') {
+        container.innerHTML = createNumberTools();
+        initializeNumberTools();
+        return;
+    }
+    
+    if (tabName === 'vastuskoodi') {
+        container.innerHTML = createResistorCodeConverter();
+        initializeResistorCodeConverter();
+        return;
+    }
+    
+    if (tabName === 'varit') {
+        container.innerHTML = createColorConverter();
+        initializeColorConverter();
+        return;
+    }
+    
+    if (tabName === 'prosentti') {
+        container.innerHTML = createPercentageCalculator();
+        initializePercentageCalculator();
+        return;
+    }
+    
+    if (tabName === 'kalori') {
+        container.innerHTML = createCalorieCalculator();
+        initializeCalorieCalculator();
+        return;
+    }
+    
+    // Normaalit JSON-datasta tulevat muuntimet
+    if (!units[tabName] || !Array.isArray(units[tabName])) {
+        container.innerHTML = `
+            <div class="converter-section">
+                <div class="converter-title">❌ Virhe</div>
+                <p>Muuntimen "${tabName}" dataa ei löytynyt.</p>
+            </div>
+        `;
+        return;
+    }
+    
     const unitList = units[tabName];
     
     container.innerHTML = `
