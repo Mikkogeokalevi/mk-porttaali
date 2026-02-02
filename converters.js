@@ -4,14 +4,10 @@
 
 export function renderConvertersView(content) {
     content.innerHTML = `
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color);">
-                <h2 style="margin: 0;">🔄 Yksikönmuuntimet</h2>
-                <a href="muuntimet.html" target="_blank" class="btn" style="font-size: 0.85em;">↗ Avaa erillisessä ikkunassa</a>
-            </div>
+        <div style="margin: -20px; margin-top: -10px;">
             <iframe 
                 src="muuntimet.html" 
-                style="width: 100%; height: calc(100vh - 200px); min-height: 600px; border: none;"
+                style="width: 100%; height: calc(100vh - 120px); min-height: 700px; border: none;"
                 title="Muuntimet"
             ></iframe>
         </div>
