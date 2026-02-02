@@ -15,7 +15,6 @@ const ASSETS_TO_CACHE = [
   './map_all.js',
   './links.js',          // <--- UUSI TIEDOSTO LISÄTTY
   './converters.js',     // <--- UUSI TIEDOSTO LISÄTTY (muuntimet-integraatio)
-  './converters_extended.js', // <--- UUSI TIEDOSTO LISÄTTY (erikoismuuntimet)
   './manifest.json',
   './muuntimet.html',
   './muuntimet_style.css',

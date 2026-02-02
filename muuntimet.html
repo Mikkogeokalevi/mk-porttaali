@@ -11,6 +11,15 @@
         body {
             margin: 0; /* Poistetaan oletusmarginaalit jotta header istuu ylös */
         }
+        
+        /* Piilotetaan yläpalkki kun ollaan iframe:ssa */
+        body.in-iframe .mk-app-header {
+            display: none !important;
+        }
+        body.in-iframe .sisalto-laatikko {
+            margin-top: 0 !important;
+        }
+        
         /* Yläpalkki joka jäljittelee MK Porttaalin tyyliä */
         .mk-app-header {
             background-color: var(--card-bg, #313244); /* Porttaalin kortti-tausta */
@@ -159,6 +168,12 @@
         </div>
     </div>
     
+    <script>
+        // Tunnistetaan onko sivu iframe:ssa
+        if (window.self !== window.top) {
+            document.body.classList.add('in-iframe');
+        }
+    </script>
     <script src="muuntimet_script.js" defer></script>
 </body>
 </html>
