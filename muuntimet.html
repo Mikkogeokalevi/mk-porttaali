@@ -7,24 +7,31 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="muuntimet_style.css">
     
+    <script>
+        // Tunnistetaan onko sivu iframe:ssa - suoritetaan heti
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('in-iframe');
+        }
+    </script>
+    
     <style>
         body {
-            margin: 0; /* Poistetaan oletusmarginaalit jotta header istuu ylös */
+            margin: 0;
         }
         
-        /* Piilotetaan yläpalkki kun ollaan iframe:ssa */
-        body.in-iframe .mk-app-header {
+        /* Piilotetaan yläpalkki ja logo kun ollaan iframe:ssa */
+        .in-iframe .mk-app-header,
+        .in-iframe .header-flex-container {
             display: none !important;
         }
-        body.in-iframe .sisalto-laatikko {
+        .in-iframe .sisalto-laatikko {
             margin-top: 0 !important;
             padding-top: 10px !important;
         }
-        body.in-iframe .header-flex-container {
-            display: none !important;
-        }
-        body.in-iframe .huomio-laatikko {
-            margin-top: 0 !important;
+        /* Pakotetaan välilehdet näkyviin iframe:ssa myös mobiilissa */
+        .in-iframe .valilehdet {
+            display: flex !important;
+            flex-wrap: wrap !important;
         }
         
         /* Yläpalkki joka jäljittelee MK Porttaalin tyyliä */
@@ -175,12 +182,6 @@
         </div>
     </div>
     
-    <script>
-        // Tunnistetaan onko sivu iframe:ssa
-        if (window.self !== window.top) {
-            document.body.classList.add('in-iframe');
-        }
-    </script>
     <script src="muuntimet_script.js" defer></script>
 </body>
 </html>
