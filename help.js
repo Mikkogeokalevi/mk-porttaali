@@ -13,6 +13,9 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.7</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>2.2.2026:</strong> Koodin parannukset: debug-koodi siivottu, muuntimet integroitu SPA:han.</li>
+                <li><strong>2.2.2026:</strong> Parempi virheenkäsittely ja latausindikaattorit näkymän vaihdossa.</li>
+                <li><strong>2.2.2026:</strong> Firebase-config siirretty ympäristömuuttujiin (turvallisuusparannus).</li>
                 <li><strong>28.1.2026:</strong> Rekisteröityminen korjattu (sähköposti + kirjautumisnäkymän vaihto).</li>
                 <li><strong>28.1.2026:</strong> Uusien käyttäjien hyväksyntä toimii myös Google-rekisteröinneissä.</li>
                 <li><strong>26.1.2026:</strong> Reissuapuri (EXTRA) lisätty ja admin voi kytkeä sen käyttöön käyttäjäkohtaisesti.</li>

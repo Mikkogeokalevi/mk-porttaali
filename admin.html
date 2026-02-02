@@ -40,10 +40,6 @@
         .instruction-text { color: #a6adc8; font-size: 0.9em; margin-bottom: 10px; }
         
         /* Debug-grid tyylit */
-        .debug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 5px; margin-top: 10px; }
-        .debug-item { background: #181825; padding: 5px; border-radius: 4px; border: 1px solid #45475a; text-align: center; font-size: 0.8em; }
-        .col-idx { display: block; color: #a6adc8; margin-bottom: 2px; }
-        .col-val { display: block; font-weight: bold; color: #fab387; }
     </style>
 </head>
 <body>
@@ -92,7 +88,6 @@
                 <div class="stat-box">Ei löytöjä: <span id="countNone">-</span></div>
             </div>
             
-            <div id="firstRowDebug" style="margin-top:15px; padding-top:10px; border-top:1px dashed #45475a;"></div>
         </div>
     </div>
 </div>
@@ -200,8 +195,6 @@
                 municipalityData[kunta] = { r: region, s: allStats };
                 success++;
 
-                // Tallennetaan eka rivi debuggausta varten
-                if(!firstRowStats) { firstRowStats = allStats; firstRowName = kunta; }
 
                 // LASKETAAN TRIPLETTI ESIKATSELUUN
                 const t = allStats[idxTradi] || 0;
@@ -222,17 +215,6 @@
         document.getElementById('countTradi').textContent = cats[2];
         document.getElementById('countNone').textContent = cats[1];
         
-        // Debug-rivi
-        if(firstRowStats) {
-            let dbgHtml = `<p style="font-size:0.8em; color:#aaa;">Tarkistus (${firstRowName}):<br>`;
-            dbgHtml += `<span style="color:#a6e3a1">Tradi (${firstRowStats[idxTradi]})</span> | `;
-            dbgHtml += `<span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | `;
-            dbgHtml += `<span style="color:#f38ba8">Mysteeri (${firstRowStats[idxMysse]})</span></p>`;
-            dbgHtml += `<div class="debug-grid">`;
-            firstRowStats.forEach((v, i) => dbgHtml += `<div class="debug-item"><span class="col-idx">${i}</span><span class="col-val">${v}</span></div>`);
-            dbgHtml += `</div>`;
-            document.getElementById('firstRowDebug').innerHTML = dbgHtml;
-        }
 
         document.getElementById('previewArea').classList.remove('hidden');
         document.getElementById('saveBtn').style.display = 'inline-block';

@@ -31,9 +31,6 @@ export const renderAdminView = async (content, db, currentUser) => {
         .stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
         .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid #45475a; text-align:center; }
         .stat-box span { display:block; font-size:1.5em; font-weight:bold; margin-top:5px; }
-        .debug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 5px; margin-top: 10px; }
-        .debug-item { background: #181825; padding: 5px; border-radius: 4px; border: 1px solid #45475a; text-align: center; font-size: 0.7em; }
-        .col-val { display: block; font-weight: bold; color: #fab387; font-size: 1.1em; }
         
         .tab-btn { background:none; border:none; color:#aaa; padding:10px 15px; cursor:pointer; font-weight:bold; }
         .tab-btn.active { color:#fff; border-bottom:2px solid var(--accent-color); }
@@ -317,14 +314,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                     <span style="color:#a6e3a1">Tradi (${firstRowStats[idxTradi]})</span> | 
                     <span style="color:#89b4fa">Multi (${firstRowStats[idxMulti]})</span> | 
                     <span style="color:#f38ba8">Mysse (${firstRowStats[idxMysse]})</span></p>
-                    
-                    <div class="debug-grid">`;
-                
-                firstRowStats.forEach((v, i) => {
-                    reportHtml += `<div class="debug-item"><span style="display:block; color:#aaa; margin-bottom:2px;">${i}</span><span class="col-val">${v}</span></div>`;
-                });
-                
-                reportHtml += `</div></div>`;
+                </div>`;
             }
             
             reportHtml += `</div>`;

@@ -8,18 +8,19 @@ import * as Gen from "./generator.js";
 import * as Stats from "./stats.js";
 import { renderHelp } from "./help.js";
 import { renderLinksView } from "./links.js"; 
+import { renderConvertersView } from "./converters.js";
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
 import { renderAdminView } from "./admin.js";
 import { renderSettingsView } from "./settings.js"; 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
-  authDomain: "mk-porttaali.firebaseapp.com",
-  projectId: "mk-porttaali",
-  storageBucket: "mk-porttaali.firebasestorage.app",
-  messagingSenderId: "220899819334",
-  appId: "1:220899819334:web:6662b7b1519f4c89c32f47"
+  apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
+  authDomain: import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN || "mk-porttaali.firebaseapp.com",
+  projectId: import.meta.env?.VITE_FIREBASE_PROJECT_ID || "mk-porttaali",
+  storageBucket: import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET || "mk-porttaali.firebasestorage.app",
+  messagingSenderId: import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "220899819334",
+  appId: import.meta.env?.VITE_FIREBASE_APP_ID || "1:220899819334:web:6662b7b1519f4c89c32f47"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
@@ -43,45 +44,59 @@ window.app = {
   router: (view, options = {}) => {
     const { fromHash = false, replaceHash = false } = options;
     const targetView = view || 'home';
+    
+    // Näytetään latausindikaattori
+    const content = document.getElementById('appContent');
+    if (content) {
+      content.innerHTML = `
+        <div style="text-align: center; margin-top: 50px; padding: 20px;">
+          <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          <p style="margin-top: 15px; color: var(--subtext-color);">Ladataan...</p>
+        </div>
+        <style>
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
+      `;
+    }
 
     if (!fromHash) {
         const hashValue = `#${targetView}`;
         if (replaceHash) {
             history.replaceState(null, '', hashValue);
-        } else if (location.hash !== hashValue) {
-            location.hash = targetView;
+        } else {
+            history.pushState(null, '', hashValue);
         }
     }
 
-    if (window.app.currentView) {
-        const scrollValue = String(window.scrollY || 0);
-        sessionStorage.setItem(`mk_scroll_${window.app.currentView}`, scrollValue);
-        localStorage.setItem(`mk_scroll_${window.app.currentView}`, scrollValue);
-    }
+    // Päivitetään navigaation aktiivinen tila
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(targetView) || 
+            (targetView === 'home' && btn.textContent === 'Etusivu') ||
+            (targetView === 'generator' && btn.textContent === 'Kuvageneraattori') ||
+            (targetView === 'help' && btn.textContent === 'Ohjeet & Tuki'));
+    });
 
-    const persistView = targetView === 'converters' ? 'home' : targetView;
-    sessionStorage.setItem('mk_last_view', persistView);
-    localStorage.setItem('mk_last_view', persistView);
+    // Suoritetaan näkymän renderöinti virheenkäsittelyllä
+    try {
+      window.app.currentView = targetView;
+      
+      const nav = document.getElementById('mainNav');
+      if (nav) nav.classList.remove('open');
 
-    // SULJE VALIKKO AUTOMAATTISESTI MOBIILISSA
-    const nav = document.getElementById('mainNav');
-    if (nav && nav.classList.contains('open')) {
-        nav.classList.remove('open');
-    }
+      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
+      
+      if (protectedViews.includes(targetView) && !window.app.currentUser) {
+          sessionStorage.setItem('mk_post_login_view', targetView);
+          window.app.router('login_view', { replaceHash: true });
+          return;
+      }
 
-    const content = document.getElementById('appContent');
-    const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
-    
-    if (protectedViews.includes(targetView) && !window.app.currentUser) {
-        sessionStorage.setItem('mk_post_login_view', targetView);
-        window.app.router('login_view', { replaceHash: true });
-        return;
-    }
+      // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli: pyöristys + varjo)
+      const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
 
-    // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli: pyöristys + varjo)
-    const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
-
-    switch(targetView) {
+      switch(targetView) {
       case 'home':
         // GUEST VIEW (KIRJAUTUMATON)
         if (!window.app.currentUser) {
@@ -167,7 +182,7 @@ window.app = {
       
       case 'converters': 
         if (checkPremium(content)) {
-            window.location.href = 'muuntimet.html';
+            renderConvertersView(content);
         }
         break;
 
@@ -204,7 +219,8 @@ window.app = {
         `;
         break;
 
-      default: content.innerHTML = '<div class="card"><h1>404</h1></div>';
+      default: 
+        if (content) content.innerHTML = '<div class="card"><h1>404</h1></div>';
     }
 
     window.app.currentView = targetView;
@@ -213,6 +229,19 @@ window.app = {
         requestAnimationFrame(() => window.scrollTo(0, parseInt(storedScroll, 10) || 0));
     } else {
         window.scrollTo(0, 0);
+    }
+    
+    } catch (error) {
+      console.error('Virhe näkymän lataamisessa:', error);
+      if (content) {
+        content.innerHTML = `
+          <div class="card" style="text-align: center; padding: 40px;">
+            <h2 style="color: var(--error-color);">❌ Virhe</h2>
+            <p>Näkymän lataaminen epäonnistui.</p>
+            <button class="btn" onclick="location.reload()">Lataa sivu uudelleen</button>
+          </div>
+        `;
+      }
     }
   },
 
