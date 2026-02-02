@@ -10,6 +10,7 @@
         { "sym": "mi", "name": "Maili (eng.)", "kerroin": 1609.34, "selite": "1760 jaardia. Yleinen tie-etäisyyksien mitta Yhdysvalloissa ja Isossa-Britanniassa." },
         { "sym": "µm", "name": "Mikrometri", "kerroin": 1e-6, "tyyppi": "harvinainen", "selite": "Metrin miljoonasosa. Tunnetaan myös nimellä mykron. Käytetään mm. biologiassa solujen mittaamiseen." },
         { "sym": "nm", "name": "Nanometri", "kerroin": 1e-9, "tyyppi": "harvinainen", "selite": "Metrin miljardisosa. Käytetään nanoteknologiassa ja tieteellisessä kuvantamisessa." },
+        { "sym": "pm", "name": "Pikometri", "kerroin": 1e-12, "tyyppi": "harvinainen", "selite": "Metrin biljoonasosa. Käytetään atomien välisen etäisyyden mittaamiseen kemiassa ja fysiikassa." },
         { "sym": "dm", "name": "Desimetri", "kerroin": 0.1, "tyyppi": "harvinainen", "selite": "Metrin kymmenesosa. Käytetään harvemmin, mutta esiintyy joissain yhteyksissä, kuten tilavuuden määrittelyssä (dm³ = litra)." },
         { "sym": "dam", "name": "Dekametri", "kerroin": 10, "tyyppi": "harvinainen", "selite": "10 metriä. Harvinainen yksikkö arkikäytössä." },
         { "sym": "hm", "name": "Hehtometri", "kerroin": 100, "tyyppi": "harvinainen", "selite": "100 metriä. Harvinainen yksikkö arkikäytössä." },
@@ -48,6 +49,8 @@
         { "sym": "lb_t", "name": "Troy-naula", "kerroin": 373.24172, "tyyppi": "harvinainen", "selite": "12 Troy-unssia. Vanha jalometallien ja apteekkitavaroiden mittayksikkö." },
         { "sym": "luoti", "name": "Luoti (vanha)", "kerroin": 13.28, "tyyppi": "harvinainen", "selite": "Vanha suomalainen painoyksikkö." },
         { "sym": "leiviskä", "name": "Leiviskä (vanha)", "kerroin": 8500, "tyyppi": "harvinainen", "selite": "Vanha suomalainen painoyksikkö, 20 naulaa." },
+        { "sym": "ct", "name": "Karaatti", "kerroin": 0.2, "tyyppi": "harvinainen", "selite": "Jalokivien ja helmiiden painoyksikkö. Tarkalleen 200 milligrammaa." },
+        { "sym": "gr", "name": "Granaatti", "kerroin": 0.0648, "tyyppi": "harvinainen", "selite": "Historiallinen painoyksikkö, jonka perustana on yksi jyvä (grain)." },
         { "sym": "naula_fi", "name": "Naula (Suomi)", "kerroin": 425.6, "tyyppi": "harvinainen", "selite": "Vanha suomalainen painoyksikkö, noin 425 grammaa. Jaettiin 32 luotiin." },
         { "sym": "markka_paino", "name": "Markka (paino, Suomi)", "kerroin": 212.8, "tyyppi": "harvinainen", "selite": "Puoli naulaa, noin 213 grammaa. Käytettiin erityisesti metallien punnitsemiseen." },
         { "sym": "livre", "name": "Livre (Ranska)", "kerroin": 489.5, "tyyppi": "harvinainen", "selite": "Vanha ranskalainen naula ennen metrijärjestelmää." },
@@ -202,7 +205,10 @@
         { "sym": "W", "name": "Watti", "kerroin": 1, "selite": "Tehon SI-perusyksikkö. Vastaa yhtä joulea sekunnissa." },
         { "sym": "kW", "name": "Kilowatti", "kerroin": 1000, "selite": "1000 Wattia. Yleinen sähkölaitteiden ja moottoreiden tehon yksikkö." },
         { "sym": "MW", "name": "Megawatti", "kerroin": 1000000, "selite": "Miljoona Wattia. Käytetään voimalaitosten tehon ilmaisemiseen." },
-        { "sym": "hp", "name": "Hevosvoima", "kerroin": 745.7, "selite": "Historiallinen tehon yksikkö, joka perustuu hevosen arvioituun voimantuottoon. Yleinen autojen tehon ilmoittamisessa." }
+        { "sym": "GW", "name": "Gigawatti", "kerroin": 1000000000, "tyyppi": "harvinainen", "selite": "Miljardi Wattia. Käytetään suurten voimalaitosryhmien ja sähköverkkojen tehon ilmaisemiseen." },
+        { "sym": "hp", "name": "Hevosvoima", "kerroin": 745.7, "selite": "Historiallinen tehon yksikkö, joka perustuu hevosen arvioituun voimantuottoon. Yleinen autojen tehon ilmoittamisessa." },
+        { "sym": "PS", "name": "Metrinen hevosvoima", "kerroin": 735.5, "tyyppi": "harvinainen", "selite": "Eurooppalainen versio hevosvoimasta, 75 kgf·m/s. Käytetään autojen tehon ilmoittamiseen Euroopassa." },
+        { "sym": "dBm", "name": "dBm", "kerroin": 1.258925, "tyyppi": "harvinainen", "selite": "Tehon yksikkö desibeleissä suhteessa 1 milliwattiin. Käytetään radio- ja telekommunikaatiotekniikassa." }
     ],
     "kulma": [
         { "sym": "deg", "name": "Aste", "kerroin": 1, "selite": "Ympyrän 360. osa. Yleisin kulman mittayksikkö." },
@@ -225,6 +231,8 @@
         { "sym": "H", "name": "Henry", "kerroin": 1, "tyyppi": "Induktanssi", "selite": "Induktanssin SI-yksikkö." },
         { "sym": "Hz", "name": "Hertsi", "kerroin": 1, "tyyppi": "Taajuus", "selite": "Taajuuden SI-yksikkö, yksi jakso sekunnissa." },
         { "sym": "kHz", "name": "Kilohertsi", "kerroin": 1000, "tyyppi": "Taajuus", "selite": "1000 hertsiä." },
+        { "sym": "S", "name": "Siemens", "kerroin": 1, "tyyppi": "Johtavuus", "selite": "Sähkönjohtavuuden SI-yksikkö. Käänteisarvo ohmille." },
+        { "sym": "Wb", "name": "Weber", "kerroin": 1, "tyyppi": "Magneettivuo", "selite": "Magneettivuon SI-yksikkö. Yksi weber aiheuttaa yhden voltin jännitteen yhden kierroksen käämissä." },
         { "sym": "statV", "name": "Statvoltti", "kerroin": 299.79, "tyyppi": "Harvinaiset (CGS)", "selite": "Sähköjännitteen vanha CGS-yksikkö." },
         { "sym": "abA", "name": "Abampeeri", "kerroin": 10, "tyyppi": "Harvinaiset (CGS)", "selite": "Sähkövirran vanha CGS-yksikkö." }
     ],
@@ -235,6 +243,23 @@
         { "sym": "rad", "name": "Rad", "kerroin": 0.01, "tyyppi": "Absorboitunut annos", "selite": "Vanha absorboituneen annoksen yksikkö." },
         { "sym": "Sv", "name": "Sievert", "kerroin": 1, "tyyppi": "Ekvivalenttiannos", "selite": "Sädeannoksen ekvivalentin SI-yksikkö, kuvaa säteilyn biologista vaikutusta." },
         { "sym": "rem", "name": "Rem", "kerroin": 0.01, "tyyppi": "Ekvivalenttiannos", "selite": "Vanha ekvivalenttiannoksen yksikkö." }
+    ],
+    "lampotila": [
+        { "sym": "°C", "name": "Celsiusaste", "kerroin": 1, "selite": "Yleisin lämpötilayksikkö. Veden jäätymispiste 0°C ja kiehumispiste 100°C normaalipaineessa." },
+        { "sym": "°F", "name": "Fahrenheitaste", "kerroin": 1.8, "selite": "Yhdysvalloissa ja joissain muissa maissa käytetty yksikkö. Veden jäätymispiste 32°F ja kiehumispiste 212°F." },
+        { "sym": "K", "name": "Kelvin", "kerroin": 1, "selite": "SI-järjestelmän lämpötilan perusyksikkö. Absoluuttinen nollapiste on 0 K. Käytetään tieteellisissä laskelmissa." },
+        { "sym": "°R", "name": "Rankine", "kerroin": 1.8, "selite": "Absoluuttinen lämpötilayksikkö, joka perustuu Fahrenheit-asteikkunaan. Absoluuttinen nollapiste on 0°R." },
+        { "sym": "°Ré", "name": "Réaumur", "kerroin": 0.8, "selite": "Historiallinen ranskalainen lämpötilayksikkö. Veden jäätymispiste 0°Ré ja kiehumispiste 80°Ré." },
+        { "sym": "°Rø", "name": "Rømer", "kerroin": 0.525, "selite": "Historiallinen tanskalainen lämpötilayksikkö. Veden jäätymispiste 7.5°Rø ja kiehumispiste 60°Rø." },
+        { "sym": "°D", "name": "Delisle", "kerroin": -1.5, "selite": "Historiallinen venäläinen lämpötilayksikkö. Veden kiehumispiste 0°D ja jäätymispiste 150°D." }
+    ],
+    "kulutus": [
+        { "sym": "l/100km", "name": "Litraa/100km", "kerroin": 1, "selite": "Eurooppalainen polttoaineenkulutuksen yksikkö. Kuinka monta litraa polttoainetta kuluu 100 kilometrin matkalla." },
+        { "sym": "km/l", "name": "Kilometriä/litra", "kerroin": 100, "selite": "Polttoaineen tehokkuuden yksikkö. Kuinka monta kilometriä ajetaan yhdellä litralla polttoainetta." },
+        { "sym": "mpg", "name": "Mailia/gallona (US)", "kerroin": 235.215, "selite": "Yhdysvaltalainen polttoaineenkulutuksen yksikkö. Kuinka monta mailia ajetaan yhdellä gallonalla." },
+        { "sym": "mpg_imp", "name": "Mailia/gallona (UK)", "kerroin": 282.481, "selite": "Brittiläinen polttoaineenkulutuksen yksikkö. Käyttää suurempaa gallonaa kuin USA-versio." },
+        { "sym": "gal/100mi", "name": "Gallonaa/100 mailia (US)", "kerroin": 0.425144, "selite": "Yhdysvaltalainen kulutusyksikkö. Gallonaa per 100 mailia." },
+        { "sym": "kg/100km", "name": "Kilogrammaa/100km", "kerroin": 0.832, "selite": "Polttoaineenkulutus massana. Bensiinin tiheys on noin 0.832 kg/l." }
     ],
     "valo": [
         { "sym": "lx", "name": "Luksi (lux)", "kerroin": 1, "tyyppi": "Valaistusvoimakkuus", "selite": "SI-yksikkö valaistusvoimakkuudelle. Vastaa yhtä luumenia neliömetrillä (lm/m²)." },

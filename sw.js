@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v47'; // PÄIVITETTY: v46 -> v47 (versio 2.8)
+const CACHE_NAME = 'mk-porttaali-v48'; // PÄIVITETTY: v47 -> v48 (uudet yksiköt ja kategoriat)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
