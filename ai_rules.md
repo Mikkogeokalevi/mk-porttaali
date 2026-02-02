@@ -9,14 +9,22 @@
 - Ei arvailua: jos tietoa ei voi lukea, pyydä se ensin.
 - Kunnioita alkuperaista: älä vaihda rakenteita tai muuttujia ilman pyyntöä
 - Kieli: kommunikoi suomeksi; koodin kielilinja pidetaan ennallaan.
-- `help.js`: Ohjetta ja versiotietoja ei saa tiivistaa, lyhentaa tai poistaa ilman erillista pyyntoa.
-- `help.js`: Jos paivitys vaikuttaa ohjeisiin tai versiotietoihin, lisaa uusi tieto ohjeeseen (ilman tiivistamista).
-- `help.js`: Kysy aina kuluva paivamaara ennen uusien paivityskohtien lisaamista.
-- `help.js`: Vain uudet lisaykset saavat uuden paivamaaran; vanhat paivat pidetaan ennallaan.
-- `help.js`: Kun versio pysyy samana, lisaa paivitykselle paivays versiohistoriaan.
-- `help.js`: "Uutta versiossa" -listassa pidetaan vain 5 uusinta; vanhemmat saman version kohdat siirretaan aiempaan historiaan.
-- `app.js` ja `index.html`: Ohje-nakyma nimetaan yhtenaeisesti "Ohjeet & Tuki".
-- `sw.js`: Kun nakyviin tulee muutoksia mobiilissa, paivita `CACHE_NAME` jotta uusi versio latautuu.
-- Reissuapuri integroidaan MK Porttaaliin SPA-nakymana ja naytetaan kayttajille, joilla on Firestoressa reissuapuriEnabled=true (admin voi myos kytkea).
-- Reissuapurin data tallennetaan RTDB-polkuun reissuapuri/{uid}/... (kayttajakohtainen).
-- AiRules: Paivita ai_rules.md automaattisesti aina, kun tehdään paatoksia joita tulee muistaa jatkossa.
+- `help.js`: Ohjetta ja versiotietoja ei saa tiivistää, lyhentää tai poistaa ilman erillista pyyntöä.
+- `help.js`: Jos päivitys vaikuttaa ohjeisiin tai versiotietoihin, lisää uusi tieto ohjeeseen (ilman tiivistämistä).
+- `help.js`: Kysy aina kuluva päivämäärä ennen uusien päivityskohtien lisäämistä.
+- `help.js`: Vain uudet lisäykset saavat uuden päivämäärän; vanhat päivät pidetään ennallaan.
+- `help.js`: Kun versio pysyy samana, lisää päivitykselle päiväys versiohistoriaan.
+- `help.js`: "Uutta versiossa" -listassa pidetään vain 5 uusinta; vanhemmat saman version kohdat siirretään aiempaan historiaan.
+- `app.js` ja `index.html`: Ohje-näkyma nimetään yhtenäisesti "Ohjeet & Tuki".
+- `sw.js`: Kun näkyviin tulee muutoksia mobiilissa, päivitä `CACHE_NAME` jotta uusi versio latautuu.
+- Reissuapuri integroidaan MK Porttaaliin SPA-näkymänä ja näytetään käyttäjille, joilla on Firestoressa reissuapuriEnabled=true (admin voi myös käyttää).
+- Reissuapurin data tallennetaan RTDB-polkuun reissuapuri/{uid}/... (käyttäjäkohtainen).
+- AiRules: Päivitä ai_rules.md automaattisesti aina, kun tehdään päätöksiä joita tulee muistaa jatkossa.
+
+## Päivityshistoria (AI Rules)
+- **2.2.2026**: Muuntimet integroitu SPA:han, kaikki 18 kategoriaa palautettu
+- **2.2.2026**: Service Worker päivitetty v45 (converters.js lisätty)
+- **2.2.2026**: help.js versiohistoria korjattu sääntöjen mukaisesti (5 uusinta)
+- **2.2.2026**: Firebase-config siirretty ympäristömuuttujiin (.env-tuki)
+- **2.2.2026**: Debug-koodi siivottu (17 TODO/FIXME poistettu)
+- **2.2.2026**: Parempi virheenkäsittely ja latausindikaattorit

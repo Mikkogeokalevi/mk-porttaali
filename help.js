@@ -16,18 +16,19 @@ export const renderHelp = (content, app) => {
                 <li><strong>2.2.2026:</strong> Koodin parannukset: debug-koodi siivottu, muuntimet integroitu SPA:han.</li>
                 <li><strong>2.2.2026:</strong> Parempi virheenkäsittely ja latausindikaattorit näkymän vaihdossa.</li>
                 <li><strong>2.2.2026:</strong> Firebase-config siirretty ympäristömuuttujiin (turvallisuusparannus).</li>
+                <li><strong>2.2.2026:</strong> Muuntimet palautettu täysin: kaikki 18 kategoriaa + selitykset.</li>
                 <li><strong>28.1.2026:</strong> Rekisteröityminen korjattu (sähköposti + kirjautumisnäkymän vaihto).</li>
-                <li><strong>28.1.2026:</strong> Uusien käyttäjien hyväksyntä toimii myös Google-rekisteröinneissä.</li>
-                <li><strong>26.1.2026:</strong> Reissuapuri (EXTRA) lisätty ja admin voi kytkeä sen käyttöön käyttäjäkohtaisesti.</li>
-                <li><strong>25.1.2026:</strong> Kartat: paikannus on valinnainen ja kuntanimet näkyvät zoomilla.</li>
-                <li><strong>25.1.2026:</strong> Mobiilinäkymän päivitys ja takaisin-navigointi korjattu.</li>
-                <li><strong>23.1.2026:</strong> Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
                 <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
                     <strong>v2.7 (lisäpäivitykset)</strong><br>
+                    - 28.1.2026: Uusien käyttäjien hyväksyntä toimii myös Google-rekisteröinneissä.<br>
+                    - 26.1.2026: Reissuapuri (EXTRA) lisätty ja admin voi kytkeä sen käyttöön käyttäjäkohtaisesti.<br>
+                    - 25.1.2026: Kartat: paikannus on valinnainen ja kuntanimet näkyvät zoomilla.<br>
+                    - 25.1.2026: Mobiilinäkymän päivitys ja takaisin-navigointi korjattu.<br>
+                    - 23.1.2026: Vastuuvapaus ja Premium-ehdot selkeytetty ohjesivulle.<br>
                     - Linkkikirjasto: Linkit eriytetty omaksi, selkeäksi näkymäkseen.<br>
                     - Linkkikirjasto sai uusia geokätkölinkkejä (kartat, sovellukset, Wherigo).<br>
                     - Kartat: Paikannus toggle ja kuntanimet zoomilla.<br>

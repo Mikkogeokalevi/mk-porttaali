@@ -31,20 +31,33 @@ async function initializeMuuntimet(yksikot) {
 async function createConverterHTML(yksikot) {
     let html = '';
     
-    // Etäisyysmuunnin (käytetään "pituus"-avainta)
-    if (yksikot.pituus && Array.isArray(yksikot.pituus)) {
-        html += createDistanceConverter(yksikot.pituus);
-    }
+    // Dynaamisesti kaikki muuntimet JSON-datasta
+    const kategoriat = [
+        { key: 'pituus', nimi: '📏 Pituus', ikoni: '📏' },
+        { key: 'massa', nimi: '⚖️ Massa', ikoni: '⚖️' },
+        { key: 'pinta_ala', nimi: '📐 Pinta-ala', ikoni: '📐' },
+        { key: 'tilavuus', nimi: '🥤 Tilavuus', ikoni: '🥤' },
+        { key: 'voima', nimi: '💪 Voima', ikoni: '💪' },
+        { key: 'nopeus', nimi: '⚡ Nopeus', ikoni: '⚡' },
+        { key: 'aika', nimi: '⏰ Aika', ikoni: '⏰' },
+        { key: 'paine', nimi: '🔵 Paine', ikoni: '🔵' },
+        { key: 'energia', nimi: '⚡ Energia', ikoni: '⚡' },
+        { key: 'teho', nimi: '🔥 Teho', ikoni: '�' },
+        { key: 'kulma', nimi: '📐 Kulma', ikoni: '📐' },
+        { key: 'sahko', nimi: '⚡ Sähkö', ikoni: '⚡' },
+        { key: 'sateily', nimi: '☢️ Säteily', ikoni: '☢️' },
+        { key: 'valo', nimi: '💡 Valo', ikoni: '💡' },
+        { key: 'data', nimi: '💾 Data', ikoni: '💾' },
+        { key: 'apteekkari_massa', nimi: '💊 Apteekkarin mitat', ikoni: '💊' },
+        { key: 'ruoanlaitto', nimi: '🍳 Ruoanlaitto', ikoni: '🍳' },
+        { key: 'typografia', nimi: '📝 Typografia', ikoni: '📝' }
+    ];
     
-    // Painomuunnin (käytetään "paine"-avainta)
-    if (yksikot.paine && Array.isArray(yksikot.paine)) {
-        html += createPressureConverter(yksikot.paine);
-    }
-    
-    // Nopeusmuunnin (käytetään "nopeus"-avainta)
-    if (yksikot.nopeus && Array.isArray(yksikot.nopeus)) {
-        html += createSpeedConverter(yksikot.nopeus);
-    }
+    kategoriat.forEach(kategoria => {
+        if (yksikot[kategoria.key] && Array.isArray(yksikot[kategoria.key])) {
+            html += createConverter(kategoria.ikoni, kategoria.nimi, kategoria.key, yksikot[kategoria.key]);
+        }
+    });
     
     // Jos ei löytynyt yhtään konverttia, näytetään virheilmoitus
     if (!html) {
@@ -59,75 +72,19 @@ async function createConverterHTML(yksikot) {
     return html;
 }
 
-function createDistanceConverter(units) {
+// Yleinen muunninfunktio
+function createConverter(ikoni, nimi, avain, units) {
     return `
         <div class="converter-section">
-            <div class="converter-title">📏 Etäisyys</div>
+            <div class="converter-title">${ikoni} ${nimi}</div>
             <div class="converter-input-group">
-                <input type="number" id="dist-input" class="converter-input" value="1" step="any">
-                <select id="dist-from" class="converter-input">
+                <input type="number" id="${avain}-input" class="converter-input" value="1" step="any">
+                <select id="${avain}-from" class="converter-input">
                     ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
                 <div class="converter-arrow">→</div>
-                <input type="text" id="dist-to" class="converter-result" readonly>
-                <select id="dist-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
-                </select>
-            </div>
-        </div>
-    `;
-}
-
-function createTemperatureConverter(units) {
-    return `
-        <div class="converter-section">
-            <div class="converter-title">🌡️ Lämpötila</div>
-            <div class="converter-input-group">
-                <input type="number" id="temp-input" class="converter-input" value="20" step="any">
-                <select id="temp-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.name}">${unit.name}</option>`).join('')}
-                </select>
-                <div class="converter-arrow">→</div>
-                <input type="text" id="temp-to" class="converter-result" readonly>
-                <select id="temp-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.name}">${unit.name}</option>`).join('')}
-                </select>
-            </div>
-        </div>
-    `;
-}
-
-function createPressureConverter(units) {
-    return `
-        <div class="converter-section">
-            <div class="converter-title">🔵 Paine</div>
-            <div class="converter-input-group">
-                <input type="number" id="pressure-input" class="converter-input" value="1013" step="any">
-                <select id="pressure-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
-                </select>
-                <div class="converter-arrow">→</div>
-                <input type="text" id="pressure-to" class="converter-result" readonly>
-                <select id="pressure-to-unit" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
-                </select>
-            </div>
-        </div>
-    `;
-}
-
-function createSpeedConverter(units) {
-    return `
-        <div class="converter-section">
-            <div class="converter-title">⚡ Nopeus</div>
-            <div class="converter-input-group">
-                <input type="number" id="speed-input" class="converter-input" value="5" step="any">
-                <select id="speed-from" class="converter-input">
-                    ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
-                </select>
-                <div class="converter-arrow">→</div>
-                <input type="text" id="speed-to" class="converter-result" readonly>
-                <select id="speed-to-unit" class="converter-input">
+                <input type="text" id="${avain}-to" class="converter-result" readonly>
+                <select id="${avain}-to-unit" class="converter-input">
                     ${units.map(unit => `<option value="${unit.kerroin}">${unit.name}</option>`).join('')}
                 </select>
             </div>
@@ -136,68 +93,32 @@ function createSpeedConverter(units) {
 }
 
 function initializeEventListeners(yksikot) {
-    // Etäisyysmuunnin
-    const distInput = document.getElementById('dist-input');
-    const distFrom = document.getElementById('dist-from');
-    const distTo = document.getElementById('dist-to-unit');
-    const distResult = document.getElementById('dist-to');
+    // Dynaamisesti kaikki muuntimet
+    const kategoriat = ['pituus', 'massa', 'pinta_ala', 'tilavuus', 'voima', 'nopeus', 'aika', 'paine', 'energia', 'teho', 'kulma', 'sahko', 'sateily', 'valo', 'data', 'apteekkari_massa', 'ruoanlaitto', 'typografia'];
     
-    if (distInput && distFrom && distTo && distResult) {
-        const updateDistance = () => {
-            const value = parseFloat(distInput.value) || 0;
-            const fromFactor = parseFloat(distFrom.value);
-            const toFactor = parseFloat(distTo.value);
-            const result = (value * fromFactor) / toFactor;
-            distResult.value = result.toFixed(6).replace(/\.?0+$/, '');
-        };
-        
-        distInput.addEventListener('input', updateDistance);
-        distFrom.addEventListener('change', updateDistance);
-        distTo.addEventListener('change', updateDistance);
-        updateDistance();
-    }
-    
-    // Painomuunnin
-    const pressureInput = document.getElementById('pressure-input');
-    const pressureFrom = document.getElementById('pressure-from');
-    const pressureTo = document.getElementById('pressure-to-unit');
-    const pressureResult = document.getElementById('pressure-to');
-    
-    if (pressureInput && pressureFrom && pressureTo && pressureResult) {
-        const updatePressure = () => {
-            const value = parseFloat(pressureInput.value) || 0;
-            const fromFactor = parseFloat(pressureFrom.value);
-            const toFactor = parseFloat(pressureTo.value);
-            const result = (value * fromFactor) / toFactor;
-            pressureResult.value = result.toFixed(2).replace(/\.?0+$/, '');
-        };
-        
-        pressureInput.addEventListener('input', updatePressure);
-        pressureFrom.addEventListener('change', updatePressure);
-        pressureTo.addEventListener('change', updatePressure);
-        updatePressure();
-    }
-    
-    // Nopeusmuunnin
-    const speedInput = document.getElementById('speed-input');
-    const speedFrom = document.getElementById('speed-from');
-    const speedTo = document.getElementById('speed-to-unit');
-    const speedResult = document.getElementById('speed-to');
-    
-    if (speedInput && speedFrom && speedTo && speedResult) {
-        const updateSpeed = () => {
-            const value = parseFloat(speedInput.value) || 0;
-            const fromFactor = parseFloat(speedFrom.value);
-            const toFactor = parseFloat(speedTo.value);
-            const result = (value * fromFactor) / toFactor;
-            speedResult.value = result.toFixed(4).replace(/\.?0+$/, '');
-        };
-        
-        speedInput.addEventListener('input', updateSpeed);
-        speedFrom.addEventListener('change', updateSpeed);
-        speedTo.addEventListener('change', updateSpeed);
-        updateSpeed();
-    }
+    kategoriat.forEach(avain => {
+        if (yksikot[avain] && Array.isArray(yksikot[avain])) {
+            const input = document.getElementById(`${avain}-input`);
+            const from = document.getElementById(`${avain}-from`);
+            const to = document.getElementById(`${avain}-to-unit`);
+            const result = document.getElementById(`${avain}-to`);
+            
+            if (input && from && to && result) {
+                const updateConverter = () => {
+                    const value = parseFloat(input.value) || 0;
+                    const fromFactor = parseFloat(from.value);
+                    const toFactor = parseFloat(to.value);
+                    const converted = (value * fromFactor) / toFactor;
+                    result.value = converted.toFixed(8).replace(/\.?0+$/, '');
+                };
+                
+                input.addEventListener('input', updateConverter);
+                from.addEventListener('change', updateConverter);
+                to.addEventListener('change', updateConverter);
+                updateConverter();
+            }
+        }
+    });
 }
 
 // Vanha DOMContentLoaded-tapahtuma säilytetään erillistä sivua varten

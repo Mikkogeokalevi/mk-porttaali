@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v44'; // PÄIVITETTY: v43 -> v44
+const CACHE_NAME = 'mk-porttaali-v45'; // PÄIVITETTY: v44 -> v45 (muuntimet-integraatio)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS_TO_CACHE = [
   './map.js',
   './map_all.js',
   './links.js',          // <--- UUSI TIEDOSTO LISÄTTY
+  './converters.js',     // <--- UUSI TIEDOSTO LISÄTTY (muuntimet-integraatio)
   './manifest.json',
   './muuntimet.html',
   './muuntimet_style.css',
