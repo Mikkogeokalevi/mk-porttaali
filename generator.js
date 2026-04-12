@@ -5,6 +5,8 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  orderBy,
+  query,
   serverTimestamp,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
@@ -128,7 +130,13 @@ function renderPresetOptions(presets, selectedId = '') {
 
 async function loadFirestorePresets(db, uid) {
   const col = collection(db, 'users', uid, 'generator_presets');
-  const snap = await getDocs(col);
+  const q = query(col, orderBy('order', 'asc'));
+  let snap;
+  try {
+    snap = await getDocs(q);
+  } catch {
+    snap = await getDocs(col);
+  }
   const items = [];
   snap.forEach(d => {
     const data = d.data() || {};
@@ -136,16 +144,40 @@ async function loadFirestorePresets(db, uid) {
       id: d.id,
       name: data.name || '',
       state: data.state || {},
-      updatedAt: data.updatedAt || null
+      updatedAt: data.updatedAt || null,
+      order: typeof data.order === 'number' ? data.order : null
     });
   });
-  // Järjestys: uusin ensin jos mahdollista
   items.sort((a, b) => {
+    const ao = typeof a.order === 'number' ? a.order : Number.POSITIVE_INFINITY;
+    const bo = typeof b.order === 'number' ? b.order : Number.POSITIVE_INFINITY;
+    if (ao !== bo) return ao - bo;
     const ta = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0;
     const tb = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0;
     return tb - ta;
   });
   return items;
+}
+
+function sortPresetsByOrder(presets) {
+  const copy = [...presets];
+  copy.sort((a, b) => {
+    const ao = typeof a.order === 'number' ? a.order : Number.POSITIVE_INFINITY;
+    const bo = typeof b.order === 'number' ? b.order : Number.POSITIVE_INFINITY;
+    if (ao !== bo) return ao - bo;
+    return (a.name || '').localeCompare(b.name || '', 'fi');
+  });
+  return copy;
+}
+
+async function ensureLocalPresetOrders() {
+  const presets = getLocalPresets();
+  if (!presets.length) return;
+  const anyMissing = presets.some(p => p && typeof p.order !== 'number');
+  if (!anyMissing) return;
+  const sorted = sortPresetsByOrder(presets);
+  const normalized = sorted.map((p, idx) => ({ ...p, order: idx }));
+  setLocalPresets(normalized);
 }
 
 function getDbAndUid() {
@@ -165,15 +197,19 @@ export async function refreshGeneratorPresets() {
     if (db && uid) {
       presets = await loadFirestorePresets(db, uid);
     } else {
+      await ensureLocalPresetOrders();
       presets = getLocalPresets();
     }
+    presets = sortPresetsByOrder(presets);
     renderPresetOptions(presets);
     select.dataset.presets = JSON.stringify(presets);
   } catch (e) {
     console.warn('Preset loading failed:', e);
+    await ensureLocalPresetOrders();
     const presets = getLocalPresets();
-    renderPresetOptions(presets);
-    select.dataset.presets = JSON.stringify(presets);
+    const sorted = sortPresetsByOrder(presets);
+    renderPresetOptions(sorted);
+    select.dataset.presets = JSON.stringify(sorted);
   }
 }
 
@@ -213,8 +249,32 @@ function renderPresetManagerList(presets) {
 
     const actions = document.createElement('div');
     actions.style.display = 'grid';
-    actions.style.gridTemplateColumns = 'auto auto';
+    actions.style.gridTemplateColumns = 'auto auto auto auto';
     actions.style.gap = '8px';
+
+    const btnUp = document.createElement('button');
+    btnUp.className = 'btn';
+    btnUp.type = 'button';
+    btnUp.textContent = '▲';
+    btnUp.style.padding = '8px 10px';
+    btnUp.title = 'Siirrä ylös';
+    btnUp.onclick = async () => {
+      await moveSelectedGeneratorPreset(p.id, -1);
+      await refreshGeneratorPresets();
+      renderPresetManagerList(getLoadedPresetsFromSelect());
+    };
+
+    const btnDown = document.createElement('button');
+    btnDown.className = 'btn';
+    btnDown.type = 'button';
+    btnDown.textContent = '▼';
+    btnDown.style.padding = '8px 10px';
+    btnDown.title = 'Siirrä alas';
+    btnDown.onclick = async () => {
+      await moveSelectedGeneratorPreset(p.id, 1);
+      await refreshGeneratorPresets();
+      renderPresetManagerList(getLoadedPresetsFromSelect());
+    };
 
     const btnUse = document.createElement('button');
     btnUse.className = 'btn btn-primary';
@@ -246,6 +306,8 @@ function renderPresetManagerList(presets) {
     };
 
     actions.appendChild(btnUse);
+    actions.appendChild(btnUp);
+    actions.appendChild(btnDown);
     actions.appendChild(btnMore);
     row.appendChild(actions);
 
@@ -294,8 +356,10 @@ export async function saveGeneratorPreset() {
 
   if (db && uid) {
     try {
+      const existing = await loadFirestorePresets(db, uid);
+      const maxOrder = existing.reduce((m, p) => (typeof p.order === 'number' ? Math.max(m, p.order) : m), -1);
       const col = collection(db, 'users', uid, 'generator_presets');
-      await addDoc(col, { name, state, updatedAt: serverTimestamp() });
+      await addDoc(col, { name, state, order: maxOrder + 1, updatedAt: serverTimestamp() });
       await refreshGeneratorPresets();
       return;
     } catch (e) {
@@ -303,8 +367,49 @@ export async function saveGeneratorPreset() {
     }
   }
 
-  upsertLocalPreset({ id: `local_${Date.now()}`, name, state });
+  await ensureLocalPresetOrders();
+  const local = getLocalPresets();
+  const maxOrder = local.reduce((m, p) => (typeof p.order === 'number' ? Math.max(m, p.order) : m), -1);
+  upsertLocalPreset({ id: `local_${Date.now()}`, name, state, order: maxOrder + 1 });
   await refreshGeneratorPresets();
+}
+
+export async function moveSelectedGeneratorPreset(presetId, delta) {
+  const presets = getLoadedPresetsFromSelect();
+  if (!presets.length) return;
+  const sorted = sortPresetsByOrder(presets);
+  const idx = sorted.findIndex(p => p && p.id === presetId);
+  if (idx < 0) return;
+  const targetIdx = idx + delta;
+  if (targetIdx < 0 || targetIdx >= sorted.length) return;
+
+  const a = sorted[idx];
+  const b = sorted[targetIdx];
+  const aOrder = typeof a.order === 'number' ? a.order : idx;
+  const bOrder = typeof b.order === 'number' ? b.order : targetIdx;
+
+  const { db, uid } = getDbAndUid();
+  if (db && uid && !a.id.startsWith('local_') && !b.id.startsWith('local_')) {
+    try {
+      await updateDoc(doc(db, 'users', uid, 'generator_presets', a.id), { order: bOrder, updatedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', uid, 'generator_presets', b.id), { order: aOrder, updatedAt: serverTimestamp() });
+      return;
+    } catch (e) {
+      console.warn('Firestore move failed:', e);
+    }
+  }
+
+  await ensureLocalPresetOrders();
+  const local = getLocalPresets();
+  const map = new Map(local.map(p => [p.id, p]));
+  const updatedA = { ...(map.get(a.id) || a), order: bOrder };
+  const updatedB = { ...(map.get(b.id) || b), order: aOrder };
+  const next = local.map(p => {
+    if (p.id === updatedA.id) return updatedA;
+    if (p.id === updatedB.id) return updatedB;
+    return p;
+  });
+  setLocalPresets(next);
 }
 
 export async function updateSelectedGeneratorPreset() {

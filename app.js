@@ -314,6 +314,7 @@ window.app = {
   openGeneratorPresetManager: Gen.openGeneratorPresetManager,
   closeGeneratorPresetManager: Gen.closeGeneratorPresetManager,
   saveGeneratorPreset: Gen.saveGeneratorPreset,
+  moveSelectedGeneratorPreset: Gen.moveSelectedGeneratorPreset,
   updateSelectedGeneratorPreset: Gen.updateSelectedGeneratorPreset,
   renameSelectedGeneratorPreset: Gen.renameSelectedGeneratorPreset,
   deleteSelectedGeneratorPreset: Gen.deleteSelectedGeneratorPreset
