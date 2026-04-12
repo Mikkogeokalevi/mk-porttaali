@@ -31,7 +31,7 @@ if %errorlevel% neq 0 goto :error
 
 echo.
 echo Valmis pullaamaan, lähetetään muutokset GitHubiin...
-git push origin main
+git push origin HEAD:main
 if %errorlevel% neq 0 goto :error
 
 echo.
