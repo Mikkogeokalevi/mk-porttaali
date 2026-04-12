@@ -27,6 +27,23 @@ function getEl(id) {
   return document.getElementById(id);
 }
 
+export function toggleGeneratorQuickPanel(panel) {
+  const panels = {
+    friend: getEl('genQuickFriendPanel'),
+    recent: getEl('genQuickRecentPanel'),
+    preset: getEl('genQuickPresetPanel')
+  };
+
+  const active = panels[panel];
+  const wasOpen = active && !active.classList.contains('hidden');
+
+  Object.values(panels).forEach(el => {
+    if (el) el.classList.add('hidden');
+  });
+
+  if (active && !wasOpen) active.classList.remove('hidden');
+}
+
 function readGeneratorFormState() {
   return {
     user: (getEl('genUser')?.value || '').trim(),
@@ -129,13 +146,12 @@ export function refreshGeneratorRecents() {
 
 export function applySelectedGeneratorRecent() {
   const select = getRecentSelect();
-  if (!select) return;
-  const id = select.value;
-  if (!id) return;
-  const recents = safeJsonParse(select.dataset.recents || '[]', []);
-  const item = recents.find(r => r && r.id === id);
-  if (!item) return;
-  applyGeneratorFormState(item.state);
+  if (!select || !select.value) return;
+  const raw = select.dataset.recents || '[]';
+  const recents = safeJsonParse(raw, []);
+  const hit = recents.find(r => r && r.id === select.value);
+  if (hit && hit.state) applyGeneratorFormState(hit.state);
+  select.value = '';
   scheduleSaveLastGeneratorState();
 }
 
@@ -706,14 +722,16 @@ export function initGeneratorPersistence() {
   refreshGeneratorPresets();
 
   const presetSelect = getPresetSelect();
-  if (presetSelect) {
-    presetSelect.addEventListener('change', applySelectedGeneratorPreset);
+  if (presetSelect && !presetSelect.dataset.bound) {
+    presetSelect.addEventListener('change', () => applySelectedGeneratorPreset());
+    presetSelect.dataset.bound = '1';
   }
 
   refreshGeneratorRecents();
   const recentSelect = getRecentSelect();
-  if (recentSelect) {
-    recentSelect.addEventListener('change', applySelectedGeneratorRecent);
+  if (recentSelect && !recentSelect.dataset.bound) {
+    recentSelect.addEventListener('change', () => applySelectedGeneratorRecent());
+    recentSelect.dataset.bound = '1';
   }
 }
 

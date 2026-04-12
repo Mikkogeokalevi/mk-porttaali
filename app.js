@@ -295,6 +295,7 @@ window.app = {
   removeFriend: (name) => Auth.removeFriend(db, window.app.currentUser?.uid, name, () => app.loadFriends()),
 
   toggleFriendManager: Gen.toggleFriendManager,
+  toggleGeneratorQuickPanel: Gen.toggleGeneratorQuickPanel,
   handleTypeChange: Gen.handleTypeChange,
   handleLocTypeChange: Gen.handleLocTypeChange,
   toggleRegionList: Gen.toggleRegionList,
@@ -407,26 +408,28 @@ function renderGeneratorView(content) {
       <div class="card">
         <h1>Kuvageneraattori</h1>
         <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
-        
-        <label>Käyttäjätunnus:</label>
-        
-        <select id="friendSelect" style="width:100%; margin-bottom:5px; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px; display:none;" onchange="if(this.value) document.getElementById('genUser').value = this.value">
-            <option value="">-- Valitse tallennettu kaveri --</option>
-        </select>
 
-        <div class="input-group">
-            <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 10px 0 10px 0; font-size:0.9em;">
+          <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
+          <a href="#" onclick="app.toggleGeneratorQuickPanel('recent'); return false;" style="color:var(--accent-color); text-decoration:none;">Viimeksi käytetyt</a>
+          <a href="#" onclick="app.toggleGeneratorQuickPanel('friend'); return false;" style="color:var(--accent-color); text-decoration:none;">Valitse tallennettu kaveri</a>
         </div>
-        <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
-        <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+        <div id="genQuickFriendPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
+          <label style="display:block; margin-bottom:6px;">Valitse tallennettu kaveri:</label>
+          <select id="friendSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;" onchange="if(this.value) document.getElementById('genUser').value = this.value">
+              <option value="">-- Valitse tallennettu kaveri --</option>
+          </select>
+        </div>
+
+        <div id="genQuickRecentPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
           <label style="display:block; margin-bottom:6px;">Viimeksi käytetyt:</label>
           <select id="genRecentSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
             <option value="">-- Valitse viimeksi käytetty --</option>
           </select>
         </div>
 
-        <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+        <div id="genQuickPresetPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
           <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>
           <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;">
             <select id="genPresetSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
@@ -436,6 +439,12 @@ function renderGeneratorView(content) {
           </div>
           <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä suosikiksi.</p>
         </div>
+
+        <label>Käyttäjätunnus:</label>
+        <div class="input-group">
+            <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
+        </div>
+        <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
         <label>Kuvan tyyppi:</label>
         <div class="gen-accordion-field">
