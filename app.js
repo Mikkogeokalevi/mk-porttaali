@@ -31,6 +31,7 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 const db = getFirestore(firebaseApp);
 
 window.app = {
+  db,
   currentUser: null,
   savedNickname: null,
   savedId: null,
@@ -306,7 +307,14 @@ window.app = {
   updateProfileLink: Gen.updateProfileLink,
   toggleTimeFields: Gen.toggleTimeFields,
   generateStatImage: Gen.generateStatImage,
-  initGeneratorAccordions: Gen.initGeneratorAccordions
+  initGeneratorAccordions: Gen.initGeneratorAccordions,
+  initGeneratorPersistence: Gen.initGeneratorPersistence,
+  refreshGeneratorPresets: Gen.refreshGeneratorPresets,
+  applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
+  saveGeneratorPreset: Gen.saveGeneratorPreset,
+  updateSelectedGeneratorPreset: Gen.updateSelectedGeneratorPreset,
+  renameSelectedGeneratorPreset: Gen.renameSelectedGeneratorPreset,
+  deleteSelectedGeneratorPreset: Gen.deleteSelectedGeneratorPreset
 };
 
 // --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
@@ -405,6 +413,22 @@ function renderGeneratorView(content) {
             <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
         </div>
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
+
+        <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+          <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>
+          <select id="genPresetSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
+            <option value="">-- Valitse suosikkihaku --</option>
+          </select>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+            <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna uusi</button>
+            <button class="btn" type="button" onclick="app.updateSelectedGeneratorPreset()">Päivitä valittu</button>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+            <button class="btn" type="button" onclick="app.renameSelectedGeneratorPreset()">Nimeä uudelleen</button>
+            <button class="btn" type="button" style="background:#f38ba8; color:#1e1e2e; border:none;" onclick="app.deleteSelectedGeneratorPreset()">Poista</button>
+          </div>
+          <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä suosikiksi.</p>
+        </div>
 
         <label>Kuvan tyyppi:</label>
         <div class="gen-accordion-field">
@@ -581,6 +605,7 @@ function renderGeneratorView(content) {
     app.loadFriends();
     app.updateProfileLink();
     app.initGeneratorAccordions();
+    app.initGeneratorPersistence();
 }
 
 Auth.initAuth(auth, db, window.app);
