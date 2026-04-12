@@ -60,14 +60,12 @@ function applyGeneratorFormState(state) {
   setIf('genLocType', state.locType);
   setIf('genLocValue', state.locValue);
 
-  // Synkataan näkyvyydet ja muut UI-riippuvuudet.
   try {
     handleTypeChange();
     toggleTimeFields();
     handleLocTypeChange();
     updateProfileLink();
   } catch {
-    // Nämä voivat epäonnistua jos elementtejä ei ole renderöity.
   }
 }
 
@@ -179,6 +177,96 @@ export async function refreshGeneratorPresets() {
   }
 }
 
+function getPresetModal() {
+  return getEl('genPresetModal');
+}
+
+function getPresetModalList() {
+  return getEl('genPresetManagerList');
+}
+
+function renderPresetManagerList(presets) {
+  const list = getPresetModalList();
+  if (!list) return;
+
+  list.innerHTML = '';
+  if (!presets.length) {
+    list.innerHTML = '<div style="opacity:0.7; font-size:0.9em;">Ei tallennettuja suosikkeja.</div>';
+    return;
+  }
+
+  presets.forEach(p => {
+    const row = document.createElement('div');
+    row.style.display = 'grid';
+    row.style.gridTemplateColumns = '1fr auto';
+    row.style.gap = '10px';
+    row.style.alignItems = 'center';
+    row.style.padding = '10px';
+    row.style.border = '1px solid var(--border-color)';
+    row.style.borderRadius = '8px';
+    row.style.background = 'rgba(0,0,0,0.2)';
+
+    const name = document.createElement('div');
+    name.textContent = p.name || '(nimetön)';
+    name.style.fontWeight = 'bold';
+    row.appendChild(name);
+
+    const actions = document.createElement('div');
+    actions.style.display = 'grid';
+    actions.style.gridTemplateColumns = 'auto auto';
+    actions.style.gap = '8px';
+
+    const btnUse = document.createElement('button');
+    btnUse.className = 'btn btn-primary';
+    btnUse.type = 'button';
+    btnUse.textContent = 'Käytä';
+    btnUse.style.padding = '8px 10px';
+    btnUse.onclick = () => {
+      const select = getPresetSelect();
+      if (select) select.value = p.id;
+      applyGeneratorFormState(p.state);
+      scheduleSaveLastGeneratorState();
+      closeGeneratorPresetManager();
+    };
+
+    const btnMore = document.createElement('button');
+    btnMore.className = 'btn';
+    btnMore.type = 'button';
+    btnMore.textContent = '⋯';
+    btnMore.style.padding = '8px 10px';
+    btnMore.onclick = async () => {
+      const choice = prompt('Valitse toiminto: 1=Päivitä asetukset, 2=Nimeä uudelleen, 3=Poista', '1');
+      const select = getPresetSelect();
+      if (select) select.value = p.id;
+      if (choice === '1') await updateSelectedGeneratorPreset();
+      if (choice === '2') await renameSelectedGeneratorPreset();
+      if (choice === '3') await deleteSelectedGeneratorPreset();
+      await refreshGeneratorPresets();
+      renderPresetManagerList(getLoadedPresetsFromSelect());
+    };
+
+    actions.appendChild(btnUse);
+    actions.appendChild(btnMore);
+    row.appendChild(actions);
+
+    list.appendChild(row);
+  });
+}
+
+export async function openGeneratorPresetManager() {
+  const modal = getPresetModal();
+  if (!modal) return;
+  modal.style.display = 'flex';
+  await refreshGeneratorPresets();
+  renderPresetManagerList(getLoadedPresetsFromSelect());
+}
+
+export function closeGeneratorPresetManager() {
+  const modal = getPresetModal();
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
 function getLoadedPresetsFromSelect() {
   const select = getPresetSelect();
   if (!select) return [];
@@ -205,14 +293,17 @@ export async function saveGeneratorPreset() {
   const { db, uid } = getDbAndUid();
 
   if (db && uid) {
-    const col = collection(db, 'users', uid, 'generator_presets');
-    await addDoc(col, { name, state, updatedAt: serverTimestamp() });
-    await refreshGeneratorPresets();
-    return;
+    try {
+      const col = collection(db, 'users', uid, 'generator_presets');
+      await addDoc(col, { name, state, updatedAt: serverTimestamp() });
+      await refreshGeneratorPresets();
+      return;
+    } catch (e) {
+      console.warn('Firestore save failed, using localStorage:', e);
+    }
   }
 
-  const preset = { id: `local_${Date.now()}`, name, state };
-  upsertLocalPreset(preset);
+  upsertLocalPreset({ id: `local_${Date.now()}`, name, state });
   await refreshGeneratorPresets();
 }
 
@@ -225,9 +316,20 @@ export async function updateSelectedGeneratorPreset() {
   const { db, uid } = getDbAndUid();
 
   if (db && uid && !id.startsWith('local_')) {
-    await updateDoc(doc(db, 'users', uid, 'generator_presets', id), { state, updatedAt: serverTimestamp() });
-    await refreshGeneratorPresets();
-    return;
+    try {
+      await updateDoc(doc(db, 'users', uid, 'generator_presets', id), { state, updatedAt: serverTimestamp() });
+      await refreshGeneratorPresets();
+      return;
+    } catch (e) {
+      console.warn('Firestore update failed, using localStorage:', e);
+      const presets = getLoadedPresetsFromSelect();
+      const existing = presets.find(p => p && p.id === id);
+      if (existing) {
+        upsertLocalPreset({ id: `local_${Date.now()}`, name: existing.name, state });
+        await refreshGeneratorPresets();
+        return;
+      }
+    }
   }
 
   const presets = getLocalPresets();
@@ -250,10 +352,18 @@ export async function renameSelectedGeneratorPreset() {
 
   const { db, uid } = getDbAndUid();
   if (db && uid && !id.startsWith('local_')) {
-    await updateDoc(doc(db, 'users', uid, 'generator_presets', id), { name, updatedAt: serverTimestamp() });
-    await refreshGeneratorPresets();
-    select.value = id;
-    return;
+    try {
+      await updateDoc(doc(db, 'users', uid, 'generator_presets', id), { name, updatedAt: serverTimestamp() });
+      await refreshGeneratorPresets();
+      select.value = id;
+      return;
+    } catch (e) {
+      console.warn('Firestore rename failed, using localStorage:', e);
+      const presetState = existing?.state || {};
+      upsertLocalPreset({ id: `local_${Date.now()}`, name, state: presetState });
+      await refreshGeneratorPresets();
+      return;
+    }
   }
 
   const local = getLocalPresets();
@@ -277,10 +387,14 @@ export async function deleteSelectedGeneratorPreset() {
 
   const { db, uid } = getDbAndUid();
   if (db && uid && !id.startsWith('local_')) {
-    await deleteDoc(doc(db, 'users', uid, 'generator_presets', id));
-    await refreshGeneratorPresets();
-    select.value = '';
-    return;
+    try {
+      await deleteDoc(doc(db, 'users', uid, 'generator_presets', id));
+      await refreshGeneratorPresets();
+      select.value = '';
+      return;
+    } catch (e) {
+      console.warn('Firestore delete failed, using localStorage:', e);
+    }
   }
 
   removeLocalPreset(id);
@@ -289,7 +403,6 @@ export async function deleteSelectedGeneratorPreset() {
 }
 
 export function initGeneratorPersistence() {
-  // 1) Lataa viimeisin tila (mutta älä yliaja oletus-käyttäjää tyhjäksi).
   const last = loadLastGeneratorState();
   if (last) {
     const currentUserVal = (getEl('genUser')?.value || '').trim();
@@ -298,18 +411,15 @@ export function initGeneratorPersistence() {
     }
     applyGeneratorFormState(last);
   } else {
-    // Varmistetaan UI:n initial state
     try {
       handleTypeChange();
       toggleTimeFields();
       handleLocTypeChange();
       updateProfileLink();
     } catch {
-      // ignore
     }
   }
 
-  // 2) Kuuntelijat: tallenna “edellinen haku” automaattisesti.
   const ids = [
     'genUser',
     'genType',
@@ -330,7 +440,6 @@ export function initGeneratorPersistence() {
     el.addEventListener('input', scheduleSaveLastGeneratorState);
   });
 
-  // 3) Presetit
   refreshGeneratorPresets();
 
   const presetSelect = getPresetSelect();

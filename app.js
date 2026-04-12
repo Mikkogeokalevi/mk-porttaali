@@ -311,6 +311,8 @@ window.app = {
   initGeneratorPersistence: Gen.initGeneratorPersistence,
   refreshGeneratorPresets: Gen.refreshGeneratorPresets,
   applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
+  openGeneratorPresetManager: Gen.openGeneratorPresetManager,
+  closeGeneratorPresetManager: Gen.closeGeneratorPresetManager,
   saveGeneratorPreset: Gen.saveGeneratorPreset,
   updateSelectedGeneratorPreset: Gen.updateSelectedGeneratorPreset,
   renameSelectedGeneratorPreset: Gen.renameSelectedGeneratorPreset,
@@ -416,16 +418,11 @@ function renderGeneratorView(content) {
 
         <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
           <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>
-          <select id="genPresetSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
-            <option value="">-- Valitse suosikkihaku --</option>
-          </select>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-            <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna uusi</button>
-            <button class="btn" type="button" onclick="app.updateSelectedGeneratorPreset()">Päivitä valittu</button>
-          </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-            <button class="btn" type="button" onclick="app.renameSelectedGeneratorPreset()">Nimeä uudelleen</button>
-            <button class="btn" type="button" style="background:#f38ba8; color:#1e1e2e; border:none;" onclick="app.deleteSelectedGeneratorPreset()">Poista</button>
+          <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;">
+            <select id="genPresetSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
+              <option value="">-- Valitse suosikkihaku --</option>
+            </select>
+            <button class="btn" type="button" title="Muokkaa suosikkihakuja" onclick="app.openGeneratorPresetManager()" style="padding:8px 12px;">✎</button>
           </div>
           <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä suosikiksi.</p>
         </div>
@@ -598,6 +595,24 @@ function renderGeneratorView(content) {
             <div class="modal-content">
                 <ul id="genTypeOptions" class="gen-type-options"></ul>
             </div>
+        </div>
+      </div>
+
+      <div id="genPresetModal" class="modal-overlay" style="display:none;">
+        <div style="width:min(700px, 92vw); max-height: 80vh; overflow:auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+            <div>
+              <div style="font-weight:bold; font-size:1.1em;">Muokkaa suosikkihakuja</div>
+              <div style="opacity:0.7; font-size:0.85em;">Tallennus: kirjautuneena Firestore, muuten paikallisesti laitteelle.</div>
+            </div>
+            <button class="btn" type="button" onclick="app.closeGeneratorPresetManager()">Sulje</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px;">
+            <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna nykyinen uusi suosikiksi</button>
+          </div>
+
+          <div id="genPresetManagerList" style="display:grid; gap:10px;"></div>
         </div>
       </div>
     `;
