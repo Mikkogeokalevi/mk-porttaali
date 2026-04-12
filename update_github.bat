@@ -7,6 +7,10 @@ echo Git-päivitysskripti GitHubiin
 echo =========================================
 echo.
 
+set HAS_CHANGES=
+for /f "delims=" %%i in ('git status --porcelain') do set HAS_CHANGES=1
+if not defined HAS_CHANGES goto :nochanges
+
 REM Kysy commit-viesti käyttäjältä
 set /p commit_message="Syötä lyhyt kuvaus tekemillesi muutoksille (commit-viesti): "
 
@@ -27,13 +31,19 @@ if %errorlevel% neq 0 goto :error
 
 echo.
 echo Valmis pullaamaan, lähetetään muutokset GitHubiin...
-git push origin master:main
+git push origin main
 if %errorlevel% neq 0 goto :error
 
 echo.
 echo =========================================
 echo GitHub-päivitys valmis onnistuneesti!
 echo =========================================
+echo.
+pause
+goto :eof
+
+:nochanges
+echo Ei muutoksia vietäväksi GitHubiin.
 echo.
 pause
 goto :eof

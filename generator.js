@@ -137,6 +137,13 @@ async function loadFirestorePresets(db, uid) {
   } catch {
     snap = await getDocs(col);
   }
+  if (snap.empty) {
+    try {
+      const all = await getDocs(col);
+      if (!all.empty) snap = all;
+    } catch {
+    }
+  }
   const items = [];
   snap.forEach(d => {
     const data = d.data() || {};
@@ -157,6 +164,56 @@ async function loadFirestorePresets(db, uid) {
     return tb - ta;
   });
   return items;
+}
+
+async function ensureFirestorePresetOrders(db, uid, presets) {
+  if (!db || !uid) return;
+  const missing = presets.filter(p => p && typeof p.order !== 'number');
+  if (!missing.length) return;
+
+  const presentOrders = presets
+    .map(p => (p && typeof p.order === 'number' ? p.order : null))
+    .filter(v => typeof v === 'number');
+  let next = presentOrders.length ? Math.max(...presentOrders) + 1 : 0;
+
+  for (const p of missing) {
+    try {
+      await updateDoc(doc(db, 'users', uid, 'generator_presets', p.id), {
+        order: next,
+        updatedAt: serverTimestamp()
+      });
+      p.order = next;
+      next += 1;
+    } catch (e) {
+      console.warn('Firestore order migration failed:', e);
+    }
+  }
+}
+
+async function migrateLocalPresetsToFirestoreIfNeeded(db, uid, firestorePresets) {
+  if (!db || !uid) return;
+  const local = getLocalPresets();
+  if (!local.length) return;
+  if (firestorePresets.length) return;
+
+  await ensureLocalPresetOrders();
+  const normalized = sortPresetsByOrder(getLocalPresets());
+  const col = collection(db, 'users', uid, 'generator_presets');
+  for (let i = 0; i < normalized.length; i++) {
+    const p = normalized[i];
+    if (!p) continue;
+    try {
+      await addDoc(col, {
+        name: p.name || '',
+        state: p.state || {},
+        order: typeof p.order === 'number' ? p.order : i,
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn('Local preset migration failed:', e);
+    }
+  }
+  setLocalPresets([]);
 }
 
 function sortPresetsByOrder(presets) {
@@ -196,6 +253,9 @@ export async function refreshGeneratorPresets() {
     let presets = [];
     if (db && uid) {
       presets = await loadFirestorePresets(db, uid);
+      await migrateLocalPresetsToFirestoreIfNeeded(db, uid, presets);
+      presets = await loadFirestorePresets(db, uid);
+      await ensureFirestorePresetOrders(db, uid, presets);
     } else {
       await ensureLocalPresetOrders();
       presets = getLocalPresets();

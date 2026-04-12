@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v49'; // PÄIVITETTY: v48 -> v49 (kuvageneraattorin suosikkihaut + edellinen haku)
+const CACHE_NAME = 'mk-porttaali-v50'; // PÄIVITETTY: v49 -> v50 (suosikkien järjestys + migraatiokorjaus)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
