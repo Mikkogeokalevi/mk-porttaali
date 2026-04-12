@@ -311,6 +311,8 @@ window.app = {
   initGeneratorPersistence: Gen.initGeneratorPersistence,
   refreshGeneratorPresets: Gen.refreshGeneratorPresets,
   applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
+  refreshGeneratorRecents: Gen.refreshGeneratorRecents,
+  applySelectedGeneratorRecent: Gen.applySelectedGeneratorRecent,
   openGeneratorPresetManager: Gen.openGeneratorPresetManager,
   closeGeneratorPresetManager: Gen.closeGeneratorPresetManager,
   saveGeneratorPreset: Gen.saveGeneratorPreset,
@@ -416,6 +418,13 @@ function renderGeneratorView(content) {
             <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
         </div>
         <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
+
+        <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+          <label style="display:block; margin-bottom:6px;">Viimeksi käytetyt:</label>
+          <select id="genRecentSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
+            <option value="">-- Valitse viimeksi käytetty --</option>
+          </select>
+        </div>
 
         <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
           <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>

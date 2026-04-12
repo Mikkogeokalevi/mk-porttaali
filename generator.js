@@ -13,6 +13,7 @@ import {
 
 const GEN_LAST_STATE_KEY = 'mk_generator_last_state_v1';
 const GEN_PRESETS_KEY = 'mk_generator_presets_v1';
+const GEN_RECENTS_KEY = 'mk_generator_recents_v1';
 
 function safeJsonParse(value, fallback) {
   try {
@@ -39,6 +40,103 @@ function readGeneratorFormState() {
     locType: getEl('genLocType')?.value || 'none',
     locValue: (getEl('genLocValue')?.value || '').trim()
   };
+}
+
+function getRecentSelect() {
+  return getEl('genRecentSelect');
+}
+
+function getRecentsStorageKey() {
+  const uid = window.app?.currentUser?.uid;
+  return uid ? `${GEN_RECENTS_KEY}_${uid}` : `${GEN_RECENTS_KEY}_guest`;
+}
+
+function loadRecents() {
+  const items = safeJsonParse(localStorage.getItem(getRecentsStorageKey()), []);
+  return Array.isArray(items) ? items : [];
+}
+
+function saveRecents(items) {
+  localStorage.setItem(getRecentsStorageKey(), JSON.stringify(items));
+}
+
+function buildRecentLabel(state) {
+  const user = (state?.user || '').trim();
+  const type = state?.type || '';
+  const timeMode = state?.timeMode || '';
+
+  let timePart = '';
+  if (timeMode === 'kylla') {
+    const start = state?.start || '';
+    const end = state?.end || '';
+    const year = state?.year || '';
+    const month = state?.month || '';
+    if (start && end) timePart = `${start}–${end}`;
+    else {
+      const y = year && year !== 'current' ? year : '';
+      const m = month && month !== 'current' ? month : '';
+      if (y && m) timePart = `${m}/${y}`;
+      else if (y) timePart = y;
+      else if (m) timePart = m;
+    }
+  }
+
+  const parts = [];
+  if (user) parts.push(user);
+  if (type) parts.push(type);
+  if (timePart) parts.push(timePart);
+  return parts.join(' • ') || 'Haku';
+}
+
+function upsertRecentFromState(state) {
+  if (!state) return;
+  const recents = loadRecents();
+  const normalized = {
+    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    label: buildRecentLabel(state),
+    state
+  };
+
+  const key = JSON.stringify(state);
+  const filtered = recents.filter(r => {
+    if (!r || !r.state) return false;
+    return JSON.stringify(r.state) !== key;
+  });
+
+  filtered.unshift(normalized);
+  saveRecents(filtered.slice(0, 5));
+}
+
+function renderRecentOptions(recents) {
+  const select = getRecentSelect();
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Valitse viimeksi käytetty --</option>';
+  recents.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.label || 'Haku';
+    select.appendChild(opt);
+  });
+  select.dataset.recents = JSON.stringify(recents);
+}
+
+export function refreshGeneratorRecents() {
+  const select = getRecentSelect();
+  if (!select) return;
+  const recents = loadRecents();
+  renderRecentOptions(recents);
+}
+
+export function applySelectedGeneratorRecent() {
+  const select = getRecentSelect();
+  if (!select) return;
+  const id = select.value;
+  if (!id) return;
+  const recents = safeJsonParse(select.dataset.recents || '[]', []);
+  const item = recents.find(r => r && r.id === id);
+  if (!item) return;
+  applyGeneratorFormState(item.state);
+  scheduleSaveLastGeneratorState();
 }
 
 function applyGeneratorFormState(state) {
@@ -611,6 +709,12 @@ export function initGeneratorPersistence() {
   if (presetSelect) {
     presetSelect.addEventListener('change', applySelectedGeneratorPreset);
   }
+
+  refreshGeneratorRecents();
+  const recentSelect = getRecentSelect();
+  if (recentSelect) {
+    recentSelect.addEventListener('change', applySelectedGeneratorRecent);
+  }
 }
 
 function formatDate(input) {
@@ -775,6 +879,20 @@ export const generateStatImage = () => {
     const cacheType = document.getElementById("genCacheType").value;
     const locType = document.getElementById('genLocType').value;
     const locValue = document.getElementById('genLocValue').value.trim();
+
+    upsertRecentFromState({
+        user,
+        type,
+        timeMode,
+        year,
+        month,
+        start,
+        end,
+        cacheType,
+        locType,
+        locValue
+    });
+    refreshGeneratorRecents();
 
     if (!user) { alert("Syötä käyttäjätunnus!"); return; }
 
