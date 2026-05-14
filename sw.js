@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v53'; // PÄIVITETTY: v52 -> v53 (kuvageneraattori: mobiili dropdown-sync + nollaus)
+const CACHE_NAME = 'mk-porttaali-v54'; // PÄIVITETTY: v53 -> v54 (kuvageneraattori: versiotieto näkyviin)
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

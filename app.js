@@ -30,6 +30,10 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
+const APP_VERSION = 'v54';
+const APP_SW_CACHE = 'mk-porttaali-v54';
+const APP_UPDATED_AT = '14.5.2026 08:51';
+
 window.app = {
   db,
   currentUser: null,
@@ -409,6 +413,7 @@ function renderGeneratorView(content) {
       <div class="card">
         <h1>Kuvageneraattori</h1>
         <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
+        <div style="margin-top:-6px; margin-bottom:10px; font-size:0.75em; opacity:0.6;">Versio: ${APP_VERSION} (SW cache: ${APP_SW_CACHE}) • Päivitetty: ${APP_UPDATED_AT}</div>
 
         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 10px 0 10px 0; font-size:0.9em;">
           <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
