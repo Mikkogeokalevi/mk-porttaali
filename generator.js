@@ -23,6 +23,51 @@ function safeJsonParse(value, fallback) {
   }
 }
 
+export function resetGeneratorForm() {
+  const now = new Date();
+  const currentYear = String(now.getFullYear());
+
+  const set = (id, value) => {
+    const el = getEl(id);
+    if (!el) return;
+    el.value = value;
+    try {
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch {
+    }
+  };
+
+  set('friendSelect', '');
+  set('genPresetSelect', '');
+  set('genRecentSelect', '');
+
+  set('genType', 'matrix');
+  set('genTimeSelect', 'ei');
+  set('genYear', 'current');
+  set('genMonth', 'current');
+  set('genStart', '');
+  set('genEnd', '');
+  set('genCacheType', '');
+  set('genLocType', 'none');
+  set('genLocValue', '');
+
+  try {
+    handleTypeChange();
+    toggleTimeFields();
+    handleLocTypeChange();
+    updateProfileLink();
+  } catch {
+  }
+
+  try {
+    localStorage.removeItem(GEN_LAST_STATE_KEY);
+  } catch {
+  }
+
+  scheduleSaveLastGeneratorState();
+}
+
 function getEl(id) {
   return document.getElementById(id);
 }
@@ -165,6 +210,16 @@ function applyGeneratorFormState(state) {
     el.value = String(value);
   };
 
+  const triggerChange = (id) => {
+    const el = getEl(id);
+    if (!el) return;
+    try {
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch {
+    }
+  };
+
   setIf('genUser', state.user);
   setIf('genType', state.type);
   setIf('genTimeSelect', state.timeMode);
@@ -175,6 +230,13 @@ function applyGeneratorFormState(state) {
   setIf('genCacheType', state.cacheType);
   setIf('genLocType', state.locType);
   setIf('genLocValue', state.locValue);
+
+  triggerChange('genType');
+  triggerChange('genTimeSelect');
+  triggerChange('genYear');
+  triggerChange('genMonth');
+  triggerChange('genCacheType');
+  triggerChange('genLocType');
 
   try {
     handleTypeChange();

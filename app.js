@@ -314,6 +314,7 @@ window.app = {
   applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
   refreshGeneratorRecents: Gen.refreshGeneratorRecents,
   applySelectedGeneratorRecent: Gen.applySelectedGeneratorRecent,
+  resetGeneratorForm: Gen.resetGeneratorForm,
   openGeneratorPresetManager: Gen.openGeneratorPresetManager,
   closeGeneratorPresetManager: Gen.closeGeneratorPresetManager,
   saveGeneratorPreset: Gen.saveGeneratorPreset,
@@ -413,6 +414,7 @@ function renderGeneratorView(content) {
           <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('recent'); return false;" style="color:var(--accent-color); text-decoration:none;">Viimeksi käytetyt</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('friend'); return false;" style="color:var(--accent-color); text-decoration:none;">Valitse tallennettu kaveri</a>
+          <button class="btn" type="button" onclick="app.resetGeneratorForm()" style="padding:6px 10px; font-size:0.85em;">Nollaa</button>
         </div>
 
         <div id="genQuickFriendPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
