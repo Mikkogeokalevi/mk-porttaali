@@ -85,7 +85,7 @@ export const renderAllFindsMap = async (content, db, user, app) => {
     const map = L.map('map', { preferCanvas: true, zoomControl: false }).setView([65.0, 26.0], 5);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OSM & CARTO',
         subdomains: 'abcd',
         maxZoom: 19
