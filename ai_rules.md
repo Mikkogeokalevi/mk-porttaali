@@ -42,6 +42,7 @@
 
 ## Vanhat säännöt
 - `help.js`: Ohjetta ja versiotietoja ei saa tiivistää, lyhentää tai poistaa ilman erillista pyyntöä.
+- `help.js`: Jokaisesta käyttäjälle näkyvästä muutoksesta lisätään tieto `Uutta versiossa` -kohtaan; jos muutos vaikuttaa käyttöön, päivitetään myös varsinainen ohje.
 - `help.js`: Jos päivitys vaikuttaa ohjeisiin tai versiotietoihin, lisää uusi tieto ohjeeseen (ilman tiivistämistä).
 - `help.js`: Kysy aina kuluva päivämäärä ennen uusien päivityskohtien lisäämistä.
 - `help.js`: Vain uudet lisäykset saavat uuden päivämäärän; vanhat päivät pidetään ennallaan.
@@ -62,3 +63,4 @@
 - **2.2.2026**: Firebase-config siirretty ympäristömuuttujiin (.env-tuki)
 - **2.2.2026**: Debug-koodi siivottu (17 TODO/FIXME poistettu)
 - **2.2.2026**: Parempi virheenkäsittely ja latausindikaattorit
+- **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.

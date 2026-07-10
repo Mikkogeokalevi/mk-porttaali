@@ -13,17 +13,22 @@ export const renderHelp = (content, app) => {
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.8</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>2.2.2026:</strong> Muuntimet integroitu SPA:han: kaikki 32 kategoriaa iframe-ratkaisulla.</li>
-                <li><strong>2.2.2026:</strong> Välilehdet vaakarivissä kuten kannettavassa näkymässä.</li>
-                <li><strong>2.2.2026:</strong> Koodin parannukset: debug-koodi siivottu, virheenkäsittely parannettu.</li>
-                <li><strong>2.2.2026:</strong> Firebase-config siirretty ympäristömuuttujiin (turvallisuusparannus).</li>
-                <li><strong>2.2.2026:</strong> Latausindikaattorit näkymän vaihdossa ja parempi UX.</li>
-                <li><strong>28.1.2026:</strong> Rekisteröityminen korjattu (sähköposti + kirjautumisnäkymän vaihto).</li>
+                <li><strong>10.7.2026:</strong> Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.</li>
+                <li><strong>10.7.2026:</strong> Löytökarttaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.</li>
+                <li><strong>10.7.2026:</strong> Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.</li>
+                <li><strong>10.7.2026:</strong> Kuvageneraattoriin lisätty pikapohjat reissukuntakartalle, vuosilöydöille, Jasmerille ja saarilöydöille.</li>
+                <li><strong>10.7.2026:</strong> Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
                 <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
+                    <strong>v2.8 (aiemmat päivitykset)</strong><br>
+                    - 2.2.2026: Muuntimet integroitu SPA:han: kaikki 32 kategoriaa iframe-ratkaisulla.<br>
+                    - 2.2.2026: Välilehdet vaakarivissä kuten kannettavassa näkymässä.<br>
+                    - 2.2.2026: Koodin parannukset: debug-koodi siivottu, virheenkäsittely parannettu.<br>
+                    - 2.2.2026: Firebase-config siirretty ympäristömuuttujiin (turvallisuusparannus).<br>
+                    - 2.2.2026: Latausindikaattorit näkymän vaihdossa ja parempi UX.<br><br>
                     <strong>v2.7 (lisäpäivitykset)</strong><br>
                     - 28.1.2026: Uusien käyttäjien hyväksyntä toimii myös Google-rekisteröinneissä.<br>
                     - 26.1.2026: Reissuapuri (EXTRA) lisätty ja admin voi kytkeä sen käyttöön käyttäjäkohtaisesti.<br>
@@ -108,6 +113,8 @@ export const renderHelp = (content, app) => {
 
         <h4>Löydöt maakunnittain</h4>
         <p>Yleiskartta, joka näyttää missä kunnissa olet löytänyt <em>mitä tahansa</em> kätköjä. Hyvä työkalu yleisen kuntakartan värittämiseen.</p>
+        <p><strong>Kätkötyyppifiltterit:</strong> Kartan yläreunan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Kartta näyttää tällöin kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>.</p>
+        <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
@@ -123,7 +130,11 @@ export const renderHelp = (content, app) => {
             <li><strong>Kuntakartta:</strong> Koko Suomi tai tarkka maakuntarjaus.</li>
             <li><strong>Vuosikalenteri:</strong> Löydöt kalenterimuodossa.</li>
             <li><strong>Jasmer:</strong> Kätköjen piilotuskuukaudet.</li>
+            <li><strong>Saarilöydöt:</strong> Saarilöytöjen tilastokuva.</li>
         </ul>
+        <p><strong>Pikapohjat:</strong> Avaa generaattorin <em>Pikapohjat</em>-valikko ja valitse esimerkiksi reissun kuntakartta, vuosilöydöt, Jasmer tai saarilöydöt. Pohja täyttää generaattorin asetukset automaattisesti.</p>
+        <p><strong>Suosikkihaut:</strong> Tallenna usein käyttämäsi haku suosikiksi ja hallitse niitä <em>Suosikkihaut</em>-valikosta. Voit käyttää, nimetä uudelleen, päivittää, järjestää ja poistaa suosikkeja.</p>
+        <p><strong>Viimeksi käytetyt:</strong> Generaattori muistaa enintään kahdeksan viimeisintä hakua käyttäjäkohtaisesti. Sama haku ei synny listalle duplikaattina, vaan sen käyttöaika päivittyy. Listan voi tyhjentää <em>Tyhjennä</em>-painikkeella.</p>
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
