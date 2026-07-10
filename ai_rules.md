@@ -27,6 +27,14 @@
 - **Auth**: Google, sähköposti, rekisteröityminen, admin-roolit.
 - **Turvallisuussäännöt**: käyttäjä voi lukea vain omaa dataa, admin kaikki dataa.
 
+## Versiointi ja julkaisut
+- Käytä käyttäjälle näkyvässä versiossa semanttista mallia `major.minor.patch`.
+- **Minor-versio** (esim. `2.9`): uusi käyttäjälle näkyvä ominaisuuskokonaisuus tai useita samaan kokonaisuuteen liittyviä toimintoja.
+- **Patch-versio** (esim. `2.9.1`): pieni korjaus, käyttöliittymän hienosäätö tai yksittäinen pieni lisäys ilman uutta pääominaisuutta.
+- **Major-versio** (esim. `3.0`): suuri rakenteellinen muutos tai taaksepäin yhteensopivuutta rikkova muutos.
+- Kartta- ja kuvageneraattoripäivitysten muodostama kokonaisuus julkaistaan versiona `2.9`; seuraavat pienet korjaukset käyttävät muotoa `2.9.1`, `2.9.2` jne.
+- Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
+
 ## GitHub Pages -integraatio
 - Staattinen SPA GitHub Pages:ssä, dynaamisuus Firebasen kautta.
 - Build-prosessi: ei tarvita, suora deploy.
@@ -64,3 +72,4 @@
 - **2.2.2026**: Debug-koodi siivottu (17 TODO/FIXME poistettu)
 - **2.2.2026**: Parempi virheenkäsittely ja latausindikaattorit
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
+- **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.

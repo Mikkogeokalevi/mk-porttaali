@@ -173,6 +173,25 @@ export const loadAllStats = async (db, user, content) => {
         const pgcUser = window.app.savedNickname || user.displayName || 'user';
 
         content.innerHTML = `
+        <style>
+            #regionMissingFilterPanel { padding:8px 10px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:8px; margin-bottom:15px; font-size:0.85em; }
+            #regionMissingFilterToggle { display:none; }
+            #regionMissingFilterSummary { display:none; }
+            #regionMissingTypeOptions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+            @media (max-width: 767px) {
+                #regionMissingFilterPanel { padding:0; }
+                #regionMissingFilterToolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px; }
+                #regionMissingFilterToolbar strong { display:none; }
+                #regionMissingFilterToggle { display:inline-block; padding:5px 9px; margin:0; }
+                #regionMissingFilterSummary { display:block; flex:1; opacity:0.75; font-size:0.9em; }
+                #regionMissingFilterControls { display:none; padding:0 10px 9px 10px; }
+                #regionMissingFilterPanel.filters-open #regionMissingFilterControls { display:block; }
+                #regionMissingTypeOptions { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 6px; padding:3px 0 9px 0; }
+                #regionMissingTypeOptions label { white-space:nowrap; }
+                #regionMissingFilterMode { width:100% !important; margin:0 0 8px 0 !important; }
+                #clearRegionMissingFilters { width:100%; }
+            }
+        </style>
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; flex-wrap:wrap; gap:10px;">
                 <h2 style="margin:0;">Löydöt maakunnittain</h2>
@@ -183,8 +202,50 @@ export const loadAllStats = async (db, user, content) => {
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <input type="text" id="regionSearch" placeholder="Hae kuntaa (esim. Lahti)..." style="margin-bottom:15px;">
+            <div id="regionMissingFilterPanel">
+                <div id="regionMissingFilterToolbar">
+                    <strong>Suodata puuttuvien mukaan:</strong>
+                    <span id="regionMissingFilterSummary">Kaikki näkyvissä</span>
+                    <button id="regionMissingFilterToggle" class="btn" type="button">Suodattimet ▾</button>
+                </div>
+                <div id="regionMissingFilterControls">
+                    <div id="regionMissingTypeOptions"></div>
+                    <select id="regionMissingFilterMode" style="width:auto; padding:4px; margin:0;">
+                        <option value="any">Puuttuu vähintään yksi</option>
+                        <option value="all">Puuttuvat kaikki valitut</option>
+                    </select>
+                    <button id="clearRegionMissingFilters" class="btn" type="button" style="padding:4px 8px;">Näytä kaikki</button>
+                </div>
+            </div>
             <div id="regionList"></div>
         </div>`;
+
+        const regionFilterState = { types: [], mode: 'any' };
+        const regionFilterPanel = document.getElementById('regionMissingFilterPanel');
+        const regionFilterSummary = document.getElementById('regionMissingFilterSummary');
+        const regionFilterOptions = document.getElementById('regionMissingTypeOptions');
+
+        if (regionFilterOptions) {
+            regionFilterOptions.innerHTML = CACHE_TYPES.map(type => `
+                <label title="Näytä kunnat, joissa ${type.name} puuttuu">
+                    <input type="checkbox" class="regionMissingTypeFilter" value="${type.index}"> ${type.name}
+                </label>
+            `).join('');
+        }
+
+        const updateRegionFilterSummary = () => {
+            if (!regionFilterSummary) return;
+            regionFilterSummary.textContent = regionFilterState.types.length
+                ? `${regionFilterState.types.length} tyyppiä valittu`
+                : 'Kaikki näkyvissä';
+        };
+
+        const municipalityMatchesMissingFilter = (kunta) => {
+            if (!regionFilterState.types.length) return true;
+            const stats = fullData[kunta]?.s || [];
+            const missing = regionFilterState.types.map(index => (stats[index] || 0) === 0);
+            return regionFilterState.mode === 'all' ? missing.every(Boolean) : missing.some(Boolean);
+        };
 
         const renderRegions = (filter = "") => {
             const container = document.getElementById('regionList');
@@ -197,7 +258,8 @@ export const loadAllStats = async (db, user, content) => {
                 const matchingMunicipalities = kunnatMaakunnassa.filter(kunta => {
                     const hasData = fullData[kunta]; 
                     const matchesSearch = kunta.toLowerCase().includes(term); 
-                    return hasData && matchesSearch;
+                    const matchesMissingFilter = municipalityMatchesMissingFilter(kunta);
+                    return hasData && matchesSearch && matchesMissingFilter;
                 });
 
                 if (matchingMunicipalities.length === 0) return;
@@ -252,6 +314,33 @@ export const loadAllStats = async (db, user, content) => {
             });
             if (totalRegionsShown === 0) container.innerHTML = `<p style="text-align:center; margin-top:20px; opacity:0.6;">Ei osumia haulla "${filter}".</p>`;
         };
+        document.getElementById('regionMissingFilterToggle')?.addEventListener('click', () => {
+            regionFilterPanel?.classList.toggle('filters-open');
+        });
+
+        document.querySelectorAll('.regionMissingTypeFilter').forEach(input => {
+            input.addEventListener('change', () => {
+                regionFilterState.types = Array.from(document.querySelectorAll('.regionMissingTypeFilter:checked'))
+                    .map(item => Number(item.value));
+                updateRegionFilterSummary();
+                renderRegions(document.getElementById('regionSearch')?.value || '');
+            });
+        });
+
+        document.getElementById('regionMissingFilterMode')?.addEventListener('change', (event) => {
+            regionFilterState.mode = event.target.value;
+            renderRegions(document.getElementById('regionSearch')?.value || '');
+        });
+
+        document.getElementById('clearRegionMissingFilters')?.addEventListener('click', () => {
+            document.querySelectorAll('.regionMissingTypeFilter').forEach(input => { input.checked = false; });
+            regionFilterState.types = [];
+            updateRegionFilterSummary();
+            regionFilterPanel?.classList.remove('filters-open');
+            renderRegions(document.getElementById('regionSearch')?.value || '');
+        });
+
+        updateRegionFilterSummary();
         renderRegions();
         document.getElementById('regionSearch').addEventListener('input', (e) => renderRegions(e.target.value));
     } catch (e) { console.error(e); content.innerHTML = `<div class="card"><h1>Virhe</h1><p>${e.message}</p></div>`; }

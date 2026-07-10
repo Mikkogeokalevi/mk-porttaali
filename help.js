@@ -11,10 +11,10 @@ export const renderHelp = (content, app) => {
         </div>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.8</h3>
+            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.9</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>10.7.2026:</strong> Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.</li>
-                <li><strong>10.7.2026:</strong> Löytökarttaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.</li>
+                <li><strong>10.7.2026:</strong> Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.</li>
                 <li><strong>10.7.2026:</strong> Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.</li>
                 <li><strong>10.7.2026:</strong> Kuvageneraattoriin lisätty pikapohjat reissukuntakartalle, vuosilöydöille, Jasmerille ja saarilöydöille.</li>
                 <li><strong>10.7.2026:</strong> Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.</li>
@@ -113,8 +113,8 @@ export const renderHelp = (content, app) => {
 
         <h4>Löydöt maakunnittain</h4>
         <p>Yleiskartta, joka näyttää missä kunnissa olet löytänyt <em>mitä tahansa</em> kätköjä. Hyvä työkalu yleisen kuntakartan värittämiseen.</p>
-        <p><strong>Kätkötyyppifiltterit:</strong> Kartan yläreunan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Kartta näyttää tällöin kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>.</p>
-        <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
+        <p><strong>Kätkötyyppifiltterit:</strong> Kartan ja tekstimuotoisen kuntalistan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Näkymiin jäävät tällöin vain kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>. Maakunnat, joihin ei jää yhtään sopivaa kuntaa, piilotetaan automaattisesti.</p>
+        <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle ja listalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 
