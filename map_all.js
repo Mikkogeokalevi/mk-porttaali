@@ -60,9 +60,7 @@ export const renderAllFindsMap = async (content, db, user, app) => {
             <div style="padding:8px 10px; background:var(--input-bg); border-bottom:1px solid var(--border-color); font-size:0.85em;">
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                     <strong>Suodata puuttuvien mukaan:</strong>
-                    <label><input type="checkbox" class="missingTypeFilter" value="1"> Multi</label>
-                    <label><input type="checkbox" class="missingTypeFilter" value="3"> Mysse</label>
-                    <label><input type="checkbox" class="missingTypeFilter" value="9"> Wherigo</label>
+                    <div id="missingTypeFilterOptions" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"></div>
                     <select id="missingFilterMode" style="width:auto; padding:4px; margin:0;">
                         <option value="any">Puuttuu vähintään yksi</option>
                         <option value="all">Puuttuvat kaikki valitut</option>
@@ -93,6 +91,15 @@ export const renderAllFindsMap = async (content, db, user, app) => {
         }
     } catch (e) {
         console.error("Virhe tilastojen haussa:", e);
+    }
+
+    const filterOptions = document.getElementById('missingTypeFilterOptions');
+    if (filterOptions) {
+        filterOptions.innerHTML = CACHE_TYPES.map(type => `
+            <label title="Näytä kunnat, joissa ${type.name} puuttuu">
+                <input type="checkbox" class="missingTypeFilter" value="${type.index}"> ${type.name}
+            </label>
+        `).join('');
     }
 
     // 2. Alustetaan kartta
