@@ -48,6 +48,25 @@ export const renderAllFindsMap = async (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
 
     content.innerHTML = `
+        <style>
+            #missingFilterPanel { padding:8px 10px; background:var(--input-bg); border-bottom:1px solid var(--border-color); font-size:0.85em; }
+            #missingFilterToggle { display:none; }
+            #missingFilterSummary { display:none; }
+            #missingTypeFilterOptions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+            @media (max-width: 767px) {
+                #missingFilterPanel { padding:0; }
+                #missingFilterToolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px; }
+                #missingFilterToolbar strong { display:none; }
+                #missingFilterToggle { display:inline-block; padding:5px 9px; margin:0; }
+                #missingFilterSummary { display:block; flex:1; opacity:0.75; font-size:0.9em; }
+                #missingFilterControls { display:none; padding:0 10px 9px 10px; }
+                #missingFilterPanel.filters-open #missingFilterControls { display:block; }
+                #missingTypeFilterOptions { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 6px; padding:3px 0 9px 0; }
+                #missingTypeFilterOptions label { white-space:nowrap; }
+                #missingFilterMode { width:100% !important; margin:0 0 8px 0 !important; }
+                #clearMissingFilters { width:100%; }
+            }
+        </style>
         <div class="card" style="height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; position: relative;">
             <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border-color); z-index: 1001;">
                 <h2 style="margin:0; font-size: 1.2em;">Löytökartta</h2>
@@ -57,10 +76,14 @@ export const renderAllFindsMap = async (content, db, user, app) => {
                 </div>
             </div>
             
-            <div style="padding:8px 10px; background:var(--input-bg); border-bottom:1px solid var(--border-color); font-size:0.85em;">
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div id="missingFilterPanel">
+                <div id="missingFilterToolbar">
                     <strong>Suodata puuttuvien mukaan:</strong>
-                    <div id="missingTypeFilterOptions" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"></div>
+                    <span id="missingFilterSummary">Kaikki näkyvissä</span>
+                    <button id="missingFilterToggle" class="btn" type="button">Suodattimet ▾</button>
+                </div>
+                <div id="missingFilterControls">
+                    <div id="missingTypeFilterOptions"></div>
                     <select id="missingFilterMode" style="width:auto; padding:4px; margin:0;">
                         <option value="any">Puuttuu vähintään yksi</option>
                         <option value="all">Puuttuvat kaikki valitut</option>
@@ -213,10 +236,24 @@ export const renderAllFindsMap = async (content, db, user, app) => {
             });
         };
 
+        const filterPanel = document.getElementById('missingFilterPanel');
+        const filterSummary = document.getElementById('missingFilterSummary');
+        const updateFilterSummary = () => {
+            if (!filterSummary) return;
+            filterSummary.textContent = filterState.types.length
+                ? `${filterState.types.length} tyyppiä valittu`
+                : 'Kaikki näkyvissä';
+        };
+
+        document.getElementById('missingFilterToggle')?.addEventListener('click', () => {
+            filterPanel?.classList.toggle('filters-open');
+        });
+
         document.querySelectorAll('.missingTypeFilter').forEach(input => {
             input.addEventListener('change', () => {
                 filterState.types = Array.from(document.querySelectorAll('.missingTypeFilter:checked'))
                     .map(item => Number(item.value));
+                updateFilterSummary();
                 applyMissingFilter();
             });
         });
@@ -229,9 +266,12 @@ export const renderAllFindsMap = async (content, db, user, app) => {
         document.getElementById('clearMissingFilters')?.addEventListener('click', () => {
             document.querySelectorAll('.missingTypeFilter').forEach(input => { input.checked = false; });
             filterState.types = [];
+            updateFilterSummary();
+            filterPanel?.classList.remove('filters-open');
             applyMissingFilter();
         });
 
+        updateFilterSummary();
         refreshLabels();
         map.on('zoomend moveend', refreshLabels);
     } else {
