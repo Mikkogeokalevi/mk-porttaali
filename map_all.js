@@ -57,6 +57,20 @@ export const renderAllFindsMap = async (content, db, user, app) => {
                 </div>
             </div>
             
+            <div style="padding:8px 10px; background:var(--input-bg); border-bottom:1px solid var(--border-color); font-size:0.85em;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <strong>Suodata puuttuvien mukaan:</strong>
+                    <label><input type="checkbox" class="missingTypeFilter" value="1"> Multi</label>
+                    <label><input type="checkbox" class="missingTypeFilter" value="3"> Mysse</label>
+                    <label><input type="checkbox" class="missingTypeFilter" value="9"> Wherigo</label>
+                    <select id="missingFilterMode" style="width:auto; padding:4px; margin:0;">
+                        <option value="any">Puuttuu vähintään yksi</option>
+                        <option value="all">Puuttuvat kaikki valitut</option>
+                    </select>
+                    <button id="clearMissingFilters" class="btn" type="button" style="padding:4px 8px;">Näytä kaikki</button>
+                </div>
+            </div>
+
             <div id="map" style="flex: 1; width: 100%; background: #aad3df;">
                 <div id="mapLoading" style="padding:20px; color:black; background:white; opacity:0.8; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000; border-radius:8px;">
                     Ladataan karttaa...
@@ -146,11 +160,34 @@ export const renderAllFindsMap = async (content, db, user, app) => {
         }).addTo(map);
 
         const labelLayer = L.layerGroup().addTo(map);
+        const filterState = { types: [], mode: 'any' };
+
+        const matchesMissingFilter = (layer) => {
+            if (!filterState.types.length) return true;
+            const name = getMunicipalityName(layer.feature);
+            const data = statsData[name.trim()];
+            const stats = data && Array.isArray(data.s) ? data.s : [];
+            const missing = filterState.types.map(typeIndex => (stats[typeIndex] || 0) === 0);
+            return filterState.mode === 'all' ? missing.every(Boolean) : missing.some(Boolean);
+        };
+
+        const applyMissingFilter = () => {
+            geoLayer.eachLayer(layer => {
+                const visible = matchesMissingFilter(layer);
+                layer.setStyle({
+                    opacity: visible ? 1 : 0,
+                    fillOpacity: visible ? getStyle(layer.feature, statsData).fillOpacity : 0,
+                    weight: visible ? 1 : 0
+                });
+                if (visible) layer.bringToBack();
+            });
+            refreshLabels();
+        };
 
         const refreshLabels = () => {
             labelLayer.clearLayers();
             geoLayer.eachLayer(layer => {
-                if (!layer.getBounds) return;
+                if (!layer.getBounds || !matchesMissingFilter(layer)) return;
                 const bounds = layer.getBounds();
                 const sw = map.latLngToLayerPoint(bounds.getSouthWest());
                 const ne = map.latLngToLayerPoint(bounds.getNorthEast());
@@ -168,6 +205,25 @@ export const renderAllFindsMap = async (content, db, user, app) => {
                 }).addTo(labelLayer);
             });
         };
+
+        document.querySelectorAll('.missingTypeFilter').forEach(input => {
+            input.addEventListener('change', () => {
+                filterState.types = Array.from(document.querySelectorAll('.missingTypeFilter:checked'))
+                    .map(item => Number(item.value));
+                applyMissingFilter();
+            });
+        });
+
+        document.getElementById('missingFilterMode')?.addEventListener('change', (event) => {
+            filterState.mode = event.target.value;
+            applyMissingFilter();
+        });
+
+        document.getElementById('clearMissingFilters')?.addEventListener('click', () => {
+            document.querySelectorAll('.missingTypeFilter').forEach(input => { input.checked = false; });
+            filterState.types = [];
+            applyMissingFilter();
+        });
 
         refreshLabels();
         map.on('zoomend moveend', refreshLabels);

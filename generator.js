@@ -15,6 +15,29 @@ const GEN_LAST_STATE_KEY = 'mk_generator_last_state_v1';
 const GEN_PRESETS_KEY = 'mk_generator_presets_v1';
 const GEN_RECENTS_KEY = 'mk_generator_recents_v1';
 
+const GENERATOR_TEMPLATES = {
+  'reissu-kuntakartta': {
+    label: 'Reissu: kuntakartta',
+    description: 'Kuntakartta reissun suunnitteluun',
+    state: { type: 'kunta', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
+  },
+  'vuoden-loydot': {
+    label: 'Vuosi: kaikki löydöt',
+    description: 'Vuosikalenteri ilman sijaintirajausta',
+    state: { type: 'year', timeMode: 'kylla', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
+  },
+  'jasmer': {
+    label: 'Jasmer',
+    description: 'Jasmer-kuva nopeasti valmiiksi',
+    state: { type: 'hiddenday', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
+  },
+  'saariloydot': {
+    label: 'Saarilöydöt',
+    description: 'Saarilöytöjen tilastokuva',
+    state: { type: 'saari', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
+  }
+};
+
 function safeJsonParse(value, fallback) {
   try {
     return JSON.parse(value);
@@ -72,11 +95,27 @@ function getEl(id) {
   return document.getElementById(id);
 }
 
+export function applyGeneratorTemplate(templateId) {
+  const template = GENERATOR_TEMPLATES[templateId];
+  if (!template) return;
+  applyGeneratorFormState({ ...template.state, user: getEl('genUser')?.value || '' });
+  scheduleSaveLastGeneratorState();
+}
+
+export function clearGeneratorRecents() {
+  try {
+    localStorage.removeItem(getRecentsStorageKey());
+  } catch {
+  }
+  refreshGeneratorRecents();
+}
+
 export function toggleGeneratorQuickPanel(panel) {
   const panels = {
     friend: getEl('genQuickFriendPanel'),
     recent: getEl('genQuickRecentPanel'),
-    preset: getEl('genQuickPresetPanel')
+    preset: getEl('genQuickPresetPanel'),
+    template: getEl('genQuickTemplatePanel')
   };
 
   const active = panels[panel];
@@ -153,20 +192,22 @@ function buildRecentLabel(state) {
 function upsertRecentFromState(state) {
   if (!state) return;
   const recents = loadRecents();
+  const key = JSON.stringify(state);
+  const existing = recents.find(r => r && JSON.stringify(r.state || {}) === key);
   const normalized = {
-    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    id: existing?.id || `${Date.now()}_${Math.random().toString(16).slice(2)}`,
     label: buildRecentLabel(state),
-    state
+    state,
+    usedAt: Date.now()
   };
 
-  const key = JSON.stringify(state);
   const filtered = recents.filter(r => {
     if (!r || !r.state) return false;
     return JSON.stringify(r.state) !== key;
   });
 
   filtered.unshift(normalized);
-  saveRecents(filtered.slice(0, 5));
+  saveRecents(filtered.slice(0, 8));
 }
 
 function renderRecentOptions(recents) {
@@ -185,7 +226,9 @@ function renderRecentOptions(recents) {
 export function refreshGeneratorRecents() {
   const select = getRecentSelect();
   if (!select) return;
-  const recents = loadRecents();
+  const recents = loadRecents()
+    .filter(item => item && item.state)
+    .sort((a, b) => (b.usedAt || 0) - (a.usedAt || 0));
   renderRecentOptions(recents);
 }
 

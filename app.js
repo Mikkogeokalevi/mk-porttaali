@@ -30,9 +30,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v54';
-const APP_SW_CACHE = 'mk-porttaali-v54';
-const APP_UPDATED_AT = '14.5.2026 08:51';
+const APP_VERSION = 'v55';
+const APP_SW_CACHE = 'mk-porttaali-v55';
+const APP_UPDATED_AT = '10.7.2026';
 
 window.app = {
   db,
@@ -300,6 +300,8 @@ window.app = {
 
   toggleFriendManager: Gen.toggleFriendManager,
   toggleGeneratorQuickPanel: Gen.toggleGeneratorQuickPanel,
+  applyGeneratorTemplate: Gen.applyGeneratorTemplate,
+  clearGeneratorRecents: Gen.clearGeneratorRecents,
   handleTypeChange: Gen.handleTypeChange,
   handleLocTypeChange: Gen.handleLocTypeChange,
   toggleRegionList: Gen.toggleRegionList,
@@ -416,10 +418,21 @@ function renderGeneratorView(content) {
         <div style="margin-top:-6px; margin-bottom:10px; font-size:0.75em; opacity:0.6;">Versio: ${APP_VERSION} (SW cache: ${APP_SW_CACHE}) • Päivitetty: ${APP_UPDATED_AT}</div>
 
         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 10px 0 10px 0; font-size:0.9em;">
+          <a href="#" onclick="app.toggleGeneratorQuickPanel('template'); return false;" style="color:var(--accent-color); text-decoration:none;">Pikapohjat</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('recent'); return false;" style="color:var(--accent-color); text-decoration:none;">Viimeksi käytetyt</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('friend'); return false;" style="color:var(--accent-color); text-decoration:none;">Valitse tallennettu kaveri</a>
           <button class="btn" type="button" onclick="app.resetGeneratorForm()" style="padding:6px 10px; font-size:0.85em;">Nollaa</button>
+        </div>
+
+        <div id="genQuickTemplatePanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
+          <label style="display:block; margin-bottom:6px;">Valitse valmis pohja:</label>
+          <div style="display:grid; gap:6px;">
+            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('reissu-kuntakartta')">🗺️ Reissu: kuntakartta</button>
+            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('vuoden-loydot')">📅 Vuosi: kaikki löydöt</button>
+            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('jasmer')">🧩 Jasmer</button>
+            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('saariloydot')">🏝️ Saarilöydöt</button>
+          </div>
         </div>
 
         <div id="genQuickFriendPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
@@ -430,7 +443,10 @@ function renderGeneratorView(content) {
         </div>
 
         <div id="genQuickRecentPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
-          <label style="display:block; margin-bottom:6px;">Viimeksi käytetyt:</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+            <label style="margin:0;">Viimeksi käytetyt:</label>
+            <button class="btn" type="button" onclick="app.clearGeneratorRecents()" style="padding:4px 8px; font-size:0.8em;">Tyhjennä</button>
+          </div>
           <select id="genRecentSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
             <option value="">-- Valitse viimeksi käytetty --</option>
           </select>
