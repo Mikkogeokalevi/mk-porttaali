@@ -11,12 +11,12 @@ export const renderHelp = (content, app) => {
         </div>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.9</h3>
+            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.9.1</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>10.7.2026:</strong> Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.</li>
                 <li><strong>10.7.2026:</strong> Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.</li>
                 <li><strong>10.7.2026:</strong> Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.</li>
-                <li><strong>10.7.2026:</strong> Kuvageneraattoriin lisätty pikapohjat reissukuntakartalle, vuosilöydöille, Jasmerille ja saarilöydöille.</li>
+                <li><strong>10.7.2026:</strong> Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.</li>
                 <li><strong>10.7.2026:</strong> Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.</li>
             </ul>
 
@@ -132,7 +132,7 @@ export const renderHelp = (content, app) => {
             <li><strong>Jasmer:</strong> Kätköjen piilotuskuukaudet.</li>
             <li><strong>Saarilöydöt:</strong> Saarilöytöjen tilastokuva.</li>
         </ul>
-        <p><strong>Pikapohjat:</strong> Avaa generaattorin <em>Pikapohjat</em>-valikko ja valitse esimerkiksi reissun kuntakartta, vuosilöydöt, Jasmer tai saarilöydöt. Pohja täyttää generaattorin asetukset automaattisesti.</p>
+        <p><strong>Pikapohjat:</strong> Määritä itse pohjan asetukset generaattorissa ja paina <em>Tallenna nykyinen pikapohjaksi</em>. Anna pohjalle nimi. Omia pikapohjia voi käyttää, nimetä uudelleen, päivittää, järjestää ja poistaa suosikkihakujen hallinnassa.</p>
         <p><strong>Suosikkihaut:</strong> Tallenna usein käyttämäsi haku suosikiksi ja hallitse niitä <em>Suosikkihaut</em>-valikosta. Voit käyttää, nimetä uudelleen, päivittää, järjestää ja poistaa suosikkeja.</p>
         <p><strong>Viimeksi käytetyt:</strong> Generaattori muistaa enintään kahdeksan viimeisintä hakua käyttäjäkohtaisesti. Sama haku ei synny listalle duplikaattina, vaan sen käyttöaika päivittyy. Listan voi tyhjentää <em>Tyhjennä</em>-painikkeella.</p>
 

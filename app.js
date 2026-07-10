@@ -300,7 +300,6 @@ window.app = {
 
   toggleFriendManager: Gen.toggleFriendManager,
   toggleGeneratorQuickPanel: Gen.toggleGeneratorQuickPanel,
-  applyGeneratorTemplate: Gen.applyGeneratorTemplate,
   clearGeneratorRecents: Gen.clearGeneratorRecents,
   handleTypeChange: Gen.handleTypeChange,
   handleLocTypeChange: Gen.handleLocTypeChange,
@@ -426,12 +425,11 @@ function renderGeneratorView(content) {
         </div>
 
         <div id="genQuickTemplatePanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
-          <label style="display:block; margin-bottom:6px;">Valitse valmis pohja:</label>
-          <div style="display:grid; gap:6px;">
-            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('reissu-kuntakartta')">🗺️ Reissu: kuntakartta</button>
-            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('vuoden-loydot')">📅 Vuosi: kaikki löydöt</button>
-            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('jasmer')">🧩 Jasmer</button>
-            <button class="btn" type="button" onclick="app.applyGeneratorTemplate('saariloydot')">🏝️ Saarilöydöt</button>
+          <label style="display:block; margin-bottom:6px;">Omat pikapohjat:</label>
+          <p style="margin:0 0 10px 0; font-size:0.85em; opacity:0.75;">Tallenna ensin nykyiset generaattoriasetukset omaksi pikapohjaksi. Pikapohjia voi käyttää ja hallita suosikkihakujen hallinnassa.</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna nykyinen pikapohjaksi</button>
+            <button class="btn" type="button" onclick="app.openGeneratorPresetManager()">Hallinnoi pikapohjia</button>
           </div>
         </div>
 

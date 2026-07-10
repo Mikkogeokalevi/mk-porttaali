@@ -15,29 +15,6 @@ const GEN_LAST_STATE_KEY = 'mk_generator_last_state_v1';
 const GEN_PRESETS_KEY = 'mk_generator_presets_v1';
 const GEN_RECENTS_KEY = 'mk_generator_recents_v1';
 
-const GENERATOR_TEMPLATES = {
-  'reissu-kuntakartta': {
-    label: 'Reissu: kuntakartta',
-    description: 'Kuntakartta reissun suunnitteluun',
-    state: { type: 'kunta', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
-  },
-  'vuoden-loydot': {
-    label: 'Vuosi: kaikki löydöt',
-    description: 'Vuosikalenteri ilman sijaintirajausta',
-    state: { type: 'year', timeMode: 'kylla', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
-  },
-  'jasmer': {
-    label: 'Jasmer',
-    description: 'Jasmer-kuva nopeasti valmiiksi',
-    state: { type: 'hiddenday', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
-  },
-  'saariloydot': {
-    label: 'Saarilöydöt',
-    description: 'Saarilöytöjen tilastokuva',
-    state: { type: 'saari', timeMode: 'ei', year: 'current', month: 'current', start: '', end: '', cacheType: '', locType: 'none', locValue: '' }
-  }
-};
-
 function safeJsonParse(value, fallback) {
   try {
     return JSON.parse(value);
@@ -93,13 +70,6 @@ export function resetGeneratorForm() {
 
 function getEl(id) {
   return document.getElementById(id);
-}
-
-export function applyGeneratorTemplate(templateId) {
-  const template = GENERATOR_TEMPLATES[templateId];
-  if (!template) return;
-  applyGeneratorFormState({ ...template.state, user: getEl('genUser')?.value || '' });
-  scheduleSaveLastGeneratorState();
 }
 
 export function clearGeneratorRecents() {
