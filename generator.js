@@ -202,6 +202,17 @@ export function refreshGeneratorRecents() {
   renderRecentOptions(recents);
 }
 
+export function applySelectedGeneratorQuickTemplate() {
+  const select = getQuickTemplateSelect();
+  if (!select || !select.value) return;
+  const presets = safeJsonParse(select.dataset.presets || '[]', []);
+  const preset = presets.find(item => item && item.id === select.value);
+  if (!preset) return;
+  applyGeneratorFormState(preset.state);
+  select.value = '';
+  scheduleSaveLastGeneratorState();
+}
+
 export function applySelectedGeneratorRecent() {
   const select = getRecentSelect();
   if (!select || !select.value) return;
@@ -302,19 +313,31 @@ function getPresetSelect() {
   return getEl('genPresetSelect');
 }
 
+function getQuickTemplateSelect() {
+  return getEl('genQuickTemplateSelect');
+}
+
 function renderPresetOptions(presets, selectedId = '') {
   const select = getPresetSelect();
-  if (!select) return;
+  const quickSelect = getQuickTemplateSelect();
+  if (!select && !quickSelect) return;
 
-  const current = selectedId || select.value || '';
-  select.innerHTML = '<option value="">-- Valitse suosikkihaku --</option>';
-  presets.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name || '(nimetön)';
-    select.appendChild(opt);
-  });
-  select.value = current;
+  const render = (target, placeholder) => {
+    if (!target) return;
+    const current = selectedId || target.value || '';
+    target.innerHTML = `<option value="">${placeholder}</option>`;
+    presets.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name || '(nimetön)';
+      target.appendChild(opt);
+    });
+    target.value = current;
+    target.dataset.presets = JSON.stringify(presets);
+  };
+
+  render(select, '-- Valitse suosikkihaku --');
+  render(quickSelect, '-- Valitse pikapohja --');
 }
 
 async function loadFirestorePresets(db, uid) {
@@ -435,7 +458,8 @@ function getDbAndUid() {
 
 export async function refreshGeneratorPresets() {
   const select = getPresetSelect();
-  if (!select) return;
+  const quickSelect = getQuickTemplateSelect();
+  if (!select && !quickSelect) return;
 
   const { db, uid } = getDbAndUid();
   try {
@@ -451,14 +475,14 @@ export async function refreshGeneratorPresets() {
     }
     presets = sortPresetsByOrder(presets);
     renderPresetOptions(presets);
-    select.dataset.presets = JSON.stringify(presets);
+    if (select) select.dataset.presets = JSON.stringify(presets);
   } catch (e) {
     console.warn('Preset loading failed:', e);
     await ensureLocalPresetOrders();
     const presets = getLocalPresets();
     const sorted = sortPresetsByOrder(presets);
     renderPresetOptions(sorted);
-    select.dataset.presets = JSON.stringify(sorted);
+    if (select) select.dataset.presets = JSON.stringify(sorted);
   }
 }
 

@@ -318,6 +318,7 @@ window.app = {
   refreshGeneratorPresets: Gen.refreshGeneratorPresets,
   applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
   refreshGeneratorRecents: Gen.refreshGeneratorRecents,
+  applySelectedGeneratorQuickTemplate: Gen.applySelectedGeneratorQuickTemplate,
   applySelectedGeneratorRecent: Gen.applySelectedGeneratorRecent,
   resetGeneratorForm: Gen.resetGeneratorForm,
   openGeneratorPresetManager: Gen.openGeneratorPresetManager,
@@ -426,7 +427,10 @@ function renderGeneratorView(content) {
 
         <div id="genQuickTemplatePanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
           <label style="display:block; margin-bottom:6px;">Omat pikapohjat:</label>
-          <p style="margin:0 0 10px 0; font-size:0.85em; opacity:0.75;">Tallenna ensin nykyiset generaattoriasetukset omaksi pikapohjaksi. Pikapohjia voi käyttää ja hallita suosikkihakujen hallinnassa.</p>
+          <p style="margin:0 0 10px 0; font-size:0.85em; opacity:0.75;">Tallenna ensin nykyiset generaattoriasetukset omaksi pikapohjaksi. Pikapohjat näkyvät tässä ja niitä voi hallita suosikkihakujen hallinnassa.</p>
+          <select id="genQuickTemplateSelect" style="width:100%; padding:8px; margin-bottom:10px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;" onchange="app.applySelectedGeneratorQuickTemplate()">
+            <option value="">-- Valitse pikapohja --</option>
+          </select>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna nykyinen pikapohjaksi</button>
             <button class="btn" type="button" onclick="app.openGeneratorPresetManager()">Hallinnoi pikapohjia</button>
