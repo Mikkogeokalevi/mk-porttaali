@@ -216,6 +216,65 @@ function isPointInFeature(point, feature) {
   return false;
 }
 
+function toRad(deg) {
+  return deg * Math.PI / 180;
+}
+
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function pointToSegmentDistMeters(lat, lon, lat1, lon1, lat2, lon2) {
+  const avgLat = toRad((lat1 + lat2) / 2);
+  const cosLat = Math.cos(avgLat);
+  const R = 6371000;
+  const deg2rad = Math.PI / 180;
+  // Equirectangular approximation for the nearest-point-on-segment computation
+  const x0 = lon * deg2rad * R * cosLat;
+  const y0 = lat * deg2rad * R;
+  const x1 = lon1 * deg2rad * R * cosLat;
+  const y1 = lat1 * deg2rad * R;
+  const x2 = lon2 * deg2rad * R * cosLat;
+  const y2 = lat2 * deg2rad * R;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const segLenSq = dx * dx + dy * dy;
+  let t = 0;
+  if (segLenSq !== 0) {
+    t = Math.max(0, Math.min(1, ((x0 - x1) * dx + (y0 - y1) * dy) / segLenSq));
+  }
+  const projLat = (y1 + t * dy) / (deg2rad * R);
+  const projLon = (x1 + t * dx) / (deg2rad * R * cosLat);
+  return distanceMeters(lat, lon, projLat, projLon);
+}
+
+function minDistanceToFeature(lat, lon, feature) {
+  const geom = feature?.geometry;
+  if (!geom) return Infinity;
+  let best = Infinity;
+  const processRing = (ring) => {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const p1 = ring[i];
+      const p2 = ring[j];
+      const d = pointToSegmentDistMeters(lat, lon, p1[1], p1[0], p2[1], p2[0]);
+      if (d < best) best = d;
+      if (best === 0) return;
+    }
+  };
+  if (geom.type === 'Polygon') {
+    for (const ring of geom.coordinates) processRing(ring);
+  } else if (geom.type === 'MultiPolygon') {
+    for (const polygon of geom.coordinates) {
+      for (const ring of polygon) processRing(ring);
+    }
+  }
+  return best;
+}
+
 function getCacheTypeFromWpt(wpt) {
   const gsType = wpt.getElementsByTagNameNS('http://www.groundspeak.com/cache/1/0/1', 'type')[0];
   if (gsType?.textContent) return gsType.textContent.trim();
@@ -275,6 +334,7 @@ async function renderCountryMap(content, db, user, app, config) {
   let currentLayer = null;
   let watching = false;
   let geoLayer;
+  let countryBounds;
 
   content.innerHTML = `
     <div class="card" style="height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; position: relative;">
@@ -467,6 +527,7 @@ async function renderCountryMap(content, db, user, app, config) {
       });
     }
   }).addTo(map);
+  countryBounds = geoLayer.getBounds();
 
   refreshStyle();
   updateStats();
@@ -578,15 +639,22 @@ async function renderCountryMap(content, db, user, app, config) {
         let addedMunicipalities = 0;
         let typeHits = 0;
         let duplicateCaches = 0;
+        let fallbackMatches = 0;
         let outOfBounds = 0;
         for (let i = 0; i < points.length; i++) {
           if (i % 25 === 0) updateLocationStatus(`Tuodaan... ${i} / ${points.length}`);
           const p = points[i];
-          const layer = findMunicipalityLayerByPoint(p.lat, p.lon);
+          let layer = findMunicipalityLayerByPoint(p.lat, p.lon);
           if (!layer) {
-            outOfBounds++;
-            if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
-            continue;
+            layer = findNearestMunicipalityLayerByPoint(p.lat, p.lon, 10000);
+            if (layer) {
+              fallbackMatches++;
+            } else {
+              outOfBounds++;
+              console.warn('GPX-piste kartan ulkopuolella:', p.code, p.lat, p.lon);
+              if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
+              continue;
+            }
           }
           const name = getName(layer.feature, config);
           if (!found.has(name)) {
@@ -616,8 +684,8 @@ async function renderCountryMap(content, db, user, app, config) {
         updateStats();
         updateGpxTime();
         refreshStyle();
-        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty, ${duplicateCaches} duplikaatti, ${outOfBounds} kartan ulkopuolella (yht. ${found.size} / ${config.totalMunicipalities})`);
-        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\n${duplicateCaches} kätköä oli jo aiemmin lisätty.\n${outOfBounds} kätköä jäi tämän maan kunnan ulkopuolelle.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
+        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty, ${duplicateCaches} duplikaatti, ${fallbackMatches} lähimpään kuntaan, ${outOfBounds} kartan ulkopuolella (yht. ${found.size} / ${config.totalMunicipalities})`);
+        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\n${duplicateCaches} kätköä oli jo aiemmin lisätty.\n${fallbackMatches} kätköä osui saarelle tai kunnan reunan tuntumaan ja merkittiin lähimpään kuntaan (10 km raja).\n${outOfBounds} kätköä jäi tämän maan kunnan ulkopuolelle.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
       } catch (err) {
         console.error('GPX-tuonti epäonnistui:', err);
         alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);
@@ -638,5 +706,22 @@ async function renderCountryMap(content, db, user, app, config) {
       }
     }
     return null;
+  }
+
+  function findNearestMunicipalityLayerByPoint(lat, lon, thresholdM = 10000) {
+    if (!geoLayer) return null;
+    const latlng = L.latLng(lat, lon);
+    if (!countryBounds || !countryBounds.contains(latlng)) return null;
+    let bestLayer = null;
+    let bestDist = thresholdM;
+    const layers = geoLayer.getLayers();
+    for (const layer of layers) {
+      const d = minDistanceToFeature(lat, lon, layer.feature);
+      if (d < bestDist) {
+        bestDist = d;
+        bestLayer = layer;
+      }
+    }
+    return bestLayer;
   }
 }
