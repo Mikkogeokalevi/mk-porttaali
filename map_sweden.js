@@ -1,5 +1,7 @@
 // Ruotsin kuntakartta - interaktiivinen löytökartta
-// Käyttäjä voi merkitä kunnan löydetyksi klikkaamalla ja paikantaa itsensä kartalta.
+// Käyttäjä voi merkitä kunnan löydetyksi klikkaamalla, paikantaa itsensä ja tuoda GPX-tiedoston löydöt.
+
+import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const GEOJSON_URL = './sverige_kommuner.geojson';
 const STORAGE_KEY = 'mk_sweden_found_v1';
@@ -8,7 +10,21 @@ function getStorageKey(uid) {
   return `${STORAGE_KEY}_${uid}`;
 }
 
-function loadFound(uid) {
+async function loadFound(uid, db) {
+  if (db && uid) {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid, 'sweden', 'finds'));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.municipalities)) {
+          try { localStorage.setItem(getStorageKey(uid), JSON.stringify(data.municipalities)); } catch {}
+          return data.municipalities;
+        }
+      }
+    } catch (e) {
+      console.warn('Ruotsin löytöjen lataus Firestoresta epäonnistui:', e);
+    }
+  }
   try {
     return JSON.parse(localStorage.getItem(getStorageKey(uid)) || '[]');
   } catch {
@@ -16,11 +32,21 @@ function loadFound(uid) {
   }
 }
 
-function saveFound(uid, list) {
+async function saveFound(uid, list, db) {
   try {
     localStorage.setItem(getStorageKey(uid), JSON.stringify(list));
   } catch {
     // Ei tallennustilaa
+  }
+  if (db && uid) {
+    try {
+      await setDoc(doc(db, 'users', uid, 'sweden', 'finds'), {
+        municipalities: list,
+        updatedAt: Timestamp.now()
+      });
+    } catch (e) {
+      console.warn('Ruotsin löytöjen tallennus Firestoreen epäonnistui:', e);
+    }
   }
 }
 
@@ -76,7 +102,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
     return;
   }
 
-  const found = new Set(loadFound(user.uid));
+  const found = new Set(await loadFound(user.uid, db));
   let selectedLayer = null;
   let currentLayer = null;
   let watching = false;
@@ -88,6 +114,8 @@ export const renderSwedenMap = async (content, db, user, app) => {
         <h2 style="margin: 0; font-size: 1.2em;">🇸🇪 Ruotsi-kuntakartta</h2>
         <span id="swedenLocationStatus" style="font-size: 0.85em; opacity: 0.9; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
         <div style="display: flex; gap: 10px;">
+          <button id="swedenImportBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
+          <input type="file" id="swedenGpxInput" accept=".gpx,.xml" style="display:none">
           <button id="swedenLocateBtn" class="btn" style="margin: 0; padding: 5px 10px; font-size: 1.2em;" title="Paikanna ja seuraa sijaintia">📍</button>
           <button id="swedenClearBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tyhjennä löydöt">🗑️</button>
           <button class="btn" onclick="app.router('stats')" style="margin: 0; padding: 5px 10px;">⬅ Takaisin</button>
@@ -95,7 +123,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
       </div>
 
       <div style="padding: 8px 10px; background: var(--input-bg); border-bottom: 1px solid var(--border-color); font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-        <span>Klikkaa kuntaa merkitäksesi löydetyksi.</span>
+        <span>Klikkaa kuntaa merkitäksesi löydetyksi. Voit myös tuoda löydöt GPX-tiedostosta.</span>
         <span id="swedenStats" style="font-weight: bold;"></span>
       </div>
 
@@ -173,10 +201,10 @@ export const renderSwedenMap = async (content, db, user, app) => {
     geoLayer.eachLayer(layer => setLayerStyle(layer));
   }
 
-  function toggleFound(name) {
+  async function toggleFound(name) {
     if (found.has(name)) found.delete(name);
     else found.add(name);
-    saveFound(user.uid, [...found]);
+    await saveFound(user.uid, [...found], db);
     updateStats();
     refreshStyle();
   }
@@ -194,24 +222,14 @@ export const renderSwedenMap = async (content, db, user, app) => {
       `;
       const status = div.querySelector('#swedenPopupStatus');
       const btn = div.querySelector('button');
-      btn.onclick = () => {
-        toggleFound(name);
+      btn.onclick = async () => {
+        await toggleFound(name);
         const nowFound = found.has(name);
         if (status) status.textContent = nowFound ? '✅ Löydetty' : '🔴 Etsittävä';
         btn.textContent = nowFound ? 'Poista löytö' : 'Merkitse löydetyksi';
       };
       return div;
     });
-  }
-
-  function findMunicipalityLayer(latlng) {
-    const point = [latlng.lng, latlng.lat];
-    for (const feature of geoLayer.toGeoJSON().features || []) {
-      if (isPointInFeature(point, feature)) {
-        return nameToLayer.get(getName(feature)) || null;
-      }
-    }
-    return null;
   }
 
   let geoData;
@@ -276,7 +294,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
     userMarker.clearLayers();
     L.circleMarker(e.latlng, { radius: 7, color: '#1e1e2e', fillColor: '#f9e2af', fillOpacity: 1, weight: 2 }).addTo(userMarker);
 
-    const matchLayer = findMunicipalityLayer(e.latlng);
+    const matchLayer = findMunicipalityLayerByPoint(e.latlng.lat, e.latlng.lng);
     if (matchLayer) {
       if (currentLayer !== matchLayer) {
         currentLayer = matchLayer;
@@ -304,14 +322,86 @@ export const renderSwedenMap = async (content, db, user, app) => {
   // Tyhjennys
   const clearBtn = document.getElementById('swedenClearBtn');
   if (clearBtn) {
-    clearBtn.onclick = () => {
+    clearBtn.onclick = async () => {
       if (confirm('Tyhjennätkö kaikki Ruotsin kartalle merkityt löydöt?')) {
         found.clear();
-        saveFound(user.uid, []);
+        await saveFound(user.uid, [], db);
         selectedLayer = null;
+        currentLayer = null;
+        updateLocationStatus('');
         updateStats();
         refreshStyle();
       }
     };
+  }
+
+  // GPX-tuonti
+  const importBtn = document.getElementById('swedenImportBtn');
+  const gpxInput = document.getElementById('swedenGpxInput');
+  if (importBtn && gpxInput) {
+    importBtn.onclick = () => gpxInput.click();
+    gpxInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const xml = new DOMParser().parseFromString(text, 'application/xml');
+        const parserError = xml.querySelector('parsererror');
+        if (parserError) throw new Error('Tiedosto ei ole kelvollinen XML/GPX');
+
+        const points = [];
+        ['wpt','trkpt','rtept'].forEach(tag => {
+          xml.querySelectorAll(tag).forEach(el => {
+            const lat = parseFloat(el.getAttribute('lat'));
+            const lon = parseFloat(el.getAttribute('lon'));
+            if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lon });
+          });
+        });
+
+        if (points.length === 0) {
+          alert('GPX-tiedostosta ei löytynyt koordinaatteja (wpt/trkpt/rtept).');
+          return;
+        }
+
+        updateLocationStatus(`Tuodaan ${points.length} pistettä...`);
+        let added = 0;
+        for (let i = 0; i < points.length; i++) {
+          if (i % 25 === 0) updateLocationStatus(`Tuodaan... ${i} / ${points.length}`);
+          const p = points[i];
+          const layer = findMunicipalityLayerByPoint(p.lat, p.lon);
+          if (layer) {
+            const name = getName(layer.feature);
+            if (!found.has(name)) {
+              found.add(name);
+              added++;
+            }
+          }
+          if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
+        }
+        await saveFound(user.uid, [...found], db);
+        updateStats();
+        refreshStyle();
+        updateLocationStatus(`${added} uutta kuntaa tuotu (yht. ${found.size} / 290)`);
+        alert(`GPX-tuonti valmis.\n\n${added} uutta kuntaa merkittiin löydetyksi.\nYhteensä ${found.size} / 290 kuntaa.`);
+      } catch (err) {
+        console.error('GPX-tuonti epäonnistui:', err);
+        alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);
+        updateLocationStatus('');
+      } finally {
+        gpxInput.value = '';
+      }
+    };
+  }
+
+  function findMunicipalityLayerByPoint(lat, lon) {
+    if (!geoLayer) return null;
+    const latlng = L.latLng(lat, lon);
+    const layers = geoLayer.getLayers();
+    for (const layer of layers) {
+      if (layer.getBounds && layer.getBounds().contains(latlng)) {
+        if (isPointInFeature([lon, lat], layer.feature)) return layer;
+      }
+    }
+    return null;
   }
 };
