@@ -87,9 +87,18 @@ function createEmptyStats() {
 function migrateListToObject(list) {
   const obj = {};
   for (const name of list) {
-    obj[name] = { s: createEmptyStats() };
+    obj[name] = { s: createEmptyStats(), ids: [] };
   }
   return obj;
+}
+
+function ensureIds(data) {
+  for (const key in data) {
+    if (data[key] && typeof data[key] === 'object' && !Array.isArray(data[key].ids)) {
+      data[key].ids = [];
+    }
+  }
+  return data;
 }
 
 function getStorageKey(uid, config) {
@@ -101,22 +110,32 @@ function getName(feature, config) {
   return config.nameProperty(props) || 'Tuntematon';
 }
 
+function normalizeGpxTime(value) {
+  if (!value) return null;
+  if (value.toDate) return value.toDate().toISOString();
+  if (typeof value === 'string') {
+    const d = new Date(value);
+    return isNaN(d) ? null : d.toISOString();
+  }
+  return null;
+}
+
 async function loadFound(uid, db, config) {
-  let data = {};
+  let municipalities = {};
+  let lastGpxImport = null;
   if (db && uid) {
     try {
       const snap = await getDoc(doc(db, 'users', uid, config.firestorePath, 'finds'));
       if (snap.exists()) {
         const d = snap.data();
-        let municipalities = d.municipalities;
-        if (municipalities) {
-          if (Array.isArray(municipalities)) {
-            municipalities = migrateListToObject(municipalities);
-          }
-          data = municipalities;
-          try { localStorage.setItem(getStorageKey(uid, config), JSON.stringify({ municipalities: data })); } catch {}
-          return data;
+        if (d.lastGpxImport) lastGpxImport = normalizeGpxTime(d.lastGpxImport);
+        let ms = d.municipalities;
+        if (ms) {
+          if (Array.isArray(ms)) ms = migrateListToObject(ms);
+          municipalities = ensureIds(ms);
         }
+        try { localStorage.setItem(getStorageKey(uid, config), JSON.stringify({ municipalities, lastGpxImport })); } catch {}
+        return { municipalities, lastGpxImport };
       }
     } catch (e) {
       console.warn(`${config.name}-löytöjen lataus Firestoresta epäonnistui:`, e);
@@ -124,28 +143,34 @@ async function loadFound(uid, db, config) {
   }
   try {
     const raw = JSON.parse(localStorage.getItem(getStorageKey(uid, config)) || '{}');
-    if (Array.isArray(raw)) return migrateListToObject(raw);
+    if (Array.isArray(raw)) return { municipalities: migrateListToObject(raw), lastGpxImport: null };
     if (raw && typeof raw === 'object') {
-      return raw.municipalities || {};
+      return {
+        municipalities: ensureIds(raw.municipalities || {}),
+        lastGpxImport: normalizeGpxTime(raw.lastGpxImport)
+      };
     }
   } catch {
     // Ei dataa
   }
-  return {};
+  return { municipalities, lastGpxImport };
 }
 
-async function saveFound(uid, data, db, config) {
+async function saveFound(uid, data, db, config, lastGpxImport = null) {
+  const payload = { municipalities: data, updatedAt: Timestamp.now() };
+  const localPayload = { municipalities: data };
+  if (lastGpxImport) {
+    payload.lastGpxImport = lastGpxImport;
+    localPayload.lastGpxImport = lastGpxImport;
+  }
   try {
-    localStorage.setItem(getStorageKey(uid, config), JSON.stringify({ municipalities: data }));
+    localStorage.setItem(getStorageKey(uid, config), JSON.stringify(localPayload));
   } catch {
     // Ei tallennustilaa
   }
   if (db && uid) {
     try {
-      await setDoc(doc(db, 'users', uid, config.firestorePath, 'finds'), {
-        municipalities: data,
-        updatedAt: Timestamp.now()
-      });
+      await setDoc(doc(db, 'users', uid, config.firestorePath, 'finds'), payload);
     } catch (e) {
       console.warn(`${config.name}-löytöjen tallennus Firestoreen epäonnistui:`, e);
     }
@@ -202,6 +227,14 @@ function getCacheTypeFromWpt(wpt) {
   return null;
 }
 
+function getCacheIdFromWpt(wpt) {
+  const name = wpt.querySelector('name')?.textContent?.trim();
+  if (name) return name;
+  const gsCode = wpt.getElementsByTagNameNS('http://www.groundspeak.com/cache/1/0/1', 'code')[0];
+  if (gsCode?.textContent) return gsCode.textContent.trim();
+  return null;
+}
+
 export function renderCountrySelector(content, app) {
   content.innerHTML = `
     <div class="card">
@@ -235,7 +268,8 @@ async function renderCountryMap(content, db, user, app, config) {
     return;
   }
 
-  const foundStats = await loadFound(user.uid, db, config);
+  const { municipalities: foundStats, lastGpxImport: initialLastGpxImport } = await loadFound(user.uid, db, config);
+  let lastGpxImport = initialLastGpxImport;
   const found = new Set(Object.keys(foundStats));
   let selectedLayer = null;
   let currentLayer = null;
@@ -260,6 +294,7 @@ async function renderCountryMap(content, db, user, app, config) {
         <span>Klikkaa kuntaa merkitäksesi löydetyksi. Voit myös tuoda löydöt GPX-tiedostosta.</span>
         <span id="${config.id}Stats" style="font-weight: bold;"></span>
       </div>
+      <div id="${config.id}GpxTime" style="padding: 4px 10px; background: var(--input-bg); border-bottom: 1px solid var(--border-color); font-size: 0.8em; opacity: 0.8; text-align: right;"></div>
 
       <div id="${config.id}Map" style="flex: 1; width: 100%; background: #aad3df;">
         <div id="${config.id}MapLoading" style="padding: 20px; color: black; background: white; opacity: 0.9; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; border-radius: 8px;">
@@ -287,12 +322,20 @@ async function renderCountryMap(content, db, user, app, config) {
   const statsEl = document.getElementById(`${config.id}Stats`);
   const loadingEl = document.getElementById(`${config.id}MapLoading`);
   const locationStatusEl = document.getElementById(`${config.id}LocationStatus`);
+  const gpxTimeEl = document.getElementById(`${config.id}GpxTime`);
   const userMarker = L.layerGroup().addTo(map);
   const nameToLayer = new Map();
 
   function updateLocationStatus(text) {
     if (!locationStatusEl) return;
     locationStatusEl.textContent = text || '';
+  }
+
+  function updateGpxTime() {
+    if (!gpxTimeEl) return;
+    gpxTimeEl.textContent = lastGpxImport
+      ? 'Viimeisin GPX-tuonti: ' + new Date(lastGpxImport).toLocaleString('fi-FI', { dateStyle: 'short', timeStyle: 'short' })
+      : '';
   }
 
   function updateLocateButton() {
@@ -341,9 +384,9 @@ async function renderCountryMap(content, db, user, app, config) {
       delete foundStats[name];
     } else {
       found.add(name);
-      foundStats[name] = { s: createEmptyStats() };
+      foundStats[name] = { s: createEmptyStats(), ids: [] };
     }
-    await saveFound(user.uid, foundStats, db, config);
+    await saveFound(user.uid, foundStats, db, config, lastGpxImport);
     updateStats();
     refreshStyle();
   }
@@ -427,6 +470,7 @@ async function renderCountryMap(content, db, user, app, config) {
 
   refreshStyle();
   updateStats();
+  updateGpxTime();
 
   // Paikannus
   const locateBtn = document.getElementById(`${config.id}LocateBtn`);
@@ -487,11 +531,13 @@ async function renderCountryMap(content, db, user, app, config) {
       if (confirm(`Tyhjennätkö kaikki ${config.name}-kartalle merkityt löydöt?`)) {
         found.clear();
         for (const key in foundStats) delete foundStats[key];
-        await saveFound(user.uid, foundStats, db, config);
+        lastGpxImport = null;
+        await saveFound(user.uid, foundStats, db, config, lastGpxImport);
         selectedLayer = null;
         currentLayer = null;
         updateLocationStatus('');
         updateStats();
+        updateGpxTime();
         refreshStyle();
       }
     };
@@ -519,7 +565,8 @@ async function renderCountryMap(content, db, user, app, config) {
           if (isNaN(lat) || isNaN(lon)) return;
           if (!sym.includes('Found')) return; // vain löydetyt kätköt
           const type = getCacheTypeFromWpt(wpt);
-          points.push({ lat, lon, type });
+          const code = getCacheIdFromWpt(wpt) || `${lat}|${lon}`;
+          points.push({ lat, lon, type, code });
         });
 
         if (points.length === 0) {
@@ -530,33 +577,47 @@ async function renderCountryMap(content, db, user, app, config) {
         updateLocationStatus(`Tuodaan ${points.length} kätköä...`);
         let addedMunicipalities = 0;
         let typeHits = 0;
+        let duplicateCaches = 0;
+        let outOfBounds = 0;
         for (let i = 0; i < points.length; i++) {
           if (i % 25 === 0) updateLocationStatus(`Tuodaan... ${i} / ${points.length}`);
           const p = points[i];
           const layer = findMunicipalityLayerByPoint(p.lat, p.lon);
-          if (layer) {
-            const name = getName(layer.feature, config);
-            if (!found.has(name)) {
-              found.add(name);
-              foundStats[name] = { s: createEmptyStats() };
-              addedMunicipalities++;
-            }
-            if (p.type && GPX_TYPE_TO_INDEX[p.type] !== undefined) {
-              const idx = GPX_TYPE_TO_INDEX[p.type];
-              foundStats[name].s[idx] = (foundStats[name].s[idx] || 0) + 1;
-              typeHits++;
-            } else if (p.type) {
-              console.warn('Tuntematon kätkötyyppi GPX:ssä:', p.type);
-            }
+          if (!layer) {
+            outOfBounds++;
+            if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
+            continue;
+          }
+          const name = getName(layer.feature, config);
+          if (!found.has(name)) {
+            found.add(name);
+            foundStats[name] = { s: createEmptyStats(), ids: [] };
+            addedMunicipalities++;
+          }
+          const entry = foundStats[name];
+          if (!Array.isArray(entry.ids)) entry.ids = [];
+          if (entry.ids.includes(p.code)) {
+            duplicateCaches++;
+            if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
+            continue;
+          }
+          entry.ids.push(p.code);
+          if (p.type && GPX_TYPE_TO_INDEX[p.type] !== undefined) {
+            const idx = GPX_TYPE_TO_INDEX[p.type];
+            entry.s[idx] = (entry.s[idx] || 0) + 1;
+            typeHits++;
+          } else if (p.type) {
+            console.warn('Tuntematon kätkötyyppi GPX:ssä:', p.type);
           }
           if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
         }
-
-        await saveFound(user.uid, foundStats, db, config);
+        lastGpxImport = new Date().toISOString();
+        await saveFound(user.uid, foundStats, db, config, lastGpxImport);
         updateStats();
+        updateGpxTime();
         refreshStyle();
-        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty (yht. ${found.size} / ${config.totalMunicipalities})`);
-        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
+        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty, ${duplicateCaches} duplikaatti, ${outOfBounds} kartan ulkopuolella (yht. ${found.size} / ${config.totalMunicipalities})`);
+        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\n${duplicateCaches} kätköä oli jo aiemmin lisätty.\n${outOfBounds} kätköä jäi tämän maan kunnan ulkopuolelle.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
       } catch (err) {
         console.error('GPX-tuonti epäonnistui:', err);
         alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);

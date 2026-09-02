@@ -16,7 +16,7 @@
 - **Kuvageneraattori (generator.js)**: Geokätkökuvien luonti eri tyyleillä ja teksteillä.
 - **Linkkikirjasto (links.js)**: Geokätköilyyn liittyvät linkit ja resurssit.
 - **Muuntimet (converters.js + muuntimet.html)**: 33 kategoriaa, 200+ yksikköä, iframe-integraatio.
-- **Kartat (map.js, map_all.js, map_sweden.js)**: Leaflet-kartat, käyttäjäkohtainen ja yhteiskartta, sekä interaktiivinen Ruotsin kuntakartta.
+- **Kartat (map.js, map_all.js, map_countries.js)**: Leaflet-kartat, käyttäjäkohtainen ja yhteiskartta, sekä Kuntakartat-valitsimella avautuvat Ruotsin, Norjan ja Viron kuntakartat.
 - **Reissuapuri (reissuapuri.html)**: Matkasuunnittelutyökalu, RTDB-tallennus.
 - **Admin (admin.js)**: Ylläpitotoiminnot, käyttäjien hallinta.
 - **Auth (auth.js)**: Google/sähköpostikirjautuminen, roolit (guest/user/admin).
@@ -34,7 +34,10 @@
 - **Major-versio** (esim. `3.0`): suuri rakenteellinen muutos tai taaksepäin yhteensopivuutta rikkova muutos.
 - Kartta- ja kuvageneraattoripäivitysten muodostama kokonaisuus julkaistaan versiona `2.9`; seuraavat pienet korjaukset käyttävät muotoa `2.9.1`, `2.9.2` jne.
 - Ruotsin kuntakartta -kokonaisuus julkaistaan uutena minor-versiona `2.10.0`.
-- Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
+- Norjan ja Viron kuntakartat yhdistetään kuntakarttoihin versiona `2.11.0`.
+- Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `app.js`:n `APP_DISPLAY_VERSION`, etusivun logon alainen versionumero, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
+- Etusivulla näytetään `APP_DISPLAY_VERSION` logon alla ja siitä pääsee Ohjeet & Tuki -sivulle.
+- Kuntakarttojen GPX-tuonnin viimeisin ajankohta tallennetaan `lastGpxImport`-kenttään ja näytetään karttanäkymässä.
 
 ## GitHub Pages -integraatio
 - Staattinen SPA GitHub Pages:ssä, dynaamisuus Firebasen kautta.

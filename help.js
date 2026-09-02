@@ -26,6 +26,9 @@ export const renderHelp = (content, app) => {
                     - 10.7.2026: Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.<br>
                     - 10.7.2026: Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.<br>
                     - 10.7.2026: Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.<br><br>
+                    <strong>v2.10.0</strong><br>
+                    - 2.9.2026: Lisätty interaktiivinen Ruotsi-kuntakartta, jossa voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.<br>
+                    - 2.9.2026: GPX-tuonti tunnistaa kätkötyypit kunnittain; popup näyttää löydetyt ja puuttuvat tyypit.<br><br>
                     <strong>v2.8 (aiemmat päivitykset)</strong><br>
                     - 2.2.2026: Muuntimet integroitu SPA:han: kaikki 32 kategoriaa iframe-ratkaisulla.<br>
                     - 2.2.2026: Välilehdet vaakarivissä kuten kannettavassa näkymässä.<br>
@@ -118,6 +121,16 @@ export const renderHelp = (content, app) => {
         <p>Yleiskartta, joka näyttää missä kunnissa olet löytänyt <em>mitä tahansa</em> kätköjä. Hyvä työkalu yleisen kuntakartan värittämiseen.</p>
         <p><strong>Kätkötyyppifiltterit:</strong> Kartan ja tekstimuotoisen kuntalistan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Näkymiin jäävät tällöin vain kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>. Maakunnat, joihin ei jää yhtään sopivaa kuntaa, piilotetaan automaattisesti.</p>
         <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle ja listalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
+
+        <h4>Kuntakartat (Ruotsi, Norja, Viro)</h4>
+        <p>Etusivun tai Tilastot-sivun <strong>🗺️ Kuntakartat</strong> -valinnasta avautuu maa-valitsin. Valitse maa ja merkitse löydetyt kunnat.</p>
+        <ul style="line-height:1.6; padding-left:20px;">
+            <li><strong>Kunnan merkitseminen:</strong> Klikkaa kuntaa kartalta. Jos kuntaan ei ole tuotu GPX-löytöjä, voit vaihtaa sen löydetyksi / etsittäväksi nappia painamalla.</li>
+            <li><strong>Paikannus:</strong> Paina 📍-nappia. Sovellus seuraa sijaintiasi ja korostaa kunnan, jossa olet tällä hetkellä (keltainen).</li>
+            <li><strong>GPX-tuonti:</strong> Paina 📁-nappia ja valitse löydettyjä kätköjä sisältävä GPX-tiedosto. Sovellus laskee koordinaateista kunnan, merkitsee sen löydetyksi ja jakaa kätkötyypit kunnittain. Samat kätköt eivät tuplaannu, vaikka tuot saman tiedoston uudelleen. Kätköt, jotka osuvat valitun maan kuntarajojen ulkopuolelle, ilmoitetaan erikseen.</li>
+            <li><strong>Popup-tiedot:</strong> Klikkaamalla kuntaa näet löydetyt kätkötyypit (kuvakkeet ja lukumäärät) ja puuttuvat tyypit. Jos kunnan löydöt on tuotu GPX:stä, “Poista löytö” -nappia ei näy; voit tyhjentää koko maan kartalta 🗑️-painikkeella.</li>
+            <li><strong>Tyhjennys:</strong> 🗑️-nappi poistaa kaikki valitun maan kuntakartan merkinnät.</li>
+        </ul>
 
         <hr style="border-color:var(--border-color); margin:20px 0;">
 

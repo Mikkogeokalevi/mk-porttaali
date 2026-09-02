@@ -32,8 +32,11 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 const db = getFirestore(firebaseApp);
 
 const APP_VERSION = 'v59';
+const APP_DISPLAY_VERSION = '2.11.0';
 const APP_SW_CACHE = 'mk-porttaali-v59';
 const APP_UPDATED_AT = '2.9.2026';
+
+document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
 
 window.app = {
   db,
@@ -109,6 +112,7 @@ window.app = {
             content.innerHTML = `
               <div class="card" style="text-align:center; padding: 40px 20px;">
                 <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
+                <p style="margin-top:8px; font-size:0.85em; opacity:0.7; cursor:pointer;" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</p>
                 <div style="font-size:3em; margin: 10px 0;">🔐</div>
                 <p>Kirjaudu sisään käyttääksesi työkaluja.</p>
                 <div style="margin-top:30px;">
@@ -144,6 +148,7 @@ window.app = {
                 <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
                 <br>
                 ${statusBadge}
+                <p style="margin-top:8px; font-size:0.85em; opacity:0.7; cursor:pointer;" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</p>
             </div>
             
             <div style="display:grid; gap:10px; margin-top:15px;">
