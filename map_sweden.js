@@ -295,21 +295,25 @@ export const renderSwedenMap = async (content, db, user, app) => {
         }
       });
 
-      const statusText = isFound ? (total > 0 ? '✅ Löydetty' : '✅ Löydetty (käsin)') : '🔴 Etsittävä';
+      const hasGpxFinds = total > 0;
+      const statusText = isFound ? (hasGpxFinds ? '✅ Löydetty (GPX)' : '✅ Löydetty (käsin)') : '🔴 Etsittävä';
+      const showButton = !hasGpxFinds; // GPX-tuotuja kunta ei voi poistaa yksittäin tästä
       div.innerHTML = `
         <strong style="font-size:1.1em;display:block;margin-bottom:6px;">${name}</strong>
         <div id="swedenPopupStatus" style="margin-bottom:8px;">${statusText}</div>
-        ${total > 0 ? `<div style="text-align:left;margin-bottom:8px;"><div style="margin-bottom:4px;"><strong>Löydetyt (${total}):</strong></div><div style="display:flex;flex-wrap:wrap;gap:2px;">${foundHtml}</div></div>` : ''}
+        ${hasGpxFinds ? `<div style="text-align:left;margin-bottom:8px;"><div style="margin-bottom:4px;"><strong>Löydetyt (${total}):</strong></div><div style="display:flex;flex-wrap:wrap;gap:2px;">${foundHtml}</div></div>` : ''}
         ${isFound && missingHtml ? `<div style="text-align:left;margin-top:6px;border-top:1px dotted #555;padding-top:4px;"><strong style="font-size:0.9em;">Puuttuu:</strong><div style="display:flex;flex-wrap:wrap;gap:2px;">${missingHtml}</div></div>` : ''}
-        <button class="btn btn-primary" style="padding:5px 10px;font-size:0.85em;margin-top:6px;">${isFound ? 'Poista löytö' : 'Merkitse löydetyksi'}</button>
+        ${showButton ? `<button class="btn btn-primary" style="padding:5px 10px;font-size:0.85em;margin-top:6px;">${isFound ? 'Poista löytö' : 'Merkitse löydetyksi'}</button>` : ''}
       `;
 
       const btn = div.querySelector('button');
-      btn.onclick = async () => {
-        await toggleFound(name);
-        layer.closePopup();
-        layer.openPopup();
-      };
+      if (btn) {
+        btn.onclick = async () => {
+          await toggleFound(name);
+          layer.closePopup();
+          layer.openPopup();
+        };
+      }
       return div;
     });
   }
