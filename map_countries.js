@@ -1,16 +1,9 @@
-// Ruotsin kuntakartta - interaktiivinen löytökartta
-// Käyttäjä voi merkitä kunnan löydetyksi klikkaamalla, paikantaa itsensä ja tuoda GPX-tiedoston löydöt.
+// Muiden maiden kuntakartat - yleiskäyttöinen interaktiivinen löytökartta
+// Tukee Ruotsin, Norjan ja Viron kuntia/valdoja/kommuuneja.
 
 import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-const GEOJSON_URL = './sverige_kommuner.geojson';
-const STORAGE_KEY = 'mk_sweden_found_v1';
-
-function getStorageKey(uid) {
-  return `${STORAGE_KEY}_${uid}`;
-}
-
-// Kätkötyypit Suomen karttojen tyyliin (mukautettu Ruotsia varten)
+// Kätkötyypit Suomen karttojen tyyliin
 const CACHE_TYPES = [
   { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
   { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
@@ -45,6 +38,48 @@ const GPX_TYPE_TO_INDEX = {
   'Groundspeak Block Party': 6
 };
 
+const COUNTRY_CONFIGS = {
+  sweden: {
+    id: 'sweden',
+    flag: '🇸🇪',
+    name: 'Ruotsi',
+    geoJsonUrl: './sverige_kommuner.geojson',
+    storageKey: 'mk_sweden_found_v1',
+    firestorePath: 'sweden',
+    totalMunicipalities: 290,
+    center: [62.5, 16.5],
+    zoom: 5,
+    label: 'kuntaa',
+    nameProperty: (props) => props.kom_namn || props.name || props.Name || props.NAMEFIN
+  },
+  norway: {
+    id: 'norway',
+    flag: '🇳🇴',
+    name: 'Norja',
+    geoJsonUrl: './norge_kommuner.geojson',
+    storageKey: 'mk_norway_found_v1',
+    firestorePath: 'norway',
+    totalMunicipalities: 357,
+    center: [65, 14],
+    zoom: 5,
+    label: 'kommunia',
+    nameProperty: (props) => props.kommunenavn || props.name || props.Name || props.kom_namn
+  },
+  estonia: {
+    id: 'estonia',
+    flag: '🇪🇪',
+    name: 'Viro',
+    geoJsonUrl: './viro_vald.geojson',
+    storageKey: 'mk_estonia_found_v1',
+    firestorePath: 'estonia',
+    totalMunicipalities: 79,
+    center: [58.7, 25.5],
+    zoom: 7,
+    label: 'valda',
+    nameProperty: (props) => props.ONIMI || props.name || props.Name || props.kom_namn
+  }
+};
+
 function createEmptyStats() {
   return new Array(CACHE_TYPES.length).fill(0);
 }
@@ -57,11 +92,20 @@ function migrateListToObject(list) {
   return obj;
 }
 
-async function loadFound(uid, db) {
+function getStorageKey(uid, config) {
+  return `${config.storageKey}_${uid}`;
+}
+
+function getName(feature, config) {
+  const props = feature?.properties || {};
+  return config.nameProperty(props) || 'Tuntematon';
+}
+
+async function loadFound(uid, db, config) {
   let data = {};
   if (db && uid) {
     try {
-      const snap = await getDoc(doc(db, 'users', uid, 'sweden', 'finds'));
+      const snap = await getDoc(doc(db, 'users', uid, config.firestorePath, 'finds'));
       if (snap.exists()) {
         const d = snap.data();
         let municipalities = d.municipalities;
@@ -70,16 +114,16 @@ async function loadFound(uid, db) {
             municipalities = migrateListToObject(municipalities);
           }
           data = municipalities;
-          try { localStorage.setItem(getStorageKey(uid), JSON.stringify({ municipalities: data })); } catch {}
+          try { localStorage.setItem(getStorageKey(uid, config), JSON.stringify({ municipalities: data })); } catch {}
           return data;
         }
       }
     } catch (e) {
-      console.warn('Ruotsin löytöjen lataus Firestoresta epäonnistui:', e);
+      console.warn(`${config.name}-löytöjen lataus Firestoresta epäonnistui:`, e);
     }
   }
   try {
-    const raw = JSON.parse(localStorage.getItem(getStorageKey(uid)) || '{}');
+    const raw = JSON.parse(localStorage.getItem(getStorageKey(uid, config)) || '{}');
     if (Array.isArray(raw)) return migrateListToObject(raw);
     if (raw && typeof raw === 'object') {
       return raw.municipalities || {};
@@ -90,27 +134,22 @@ async function loadFound(uid, db) {
   return {};
 }
 
-async function saveFound(uid, data, db) {
+async function saveFound(uid, data, db, config) {
   try {
-    localStorage.setItem(getStorageKey(uid), JSON.stringify({ municipalities: data }));
+    localStorage.setItem(getStorageKey(uid, config), JSON.stringify({ municipalities: data }));
   } catch {
     // Ei tallennustilaa
   }
   if (db && uid) {
     try {
-      await setDoc(doc(db, 'users', uid, 'sweden', 'finds'), {
+      await setDoc(doc(db, 'users', uid, config.firestorePath, 'finds'), {
         municipalities: data,
         updatedAt: Timestamp.now()
       });
     } catch (e) {
-      console.warn('Ruotsin löytöjen tallennus Firestoreen epäonnistui:', e);
+      console.warn(`${config.name}-löytöjen tallennus Firestoreen epäonnistui:`, e);
     }
   }
-}
-
-function getName(feature) {
-  const props = feature?.properties || {};
-  return props.kom_namn || props.name || props.Name || props.NAMEFIN || 'Tuntematon';
 }
 
 // -------- Pisteen sijainti polygonin sisällä (ray casting) --------
@@ -152,15 +191,51 @@ function isPointInFeature(point, feature) {
   return false;
 }
 
-// ------------------------------------------------------------------
+function getCacheTypeFromWpt(wpt) {
+  const gsType = wpt.getElementsByTagNameNS('http://www.groundspeak.com/cache/1/0/1', 'type')[0];
+  if (gsType?.textContent) return gsType.textContent.trim();
+  const t = wpt.querySelector('type');
+  if (t?.textContent) {
+    const parts = t.textContent.split('|');
+    return parts[parts.length - 1].trim();
+  }
+  return null;
+}
 
-export const renderSwedenMap = async (content, db, user, app) => {
+export function renderCountrySelector(content, app) {
+  content.innerHTML = `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h1>Kuntakartat</h1>
+        <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Etusivulle</button>
+      </div>
+      <p>Valitse maa, jonka kuntakartan haluat avata:</p>
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px; margin-top:15px;">
+        <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('sweden_map')">
+          <span style="font-size:2em;">🇸🇪</span><br>Ruotsi
+        </button>
+        <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('norway_map')">
+          <span style="font-size:2em;">🇳🇴</span><br>Norja
+        </button>
+        <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('estonia_map')">
+          <span style="font-size:2em;">🇪🇪</span><br>Viro
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+export const renderSwedenMap = async (content, db, user, app) => renderCountryMap(content, db, user, app, COUNTRY_CONFIGS.sweden);
+export const renderNorwayMap = async (content, db, user, app) => renderCountryMap(content, db, user, app, COUNTRY_CONFIGS.norway);
+export const renderEstoniaMap = async (content, db, user, app) => renderCountryMap(content, db, user, app, COUNTRY_CONFIGS.estonia);
+
+async function renderCountryMap(content, db, user, app, config) {
   if (!user) {
     app.router('login_view');
     return;
   }
 
-  const foundStats = await loadFound(user.uid, db);
+  const foundStats = await loadFound(user.uid, db, config);
   const found = new Set(Object.keys(foundStats));
   let selectedLayer = null;
   let currentLayer = null;
@@ -170,25 +245,25 @@ export const renderSwedenMap = async (content, db, user, app) => {
   content.innerHTML = `
     <div class="card" style="height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; position: relative;">
       <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border-color); z-index: 1001; flex-wrap: wrap; gap: 8px;">
-        <h2 style="margin: 0; font-size: 1.2em;">🇸🇪 Ruotsi-kuntakartta</h2>
-        <span id="swedenLocationStatus" style="font-size: 0.85em; opacity: 0.9; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
+        <h2 style="margin: 0; font-size: 1.2em;">${config.flag} ${config.name}-kuntakartta</h2>
+        <span id="${config.id}LocationStatus" style="font-size: 0.85em; opacity: 0.9; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
         <div style="display: flex; gap: 10px;">
-          <button id="swedenImportBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
-          <input type="file" id="swedenGpxInput" accept=".gpx,.xml" style="display:none">
-          <button id="swedenLocateBtn" class="btn" style="margin: 0; padding: 5px 10px; font-size: 1.2em;" title="Paikanna ja seuraa sijaintia">📍</button>
-          <button id="swedenClearBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tyhjennä löydöt">🗑️</button>
-          <button class="btn" onclick="app.router('stats')" style="margin: 0; padding: 5px 10px;">⬅ Takaisin</button>
+          <button id="${config.id}ImportBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
+          <input type="file" id="${config.id}GpxInput" accept=".gpx,.xml" style="display:none">
+          <button id="${config.id}LocateBtn" class="btn" style="margin: 0; padding: 5px 10px; font-size: 1.2em;" title="Paikanna ja seuraa sijaintia">📍</button>
+          <button id="${config.id}ClearBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tyhjennä löydöt">🗑️</button>
+          <button class="btn" onclick="app.router('country_maps')" style="margin: 0; padding: 5px 10px;">⬅ Takaisin</button>
         </div>
       </div>
 
       <div style="padding: 8px 10px; background: var(--input-bg); border-bottom: 1px solid var(--border-color); font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
         <span>Klikkaa kuntaa merkitäksesi löydetyksi. Voit myös tuoda löydöt GPX-tiedostosta.</span>
-        <span id="swedenStats" style="font-weight: bold;"></span>
+        <span id="${config.id}Stats" style="font-weight: bold;"></span>
       </div>
 
-      <div id="swedenMap" style="flex: 1; width: 100%; background: #aad3df;">
-        <div id="swedenMapLoading" style="padding: 20px; color: black; background: white; opacity: 0.9; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; border-radius: 8px;">
-          Ladataan Ruotsin kuntakarttaa...
+      <div id="${config.id}Map" style="flex: 1; width: 100%; background: #aad3df;">
+        <div id="${config.id}MapLoading" style="padding: 20px; color: black; background: white; opacity: 0.9; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; border-radius: 8px;">
+          Ladataan ${config.name}-kuntakarttaa...
         </div>
       </div>
 
@@ -200,7 +275,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
     </div>
   `;
 
-  const map = L.map('swedenMap', { preferCanvas: true, zoomControl: false }).setView([62.5, 16.5], 5);
+  const map = L.map(`${config.id}Map`, { preferCanvas: true, zoomControl: false }).setView(config.center, config.zoom);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -209,9 +284,9 @@ export const renderSwedenMap = async (content, db, user, app) => {
     maxZoom: 19
   }).addTo(map);
 
-  const statsEl = document.getElementById('swedenStats');
-  const loadingEl = document.getElementById('swedenMapLoading');
-  const locationStatusEl = document.getElementById('swedenLocationStatus');
+  const statsEl = document.getElementById(`${config.id}Stats`);
+  const loadingEl = document.getElementById(`${config.id}MapLoading`);
+  const locationStatusEl = document.getElementById(`${config.id}LocationStatus`);
   const userMarker = L.layerGroup().addTo(map);
   const nameToLayer = new Map();
 
@@ -228,7 +303,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
 
   function updateStats() {
     if (!statsEl) return;
-    statsEl.textContent = `${found.size} / 290 kuntaa`;
+    statsEl.textContent = `${found.size} / ${config.totalMunicipalities} ${config.label}`;
   }
 
   function getBaseStyle(name) {
@@ -242,7 +317,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
   }
 
   function setLayerStyle(layer) {
-    const name = getName(layer.feature);
+    const name = getName(layer.feature, config);
     const isFound = found.has(name);
     const isCurrent = currentLayer === layer;
     const isSelected = selectedLayer === layer;
@@ -268,7 +343,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
       found.add(name);
       foundStats[name] = { s: createEmptyStats() };
     }
-    await saveFound(user.uid, foundStats, db);
+    await saveFound(user.uid, foundStats, db, config);
     updateStats();
     refreshStyle();
   }
@@ -297,10 +372,10 @@ export const renderSwedenMap = async (content, db, user, app) => {
 
       const hasGpxFinds = total > 0;
       const statusText = isFound ? (hasGpxFinds ? '✅ Löydetty (GPX)' : '✅ Löydetty (käsin)') : '🔴 Etsittävä';
-      const showButton = !hasGpxFinds; // GPX-tuotuja kunta ei voi poistaa yksittäin tästä
+      const showButton = !hasGpxFinds; // GPX-tuotuja kuntaa ei voi poistaa yksittäin tästä
       div.innerHTML = `
         <strong style="font-size:1.1em;display:block;margin-bottom:6px;">${name}</strong>
-        <div id="swedenPopupStatus" style="margin-bottom:8px;">${statusText}</div>
+        <div id="${config.id}PopupStatus" style="margin-bottom:8px;">${statusText}</div>
         ${hasGpxFinds ? `<div style="text-align:left;margin-bottom:8px;"><div style="margin-bottom:4px;"><strong>Löydetyt (${total}):</strong></div><div style="display:flex;flex-wrap:wrap;gap:2px;">${foundHtml}</div></div>` : ''}
         ${isFound && missingHtml ? `<div style="text-align:left;margin-top:6px;border-top:1px dotted #555;padding-top:4px;"><strong style="font-size:0.9em;">Puuttuu:</strong><div style="display:flex;flex-wrap:wrap;gap:2px;">${missingHtml}</div></div>` : ''}
         ${showButton ? `<button class="btn btn-primary" style="padding:5px 10px;font-size:0.85em;margin-top:6px;">${isFound ? 'Poista löytö' : 'Merkitse löydetyksi'}</button>` : ''}
@@ -320,15 +395,15 @@ export const renderSwedenMap = async (content, db, user, app) => {
 
   let geoData;
   try {
-    const response = await fetch(GEOJSON_URL);
+    const response = await fetch(config.geoJsonUrl);
     if (!response.ok) throw new Error('HTTP ' + response.status);
     geoData = await response.json();
   } catch (e) {
-    console.error('Ruotsin kuntakartan lataus epäonnistui:', e);
+    console.error(`${config.name}-kuntakartan lataus epäonnistui:`, e);
     if (loadingEl) {
       loadingEl.textContent = 'Kartan lataus epäonnistui. Tarkista verkkoyhteys.';
     } else {
-      document.getElementById('swedenMap').innerHTML = '<div style="padding:20px; color:black; background:white;">Kartan lataus epäonnistui.</div>';
+      document.getElementById(`${config.id}Map`).innerHTML = '<div style="padding:20px; color:black; background:white;">Kartan lataus epäonnistui.</div>';
     }
     return;
   }
@@ -336,9 +411,9 @@ export const renderSwedenMap = async (content, db, user, app) => {
   if (loadingEl) loadingEl.remove();
 
   geoLayer = L.geoJSON(geoData, {
-    style: (feature) => getBaseStyle(getName(feature)),
+    style: (feature) => getBaseStyle(getName(feature, config)),
     onEachFeature: (feature, layer) => {
-      const name = getName(feature);
+      const name = getName(feature, config);
       nameToLayer.set(name, layer);
 
       bindPopupForLayer(layer, name);
@@ -354,7 +429,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
   updateStats();
 
   // Paikannus
-  const locateBtn = document.getElementById('swedenLocateBtn');
+  const locateBtn = document.getElementById(`${config.id}LocateBtn`);
   if (locateBtn) {
     updateLocateButton();
     locateBtn.onclick = () => {
@@ -384,7 +459,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
     if (matchLayer) {
       if (currentLayer !== matchLayer) {
         currentLayer = matchLayer;
-        updateLocationStatus('Olet nyt: ' + getName(matchLayer.feature));
+        updateLocationStatus('Olet nyt: ' + getName(matchLayer.feature, config));
         refreshStyle();
       }
       if (watching) {
@@ -406,13 +481,13 @@ export const renderSwedenMap = async (content, db, user, app) => {
   });
 
   // Tyhjennys
-  const clearBtn = document.getElementById('swedenClearBtn');
+  const clearBtn = document.getElementById(`${config.id}ClearBtn`);
   if (clearBtn) {
     clearBtn.onclick = async () => {
-      if (confirm('Tyhjennätkö kaikki Ruotsin kartalle merkityt löydöt?')) {
+      if (confirm(`Tyhjennätkö kaikki ${config.name}-kartalle merkityt löydöt?`)) {
         found.clear();
         for (const key in foundStats) delete foundStats[key];
-        await saveFound(user.uid, foundStats, db);
+        await saveFound(user.uid, foundStats, db, config);
         selectedLayer = null;
         currentLayer = null;
         updateLocationStatus('');
@@ -423,8 +498,8 @@ export const renderSwedenMap = async (content, db, user, app) => {
   }
 
   // GPX-tuonti
-  const importBtn = document.getElementById('swedenImportBtn');
-  const gpxInput = document.getElementById('swedenGpxInput');
+  const importBtn = document.getElementById(`${config.id}ImportBtn`);
+  const gpxInput = document.getElementById(`${config.id}GpxInput`);
   if (importBtn && gpxInput) {
     importBtn.onclick = () => gpxInput.click();
     gpxInput.onchange = async (e) => {
@@ -460,7 +535,7 @@ export const renderSwedenMap = async (content, db, user, app) => {
           const p = points[i];
           const layer = findMunicipalityLayerByPoint(p.lat, p.lon);
           if (layer) {
-            const name = getName(layer.feature);
+            const name = getName(layer.feature, config);
             if (!found.has(name)) {
               found.add(name);
               foundStats[name] = { s: createEmptyStats() };
@@ -477,11 +552,11 @@ export const renderSwedenMap = async (content, db, user, app) => {
           if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
         }
 
-        await saveFound(user.uid, foundStats, db);
+        await saveFound(user.uid, foundStats, db, config);
         updateStats();
         refreshStyle();
-        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty (yht. ${found.size} / 290)`);
-        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\nYhteensä ${found.size} / 290 kuntaa.`);
+        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty (yht. ${found.size} / ${config.totalMunicipalities})`);
+        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
       } catch (err) {
         console.error('GPX-tuonti epäonnistui:', err);
         alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);
@@ -490,17 +565,6 @@ export const renderSwedenMap = async (content, db, user, app) => {
         gpxInput.value = '';
       }
     };
-  }
-
-  function getCacheTypeFromWpt(wpt) {
-    const gsType = wpt.getElementsByTagNameNS('http://www.groundspeak.com/cache/1/0/1', 'type')[0];
-    if (gsType?.textContent) return gsType.textContent.trim();
-    const t = wpt.querySelector('type');
-    if (t?.textContent) {
-      const parts = t.textContent.split('|');
-      return parts[parts.length - 1].trim();
-    }
-    return null;
   }
 
   function findMunicipalityLayerByPoint(lat, lon) {
@@ -514,4 +578,4 @@ export const renderSwedenMap = async (content, db, user, app) => {
     }
     return null;
   }
-};
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v58'; // PÄIVITETTY: v57 -> v58
+const CACHE_NAME = 'mk-porttaali-v59'; // PÄIVITETTY: v58 -> v59
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,8 +13,10 @@ const ASSETS_TO_CACHE = [
   './stats.js',
   './map.js',
   './map_all.js',
-  './map_sweden.js',     // <--- UUSI TIEDOSTO LISÄTTY (Ruotsi-kuntakartta)
+  './map_countries.js',     // <--- UUSI TIEDOSTO LISÄTTY (Ruotsi/Norja/Viro-kuntakartat)
   './sverige_kommuner.geojson',
+  './norge_kommuner.geojson',
+  './viro_vald.geojson',
   './links.js',          // <--- UUSI TIEDOSTO LISÄTTY
   './converters.js',     // <--- UUSI TIEDOSTO LISÄTTY (muuntimet-integraatio)
   './manifest.json',

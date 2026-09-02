@@ -11,7 +11,7 @@ import { renderLinksView } from "./links.js";
 import { renderConvertersView } from "./converters.js";
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
-import * as MapSwedenView from "./map_sweden.js";
+import * as MapCountriesView from "./map_countries.js";
 import { renderAdminView } from "./admin.js";
 import { renderSettingsView } from "./settings.js"; 
 
@@ -31,8 +31,8 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v58';
-const APP_SW_CACHE = 'mk-porttaali-v58';
+const APP_VERSION = 'v59';
+const APP_SW_CACHE = 'mk-porttaali-v59';
 const APP_UPDATED_AT = '2.9.2026';
 
 window.app = {
@@ -91,7 +91,7 @@ window.app = {
       const nav = document.getElementById('mainNav');
       if (nav) nav.classList.remove('open');
 
-      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'sweden_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
+      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'country_maps', 'sweden_map', 'norway_map', 'estonia_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
       
       if (protectedViews.includes(targetView) && !window.app.currentUser) {
           sessionStorage.setItem('mk_post_login_view', targetView);
@@ -149,7 +149,7 @@ window.app = {
             <div style="display:grid; gap:10px; margin-top:15px;">
                 <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
                 <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
-                <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold;" onclick="app.router('sweden_map')">🇸🇪 Ruotsi-kuntakartta ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
+                <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold;" onclick="app.router('country_maps')">🗺️ Kuntakartat ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
                 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
@@ -183,7 +183,10 @@ window.app = {
       case 'stats_triplet': if (checkPremium(content)) Stats.loadTripletData(db, window.app.currentUser, content); break;
       case 'stats_map': if (checkPremium(content)) MapView.renderTripletMap(content, db, window.app.currentUser, window.app); break;
       case 'stats_map_all': if (checkPremium(content)) MapAllView.renderAllFindsMap(content, db, window.app.currentUser, window.app); break;
-      case 'sweden_map': if (checkPremium(content)) MapSwedenView.renderSwedenMap(content, db, window.app.currentUser, window.app); break;
+      case 'country_maps': if (checkPremium(content)) MapCountriesView.renderCountrySelector(content, window.app); break;
+      case 'sweden_map': if (checkPremium(content)) MapCountriesView.renderSwedenMap(content, db, window.app.currentUser, window.app); break;
+      case 'norway_map': if (checkPremium(content)) MapCountriesView.renderNorwayMap(content, db, window.app.currentUser, window.app); break;
+      case 'estonia_map': if (checkPremium(content)) MapCountriesView.renderEstoniaMap(content, db, window.app.currentUser, window.app); break;
       case 'stats_all': if (checkPremium(content)) Stats.loadAllStats(db, window.app.currentUser, content); break;
       case 'stats_top': if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content); break;
       case 'stats_external': if (checkPremium(content)) Stats.loadExternalStats(content); break;
