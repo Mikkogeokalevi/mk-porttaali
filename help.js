@@ -11,18 +11,20 @@ export const renderHelp = (content, app) => {
         </div>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.9.1</h3>
+            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.10.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>10.7.2026:</strong> Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.</li>
-                <li><strong>10.7.2026:</strong> Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.</li>
-                <li><strong>10.7.2026:</strong> Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.</li>
-                <li><strong>10.7.2026:</strong> Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.</li>
-                <li><strong>10.7.2026:</strong> Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.</li>
+                <li><strong>2.9.2026:</strong> Uusi Ruotsi-kuntakartta: väritä kartalta löydetyt ruotsalaiset kunnat reissun aikana. Tuetulla kartalla näkee myös oman sijainnin ja sen, missä kunnassa sillä hetkellä ollaan.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
                 <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
+                    <strong>v2.9.1</strong><br>
+                    - 10.7.2026: Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.<br>
+                    - 10.7.2026: Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.<br>
+                    - 10.7.2026: Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.<br>
+                    - 10.7.2026: Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.<br>
+                    - 10.7.2026: Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.<br><br>
                     <strong>v2.8 (aiemmat päivitykset)</strong><br>
                     - 2.2.2026: Muuntimet integroitu SPA:han: kaikki 32 kategoriaa iframe-ratkaisulla.<br>
                     - 2.2.2026: Välilehdet vaakarivissä kuten kannettavassa näkymässä.<br>

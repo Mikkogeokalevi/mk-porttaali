@@ -16,7 +16,7 @@
 - **Kuvageneraattori (generator.js)**: Geokätkökuvien luonti eri tyyleillä ja teksteillä.
 - **Linkkikirjasto (links.js)**: Geokätköilyyn liittyvät linkit ja resurssit.
 - **Muuntimet (converters.js + muuntimet.html)**: 33 kategoriaa, 200+ yksikköä, iframe-integraatio.
-- **Kartat (map.js, map_all.js)**: Leaflet-kartat, käyttäjäkohtainen ja yhteiskartta.
+- **Kartat (map.js, map_all.js, map_sweden.js)**: Leaflet-kartat, käyttäjäkohtainen ja yhteiskartta, sekä interaktiivinen Ruotsin kuntakartta.
 - **Reissuapuri (reissuapuri.html)**: Matkasuunnittelutyökalu, RTDB-tallennus.
 - **Admin (admin.js)**: Ylläpitotoiminnot, käyttäjien hallinta.
 - **Auth (auth.js)**: Google/sähköpostikirjautuminen, roolit (guest/user/admin).
@@ -33,6 +33,7 @@
 - **Patch-versio** (esim. `2.9.1`): pieni korjaus, käyttöliittymän hienosäätö tai yksittäinen pieni lisäys ilman uutta pääominaisuutta.
 - **Major-versio** (esim. `3.0`): suuri rakenteellinen muutos tai taaksepäin yhteensopivuutta rikkova muutos.
 - Kartta- ja kuvageneraattoripäivitysten muodostama kokonaisuus julkaistaan versiona `2.9`; seuraavat pienet korjaukset käyttävät muotoa `2.9.1`, `2.9.2` jne.
+- Ruotsin kuntakartta -kokonaisuus julkaistaan uutena minor-versiona `2.10.0`.
 - Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
 
 ## GitHub Pages -integraatio
@@ -74,3 +75,4 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **2.9.2026**: Versio 2.10.0: lisätty interaktiivinen Ruotsi-kuntakartta, jossa voi merkitä löydetyt kunnat ja paikantaa itsensä.

@@ -55,6 +55,9 @@ export const renderStatsDashboard = (content, app) => {
             <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_all')">
                 <span style="font-size:2em;">🗺️</span><br>Maakunnat & Löydöt
             </button>
+            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('sweden_map')">
+                <span style="font-size:2em;">🇸🇪</span><br>Ruotsi-kuntakartta
+            </button>
             <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_top')">
                 <span style="font-size:2em;">📊</span><br>Top-listat
             </button>
