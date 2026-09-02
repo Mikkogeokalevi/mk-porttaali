@@ -10,15 +10,68 @@ function getStorageKey(uid) {
   return `${STORAGE_KEY}_${uid}`;
 }
 
+// Kätkötyypit Suomen karttojen tyyliin (mukautettu Ruotsia varten)
+const CACHE_TYPES = [
+  { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
+  { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
+  { index: 2, name: 'Webcam', icon: 'kuvat/webcam.gif' },
+  { index: 3, name: 'Mysse', icon: 'kuvat/mysse.gif' },
+  { index: 4, name: 'Letteri', icon: 'kuvat/letteri.gif' },
+  { index: 5, name: 'Earthcache', icon: 'kuvat/oortti.gif' },
+  { index: 6, name: 'Miitti', icon: 'kuvat/miitti.gif' },
+  { index: 7, name: 'Virtu', icon: 'kuvat/virtu.gif' },
+  { index: 8, name: 'Cito', icon: 'kuvat/cito.gif' },
+  { index: 9, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
+  { index: 10, name: 'Com.Cel', icon: 'kuvat/ccemiitti.gif' },
+  { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' }
+];
+
+// GPX:n englanninkieliset kätkötyypit -> CACHE_TYPES-indeksi
+const GPX_TYPE_TO_INDEX = {
+  'Traditional Cache': 0,
+  'Multi-cache': 1,
+  'Webcam Cache': 2,
+  'Unknown Cache': 3,
+  'Letterbox Hybrid': 4,
+  'Earthcache': 5,
+  'Event Cache': 6,
+  'Virtual Cache': 7,
+  'Cache In Trash Out Event': 8,
+  'Wherigo Cache': 9,
+  'Community Celebration Event': 10,
+  'Mega-Event': 11,
+  'Giga-Event': 11,
+  'Lost and Found Event': 6,
+  'Groundspeak Block Party': 6
+};
+
+function createEmptyStats() {
+  return new Array(CACHE_TYPES.length).fill(0);
+}
+
+function migrateListToObject(list) {
+  const obj = {};
+  for (const name of list) {
+    obj[name] = { s: createEmptyStats() };
+  }
+  return obj;
+}
+
 async function loadFound(uid, db) {
+  let data = {};
   if (db && uid) {
     try {
       const snap = await getDoc(doc(db, 'users', uid, 'sweden', 'finds'));
       if (snap.exists()) {
-        const data = snap.data();
-        if (Array.isArray(data.municipalities)) {
-          try { localStorage.setItem(getStorageKey(uid), JSON.stringify(data.municipalities)); } catch {}
-          return data.municipalities;
+        const d = snap.data();
+        let municipalities = d.municipalities;
+        if (municipalities) {
+          if (Array.isArray(municipalities)) {
+            municipalities = migrateListToObject(municipalities);
+          }
+          data = municipalities;
+          try { localStorage.setItem(getStorageKey(uid), JSON.stringify({ municipalities: data })); } catch {}
+          return data;
         }
       }
     } catch (e) {
@@ -26,22 +79,27 @@ async function loadFound(uid, db) {
     }
   }
   try {
-    return JSON.parse(localStorage.getItem(getStorageKey(uid)) || '[]');
+    const raw = JSON.parse(localStorage.getItem(getStorageKey(uid)) || '{}');
+    if (Array.isArray(raw)) return migrateListToObject(raw);
+    if (raw && typeof raw === 'object') {
+      return raw.municipalities || {};
+    }
   } catch {
-    return [];
+    // Ei dataa
   }
+  return {};
 }
 
-async function saveFound(uid, list, db) {
+async function saveFound(uid, data, db) {
   try {
-    localStorage.setItem(getStorageKey(uid), JSON.stringify(list));
+    localStorage.setItem(getStorageKey(uid), JSON.stringify({ municipalities: data }));
   } catch {
     // Ei tallennustilaa
   }
   if (db && uid) {
     try {
       await setDoc(doc(db, 'users', uid, 'sweden', 'finds'), {
-        municipalities: list,
+        municipalities: data,
         updatedAt: Timestamp.now()
       });
     } catch (e) {
@@ -102,7 +160,8 @@ export const renderSwedenMap = async (content, db, user, app) => {
     return;
   }
 
-  const found = new Set(await loadFound(user.uid, db));
+  const foundStats = await loadFound(user.uid, db);
+  const found = new Set(Object.keys(foundStats));
   let selectedLayer = null;
   let currentLayer = null;
   let watching = false;
@@ -202,31 +261,54 @@ export const renderSwedenMap = async (content, db, user, app) => {
   }
 
   async function toggleFound(name) {
-    if (found.has(name)) found.delete(name);
-    else found.add(name);
-    await saveFound(user.uid, [...found], db);
+    if (found.has(name)) {
+      found.delete(name);
+      delete foundStats[name];
+    } else {
+      found.add(name);
+      foundStats[name] = { s: createEmptyStats() };
+    }
+    await saveFound(user.uid, foundStats, db);
     updateStats();
     refreshStyle();
   }
 
   function bindPopupForLayer(layer, name) {
     layer.bindPopup(() => {
+      const data = foundStats[name];
+      const s = data?.s || createEmptyStats();
+      const total = s.reduce((a, b) => a + b, 0);
       const isFound = found.has(name);
       const div = document.createElement('div');
       div.style.textAlign = 'center';
-      div.style.minWidth = '160px';
+      div.style.minWidth = '220px';
+      div.style.maxWidth = '280px';
+
+      let foundHtml = '';
+      let missingHtml = '';
+      CACHE_TYPES.forEach(t => {
+        const count = s[t.index] || 0;
+        if (count > 0) {
+          foundHtml += `<div style="display:inline-block;margin:2px 6px 2px 0;white-space:nowrap;"><img src="${t.icon}" style="width:14px;vertical-align:middle;margin-right:3px;"> <b>${t.name}:</b> ${count}</div>`;
+        } else {
+          missingHtml += `<span style="display:inline-block;background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:0.8em;margin:2px;">${t.name}</span>`;
+        }
+      });
+
+      const statusText = isFound ? (total > 0 ? '✅ Löydetty' : '✅ Löydetty (käsin)') : '🔴 Etsittävä';
       div.innerHTML = `
-        <strong style="font-size:1.1em; display:block; margin-bottom:6px;">${name}</strong>
-        <div id="swedenPopupStatus" style="margin-bottom:8px;">${isFound ? '✅ Löydetty' : '🔴 Etsittävä'}</div>
-        <button class="btn btn-primary" style="padding:5px 10px; font-size:0.85em;">${isFound ? 'Poista löytö' : 'Merkitse löydetyksi'}</button>
+        <strong style="font-size:1.1em;display:block;margin-bottom:6px;">${name}</strong>
+        <div id="swedenPopupStatus" style="margin-bottom:8px;">${statusText}</div>
+        ${total > 0 ? `<div style="text-align:left;margin-bottom:8px;"><div style="margin-bottom:4px;"><strong>Löydetyt (${total}):</strong></div><div style="display:flex;flex-wrap:wrap;gap:2px;">${foundHtml}</div></div>` : ''}
+        ${isFound && missingHtml ? `<div style="text-align:left;margin-top:6px;border-top:1px dotted #555;padding-top:4px;"><strong style="font-size:0.9em;">Puuttuu:</strong><div style="display:flex;flex-wrap:wrap;gap:2px;">${missingHtml}</div></div>` : ''}
+        <button class="btn btn-primary" style="padding:5px 10px;font-size:0.85em;margin-top:6px;">${isFound ? 'Poista löytö' : 'Merkitse löydetyksi'}</button>
       `;
-      const status = div.querySelector('#swedenPopupStatus');
+
       const btn = div.querySelector('button');
       btn.onclick = async () => {
         await toggleFound(name);
-        const nowFound = found.has(name);
-        if (status) status.textContent = nowFound ? '✅ Löydetty' : '🔴 Etsittävä';
-        btn.textContent = nowFound ? 'Poista löytö' : 'Merkitse löydetyksi';
+        layer.closePopup();
+        layer.openPopup();
       };
       return div;
     });
@@ -325,7 +407,8 @@ export const renderSwedenMap = async (content, db, user, app) => {
     clearBtn.onclick = async () => {
       if (confirm('Tyhjennätkö kaikki Ruotsin kartalle merkityt löydöt?')) {
         found.clear();
-        await saveFound(user.uid, [], db);
+        for (const key in foundStats) delete foundStats[key];
+        await saveFound(user.uid, foundStats, db);
         selectedLayer = null;
         currentLayer = null;
         updateLocationStatus('');
@@ -350,21 +433,24 @@ export const renderSwedenMap = async (content, db, user, app) => {
         if (parserError) throw new Error('Tiedosto ei ole kelvollinen XML/GPX');
 
         const points = [];
-        ['wpt','trkpt','rtept'].forEach(tag => {
-          xml.querySelectorAll(tag).forEach(el => {
-            const lat = parseFloat(el.getAttribute('lat'));
-            const lon = parseFloat(el.getAttribute('lon'));
-            if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lon });
-          });
+        xml.querySelectorAll('wpt').forEach(wpt => {
+          const lat = parseFloat(wpt.getAttribute('lat'));
+          const lon = parseFloat(wpt.getAttribute('lon'));
+          const sym = wpt.querySelector('sym')?.textContent || '';
+          if (isNaN(lat) || isNaN(lon)) return;
+          if (!sym.includes('Found')) return; // vain löydetyt kätköt
+          const type = getCacheTypeFromWpt(wpt);
+          points.push({ lat, lon, type });
         });
 
         if (points.length === 0) {
-          alert('GPX-tiedostosta ei löytynyt koordinaatteja (wpt/trkpt/rtept).');
+          alert('GPX-tiedostosta ei löytynyt löydettyjä kätköjä.');
           return;
         }
 
-        updateLocationStatus(`Tuodaan ${points.length} pistettä...`);
-        let added = 0;
+        updateLocationStatus(`Tuodaan ${points.length} kätköä...`);
+        let addedMunicipalities = 0;
+        let typeHits = 0;
         for (let i = 0; i < points.length; i++) {
           if (i % 25 === 0) updateLocationStatus(`Tuodaan... ${i} / ${points.length}`);
           const p = points[i];
@@ -373,16 +459,25 @@ export const renderSwedenMap = async (content, db, user, app) => {
             const name = getName(layer.feature);
             if (!found.has(name)) {
               found.add(name);
-              added++;
+              foundStats[name] = { s: createEmptyStats() };
+              addedMunicipalities++;
+            }
+            if (p.type && GPX_TYPE_TO_INDEX[p.type] !== undefined) {
+              const idx = GPX_TYPE_TO_INDEX[p.type];
+              foundStats[name].s[idx] = (foundStats[name].s[idx] || 0) + 1;
+              typeHits++;
+            } else if (p.type) {
+              console.warn('Tuntematon kätkötyyppi GPX:ssä:', p.type);
             }
           }
           if (i % 75 === 0) await new Promise(r => setTimeout(r, 0));
         }
-        await saveFound(user.uid, [...found], db);
+
+        await saveFound(user.uid, foundStats, db);
         updateStats();
         refreshStyle();
-        updateLocationStatus(`${added} uutta kuntaa tuotu (yht. ${found.size} / 290)`);
-        alert(`GPX-tuonti valmis.\n\n${added} uutta kuntaa merkittiin löydetyksi.\nYhteensä ${found.size} / 290 kuntaa.`);
+        updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty (yht. ${found.size} / 290)`);
+        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\nYhteensä ${found.size} / 290 kuntaa.`);
       } catch (err) {
         console.error('GPX-tuonti epäonnistui:', err);
         alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);
@@ -391,6 +486,17 @@ export const renderSwedenMap = async (content, db, user, app) => {
         gpxInput.value = '';
       }
     };
+  }
+
+  function getCacheTypeFromWpt(wpt) {
+    const gsType = wpt.getElementsByTagNameNS('http://www.groundspeak.com/cache/1/0/1', 'type')[0];
+    if (gsType?.textContent) return gsType.textContent.trim();
+    const t = wpt.querySelector('type');
+    if (t?.textContent) {
+      const parts = t.textContent.split('|');
+      return parts[parts.length - 1].trim();
+    }
+    return null;
   }
 
   function findMunicipalityLayerByPoint(lat, lon) {

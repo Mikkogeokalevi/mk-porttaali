@@ -14,7 +14,7 @@ export const renderHelp = (content, app) => {
             <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.10.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>2.9.2026:</strong> Uusi Ruotsi-kuntakartta: väritä kartalta löydetyt ruotsalaiset kunnat reissun aikana. Tuetulla kartalla näkee myös oman sijainnin ja sen, missä kunnassa sillä hetkellä ollaan.</li>
-                <li><strong>2.9.2026:</strong> Ruotsi-kartalle voi tuoda oikeat löydöt GPX-tiedostosta. Sovellus laskee koordinaateista kunnan ja merkitsee ne löydetyiksi automaattisesti.</li>
+                <li><strong>2.9.2026:</strong> Ruotsi-kartalle voi tuoda oikeat löydöt GPX-tiedostosta. Sovellus laskee koordinaateista kunnan ja merkitsee ne löydetyiksi automaattisesti. GPX:stä tunnistetaan myös kätkötyypit, joten voit nähdä mitä eri tyyppejä kussakin kunnassa on jo löydetty ja mitkä puuttuvat.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">

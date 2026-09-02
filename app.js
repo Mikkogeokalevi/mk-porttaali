@@ -31,8 +31,8 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v57';
-const APP_SW_CACHE = 'mk-porttaali-v57';
+const APP_VERSION = 'v58';
+const APP_SW_CACHE = 'mk-porttaali-v58';
 const APP_UPDATED_AT = '2.9.2026';
 
 window.app = {
