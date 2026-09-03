@@ -140,6 +140,7 @@ export const renderAllFindsMap = async (content, db, user, app) => {
     const userMarker = L.layerGroup().addTo(map);
     const locateBtn = document.getElementById('locateBtn');
     let locateEnabled = false;
+    let manualOverrideUntil = 0;
 
     function updateLocateButton() {
         if (!locateBtn) return;
@@ -147,15 +148,23 @@ export const renderAllFindsMap = async (content, db, user, app) => {
         locateBtn.style.color = '#1e1e2e';
     }
 
-    function locateUser() { map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); }
+    function locateUser() { manualOverrideUntil = 0; map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); }
     
     map.on('locationfound', (e) => {
         if (!locateEnabled) return;
         userMarker.clearLayers();
-        L.circle(e.latlng, e.accuracy/2, { color: '#89b4fa', fillOpacity: 0.1 }).addTo(userMarker);
-        L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0077cc', fillOpacity: 1 }).addTo(userMarker).bindPopup("Olet tässä").openPopup();
+        L.circle(e.latlng, e.accuracy/2, { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.1 }).addTo(userMarker);
+        L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#ff0000', fillOpacity: 1 }).addTo(userMarker).bindPopup("Olet tässä").openPopup();
         const zoom = getZoomBySpeed(e.speed);
-        map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
+        if (Date.now() > manualOverrideUntil) {
+            map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
+        }
+    });
+
+    // Jos käyttäjä zoomaa/panoroi manuaalisesti, keskeytetään automaattinen seuranta 10 s ajaksi
+    map.on('dragstart', () => { manualOverrideUntil = Date.now() + 10000; });
+    L.DomEvent.on(map.getContainer(), 'wheel touchstart pointerdown', () => {
+        manualOverrideUntil = Date.now() + 10000;
     });
 
     if (locateBtn) {
@@ -168,7 +177,6 @@ export const renderAllFindsMap = async (content, db, user, app) => {
                 locateUser();
             } else {
                 map.stopLocate();
-                userMarker.clearLayers();
                 releaseScreenWakeLock();
             }
         };

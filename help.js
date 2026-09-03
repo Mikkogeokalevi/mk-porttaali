@@ -11,10 +11,10 @@ export const renderHelp = (content, app) => {
         </div>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.11.0</h3>
+            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.12.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>2.9.2026:</strong> Uusi Kuntakartat-sivu, jolta avautuvat Ruotsin, Norjan ja Viron kuntakartat. Jokaiselle maalle voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.</li>
-                <li><strong>2.9.2026:</strong> GPX-tuonti tunnistaa kätkötyypit kaikilla kuntakartoilla, joten näet mitä eri tyyppejä kussakin kunnassa on jo löydetty ja mitkä puuttuvat.</li>
+                <li><strong>3.9.2026:</strong> Kuntakarttojen paikannus seuraa sijaintiasi automaattisesti kun liikut. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin esimerkiksi 100 km/h nopeudessa. Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkilla rajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus myös pitää näytön päällä Androidilla, iPhone/iPadillä ja muilla mobiililaitteilla, joissa selain tukee Wake Lock -rajapintaa.</li>
+                <li><strong>3.9.2026:</strong> GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.</li>
             </ul>
 
             <details style="margin-top:15px; cursor:pointer;">
@@ -26,6 +26,9 @@ export const renderHelp = (content, app) => {
                     - 10.7.2026: Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.<br>
                     - 10.7.2026: Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.<br>
                     - 10.7.2026: Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.<br><br>
+                    <strong>v2.11.0</strong><br>
+                    - 2.9.2026: Uusi Kuntakartat-sivu, jolta avautuvat Ruotsin, Norjan ja Viron kuntakartat. Jokaiselle maalle voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.<br>
+                    - 2.9.2026: GPX-tuonti tunnistaa kätkötyypit kaikilla kuntakartoilla, joten näet mitä eri tyyppejä kussakin kunnassa on jo löydetty ja mitkä puuttuvat.<br><br>
                     <strong>v2.10.0</strong><br>
                     - 2.9.2026: Lisätty interaktiivinen Ruotsi-kuntakartta, jossa voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.<br>
                     - 2.9.2026: GPX-tuonti tunnistaa kätkötyypit kunnittain; popup näyttää löydetyt ja puuttuvat tyypit.<br><br>
@@ -119,6 +122,7 @@ export const renderHelp = (content, app) => {
 
         <h4>Löydöt maakunnittain</h4>
         <p>Yleiskartta, joka näyttää missä kunnissa olet löytänyt <em>mitä tahansa</em> kätköjä. Hyvä työkalu yleisen kuntakartan värittämiseen.</p>
+        <p><strong>Paikannus:</strong> Paina 📍-nappia. Kartta seuraa sijaintiasi automaattisesti ja zoomaa nopeuden mukaan. Paikannus pitää näytön päällä mobiililaitteilla.</p>
         <p><strong>Kätkötyyppifiltterit:</strong> Kartan ja tekstimuotoisen kuntalistan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Näkymiin jäävät tällöin vain kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>. Maakunnat, joihin ei jää yhtään sopivaa kuntaa, piilotetaan automaattisesti.</p>
         <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle ja listalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
 
@@ -126,7 +130,7 @@ export const renderHelp = (content, app) => {
         <p>Etusivun tai Tilastot-sivun <strong>🗺️ Kuntakartat</strong> -valinnasta avautuu maa-valitsin. Valitse maa ja merkitse löydetyt kunnat.</p>
         <ul style="line-height:1.6; padding-left:20px;">
             <li><strong>Kunnan merkitseminen:</strong> Klikkaa kuntaa kartalta. Jos kuntaan ei ole tuotu GPX-löytöjä, voit vaihtaa sen löydetyksi / etsittäväksi nappia painamalla.</li>
-            <li><strong>Paikannus:</strong> Paina 📍-nappia. Sovellus seuraa sijaintiasi ja korostaa kunnan, jossa olet tällä hetkellä (keltainen).</li>
+            <li><strong>Paikannus:</strong> Paina 📍-nappia. Sovellus seuraa sijaintiasi automaattisesti, kun liikut kartalla. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin nopeammassa liikkeessä (esim. 100 km/h). Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkia kuntarajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus pitää lisäksi näytön päällä mobiililaitteilla, jotta ruutu ei mene pimeäksi kesken ajon. Klikkaamalla kuntaa voit edelleen merkitä sen löydetyksi.</li>
             <li><strong>GPX-tuonti:</strong> Paina 📁-nappia ja valitse löydettyjä kätköjä sisältävä GPX-tiedosto. Sovellus laskee koordinaateista kunnan, merkitsee sen löydetyksi ja jakaa kätkötyypit kunnittain. Samat kätköt eivät tuplaannu, vaikka tuot saman tiedoston uudelleen. Kätköt, jotka osuvat valitun maan kuntarajojen ulkopuolelle, ilmoitetaan erikseen.</li>
             <li><strong>Popup-tiedot:</strong> Klikkaamalla kuntaa näet löydetyt kätkötyypit (kuvakkeet ja lukumäärät) ja puuttuvat tyypit. Jos kunnan löydöt on tuotu GPX:stä, “Poista löytö” -nappia ei näy; voit tyhjentää koko maan kartalta 🗑️-painikkeella.</li>
             <li><strong>Tyhjennys:</strong> 🗑️-nappi poistaa kaikki valitun maan kuntakartan merkinnät.</li>

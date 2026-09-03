@@ -334,6 +334,7 @@ async function renderCountryMap(content, db, user, app, config) {
   let selectedLayer = null;
   let currentLayer = null;
   let watching = false;
+  let manualOverrideUntil = 0;
   let geoLayer;
   let countryBounds;
 
@@ -386,6 +387,12 @@ async function renderCountryMap(content, db, user, app, config) {
   const gpxTimeEl = document.getElementById(`${config.id}GpxTime`);
   const userMarker = L.layerGroup().addTo(map);
   const nameToLayer = new Map();
+
+  // Jos käyttäjä zoomaa/panoroi manuaalisesti, keskeytetään automaattinen seuranta 10 s ajaksi
+  map.on('dragstart', () => { manualOverrideUntil = Date.now() + 10000; });
+  L.DomEvent.on(map.getContainer(), 'wheel touchstart pointerdown', () => {
+    manualOverrideUntil = Date.now() + 10000;
+  });
 
   function updateLocationStatus(text) {
     if (!locationStatusEl) return;
@@ -542,6 +549,7 @@ async function renderCountryMap(content, db, user, app, config) {
       watching = !watching;
       updateLocateButton();
       if (watching) {
+        manualOverrideUntil = 0;
         updateLocationStatus('Haetaan sijaintia...');
         currentLayer = null;
         selectedLayer = null;
@@ -550,7 +558,6 @@ async function renderCountryMap(content, db, user, app, config) {
         map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
       } else {
         map.stopLocate();
-        userMarker.clearLayers();
         currentLayer = null;
         updateLocationStatus('');
         refreshStyle();
@@ -561,7 +568,7 @@ async function renderCountryMap(content, db, user, app, config) {
 
   map.on('locationfound', (e) => {
     userMarker.clearLayers();
-    L.circleMarker(e.latlng, { radius: 7, color: '#1e1e2e', fillColor: '#f9e2af', fillOpacity: 1, weight: 2 }).addTo(userMarker);
+    L.circleMarker(e.latlng, { radius: 7, color: '#fff', fillColor: '#ff0000', fillOpacity: 1, weight: 2 }).addTo(userMarker);
 
     const matchLayer = findMunicipalityLayerByPoint(e.latlng.lat, e.latlng.lng);
     if (matchLayer) {
@@ -570,7 +577,7 @@ async function renderCountryMap(content, db, user, app, config) {
         updateLocationStatus('Olet nyt: ' + getName(matchLayer.feature, config));
         refreshStyle();
       }
-      if (watching) {
+      if (watching && Date.now() > manualOverrideUntil) {
         const zoom = getZoomBySpeed(e.speed);
         map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
       } else {
@@ -579,7 +586,7 @@ async function renderCountryMap(content, db, user, app, config) {
       }
     } else {
       updateLocationStatus('Sijainti ei osunut kunnan rajoille');
-      if (watching) {
+      if (watching && Date.now() > manualOverrideUntil) {
         const zoom = getZoomBySpeed(e.speed);
         map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
       }

@@ -35,6 +35,7 @@
 - Kartta- ja kuvageneraattoripäivitysten muodostama kokonaisuus julkaistaan versiona `2.9`; seuraavat pienet korjaukset käyttävät muotoa `2.9.1`, `2.9.2` jne.
 - Ruotsin kuntakartta -kokonaisuus julkaistaan uutena minor-versiona `2.10.0`.
 - Norjan ja Viron kuntakartat yhdistetään kuntakarttoihin versiona `2.11.0`.
+- Kuntakarttojen paikannus seuraa sijaintia jatkuvasti, zoomaa nopeuden mukaan ja pitää näytön päällä versiona `2.12.0`.
 - Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `app.js`:n `APP_DISPLAY_VERSION`, etusivun logon alainen versionumero, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
 - Etusivulla näytetään `APP_DISPLAY_VERSION` logon alla ja siitä pääsee Ohjeet & Tuki -sivulle.
 - Kuntakarttojen GPX-tuonnin viimeisin ajankohta tallennetaan `lastGpxImport`-kenttään ja näytetään karttanäkymässä.
@@ -78,5 +79,6 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **3.9.2026**: Versio 2.12.0: kuntakarttojen paikannus seuraa sijaintia automaattisesti, zoomaa nopeuden mukaan ja pitää näytön päällä mobiililaitteilla Wake Lock API:lla; paikannuksen sammutuksen jälkeen viimeisin sijainti jää punaiseksi palloksi ja manuaalinen zoom/pan keskeyttää automaattisen seurannan 10 sekunniksi; Viron kuntakartan GPX-tuonti tunnistaa saarilla olevat kätköt lähimmän kunnan kaaren avulla.
 - **2.9.2026**: Versio 2.11.0: kuntakartat laajennettu kattamaan Norjan ja Viron kuntakartat yhteisellä Kuntakartat-valitsimella; aiempi Ruotsi-kuntakartta siirretty uuteen yhteiseen moduuliin.
 - **2.9.2026**: Versio 2.10.0: lisätty interaktiivinen Ruotsi-kuntakartta, jossa voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta; tuonti erottelee kätkötyypit kunnittain.
