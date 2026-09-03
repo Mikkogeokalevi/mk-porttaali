@@ -14,6 +14,7 @@ const ASSETS_TO_CACHE = [
   './map.js',
   './map_all.js',
   './map_countries.js',     // <--- UUSI TIEDOSTO LISÄTTY (Ruotsi/Norja/Viro-kuntakartat)
+  './locationHelpers.js',  // <--- UUSI TIEDOSTO LISÄTTY (paikannus-zoom ja wake lock)
   './sverige_kommuner.geojson',
   './norge_kommuner.geojson',
   './viro_vald.geojson',

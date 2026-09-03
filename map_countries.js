@@ -2,6 +2,7 @@
 // Tukee Ruotsin, Norjan ja Viron kuntia/valdoja/kommuuneja.
 
 import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./locationHelpers.js";
 
 // Kätkötyypit Suomen karttojen tyyliin
 const CACHE_TYPES = [
@@ -545,13 +546,15 @@ async function renderCountryMap(content, db, user, app, config) {
         currentLayer = null;
         selectedLayer = null;
         refreshStyle();
-        map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 });
+        requestScreenWakeLock();
+        map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
       } else {
         map.stopLocate();
         userMarker.clearLayers();
         currentLayer = null;
         updateLocationStatus('');
         refreshStyle();
+        releaseScreenWakeLock();
       }
     };
   }
@@ -568,13 +571,18 @@ async function renderCountryMap(content, db, user, app, config) {
         refreshStyle();
       }
       if (watching) {
-        map.panTo(e.latlng);
+        const zoom = getZoomBySpeed(e.speed);
+        map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
       } else {
         if (matchLayer.getBounds) map.fitBounds(matchLayer.getBounds());
         matchLayer.openPopup();
       }
     } else {
       updateLocationStatus('Sijainti ei osunut kunnan rajoille');
+      if (watching) {
+        const zoom = getZoomBySpeed(e.speed);
+        map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
+      }
     }
   });
 

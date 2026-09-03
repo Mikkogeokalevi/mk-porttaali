@@ -1,5 +1,6 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { maakuntienKunnat } from "./data.js"; 
+import { maakuntienKunnat } from "./data.js";
+import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./locationHelpers.js";
 
 // Käytetään samoja varmoja karttalähteitä
 const GEOJSON_URLS = [
@@ -146,13 +147,15 @@ export const renderAllFindsMap = async (content, db, user, app) => {
         locateBtn.style.color = '#1e1e2e';
     }
 
-    function locateUser() { map.locate({ setView: true, maxZoom: 9, timeout: 10000 }); }
+    function locateUser() { map.locate({ watch: true, enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); }
     
     map.on('locationfound', (e) => {
         if (!locateEnabled) return;
         userMarker.clearLayers();
         L.circle(e.latlng, e.accuracy/2, { color: '#89b4fa', fillOpacity: 0.1 }).addTo(userMarker);
         L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0077cc', fillOpacity: 1 }).addTo(userMarker).bindPopup("Olet tässä").openPopup();
+        const zoom = getZoomBySpeed(e.speed);
+        map.setView(e.latlng, zoom, { animate: true, duration: 0.3 });
     });
 
     if (locateBtn) {
@@ -161,10 +164,12 @@ export const renderAllFindsMap = async (content, db, user, app) => {
             locateEnabled = !locateEnabled;
             updateLocateButton();
             if (locateEnabled) {
+                requestScreenWakeLock();
                 locateUser();
             } else {
                 map.stopLocate();
                 userMarker.clearLayers();
+                releaseScreenWakeLock();
             }
         };
     }
