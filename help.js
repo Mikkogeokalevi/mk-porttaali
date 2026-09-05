@@ -11,8 +11,9 @@ export const renderHelp = (content, app) => {
         </div>
         
         <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.12.1</h3>
+            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.12.2</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua: ≤40 km/h → 18, 40–70 km/h → 17, 70–100 km/h → 16, yli 100 km/h → 14.</li>
                 <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa, jotta kartta näyttää tarkemmin.</li>
                 <li><strong>3.9.2026:</strong> Kuntakarttojen paikannus seuraa sijaintiasi automaattisesti kun liikut. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin esimerkiksi 100 km/h nopeudessa. Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkilla rajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus myös pitää näytön päällä Androidilla, iPhone/iPadillä ja muilla mobiililaitteilla, joissa selain tukee Wake Lock -rajapintaa.</li>
                 <li><strong>3.9.2026:</strong> GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.</li>

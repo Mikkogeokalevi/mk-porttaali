@@ -4,12 +4,10 @@ let releaseHandler = null;
 
 export function getZoomBySpeed(speedMps) {
   const speedKmh = (speedMps || 0) * 3.6;
-  if (speedKmh < 5) return 17;
-  if (speedKmh < 15) return 16;
-  if (speedKmh < 30) return 15;
-  if (speedKmh < 60) return 14;
-  if (speedKmh < 100) return 13;
-  return 12;
+  if (speedKmh <= 40) return 18;
+  if (speedKmh <= 70) return 17;
+  if (speedKmh <= 100) return 16;
+  return 14;
 }
 
 async function acquireWakeLock() {

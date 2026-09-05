@@ -31,9 +31,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v61';
-const APP_DISPLAY_VERSION = '2.12.1';
-const APP_SW_CACHE = 'mk-porttaali-v61';
+const APP_VERSION = 'v62';
+const APP_DISPLAY_VERSION = '2.12.2';
+const APP_SW_CACHE = 'mk-porttaali-v62';
 const APP_UPDATED_AT = '5.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;

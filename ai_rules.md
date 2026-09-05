@@ -79,6 +79,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **5.9.2026**: Versio 2.12.2: paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua (≤40→18, 40–70→17, 70–100→16, >100→14).
 - **5.9.2026**: Versio 2.12.1: paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa.
 - **3.9.2026**: Versio 2.12.0: kuntakarttojen paikannus seuraa sijaintia automaattisesti, zoomaa nopeuden mukaan ja pitää näytön päällä mobiililaitteilla Wake Lock API:lla; paikannuksen sammutuksen jälkeen viimeisin sijainti jää punaiseksi palloksi ja manuaalinen zoom/pan keskeyttää automaattisen seurannan 10 sekunniksi; Viron kuntakartan GPX-tuonti tunnistaa saarilla olevat kätköt lähimmän kunnan kaaren avulla.
 - **2.9.2026**: Versio 2.11.0: kuntakartat laajennettu kattamaan Norjan ja Viron kuntakartat yhteisellä Kuntakartat-valitsimella; aiempi Ruotsi-kuntakartta siirretty uuteen yhteiseen moduuliin.
