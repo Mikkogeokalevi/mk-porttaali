@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v60'; // PÄIVITETTY: v59 -> v60
+const CACHE_NAME = 'mk-porttaali-v61'; // PÄIVITETTY: v60 -> v61
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
