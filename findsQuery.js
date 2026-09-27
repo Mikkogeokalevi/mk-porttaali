@@ -3,7 +3,7 @@
 // Datan rakenne (gpxImport.js): findsdata/{vuosi} = { finds: { GCxxxx: [tyyppiIdx, 'YYYY-MM-DD', D, T, sijainti, 'attr,attr'] } }
 
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { ATTR_FI, countryNameFi } from "./gpxImport.js";
+import { ATTR_EN, countryNameFi } from "./gpxImport.js";
 
 const TYPE_NAMES = ['Tradi', 'Multi', 'Webcam', 'Mysse', 'Letteri', 'Öörtti', 'Miitti', 'Virtu', 'Cito', 'Wherigo', 'Com.Cel', 'Mega', 'No Loc', 'Juhla'];
 // Tyyppikohtaiset värit (D/T-ruudukko + type-chips)
@@ -101,19 +101,22 @@ function dtMatrix(finds) {
     `<tr><th>${d}</th>${DT_VALUES.map(t => {
       const byType = cells[`${d}|${t}`];
       if (!byType) return '<td></td>';
-      let topType = -1, topN = 0, total = 0;
-      for (const [ty, n] of Object.entries(byType)) {
-        total += n;
-        if (n > topN) { topN = n; topType = +ty; }
-      }
+      const segs = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+      const topType = +segs[0][0];
+      const total = segs.reduce((a, s) => a + s[1], 0);
       if (topType >= 0) usedTypes.add(topType);
       const c = TYPE_COLORS[topType] || '#a6e3a1';
-      return `<td style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700;" title="${TYPE_NAMES[topType] || ''}">${total}</td>`;
+      // Pinottu väripalkki: jokaisen tyypin osuus ruudussa; monityyppiruudut näkyvät selkeästi
+      const bar = `<div style="display:flex; height:4px; border-radius:2px; overflow:hidden; margin-top:2px;">` +
+        segs.map(([ty, n]) => `<span style="flex:${n}; background:${TYPE_COLORS[ty] || '#888'};"></span>`).join('') + `</div>`;
+      const tip = segs.map(([ty, n]) => `${TYPE_NAMES[ty] || '?'} ${n}`).join(', ');
+      return `<td style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700;" title="${tip}">${total}${bar}</td>`;
     }).join('')}</tr>`
   ).join('');
   const legend = usedTypes.size
     ? `<div class="type-coverage" style="margin-top:8px;">${[...usedTypes].sort((a, b) => a - b).map(i =>
-        `<span class="type-chip" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]};">${TYPE_NAMES[i]}</span>`).join('')}</div>`
+        `<span class="type-chip" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]};">${TYPE_NAMES[i]}</span>`).join('')}</div>
+       <p style="font-size:0.7em; opacity:0.6; margin:4px 0 0;">Ruudun väri = yleisin tyyppi; alareunan palkki näyttää kaikkien tyyppien osuudet.</p>`
     : '';
   return {
     filled, total: DT_VALUES.length * DT_VALUES.length,
@@ -246,7 +249,7 @@ const FINDS_QUERIES = [
       const hits = applyFilters(finds.filter(f => f.attrs.includes(id)), input);
       const cov = typeCoverage(hits);
       return [
-        { title: `${ATTR_FI[id] || id}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
+        { title: `${ATTR_EN[id] || id}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tällä attribuutilla.</p>' }
       ];
     }
@@ -254,6 +257,15 @@ const FINDS_QUERIES = [
 ];
 
 // ---------- Näkymä ----------
+
+// Attribuuttivalinnat: viralliset englanninkieliset nimet + negatiiviset ("Ei: ...") -vaihtoehdot
+function attrOptions() {
+  const pos = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
+  const neg = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1]))
+    .map(([id, n]) => `<option value="-${id}">Ei: ${n}</option>`).join('');
+  return pos + neg;
+}
 
 function renderInputs(query, inputDiv, finds) {
   let html = `<p style="font-size:0.8em;opacity:0.7;margin:5px 0 0;">${query.desc}</p>`;
@@ -275,9 +287,7 @@ function renderInputs(query, inputDiv, finds) {
   } else if (query.input === 'weekday') {
     html += `<label>Viikonpäivä:</label><select id="fqWeekday">${WEEKDAYS_FI.map(w => `<option value="${w[1]}">${w[0]}</option>`).join('')}</select>`;
   } else if (query.input === 'attr') {
-    const opts = Object.entries(ATTR_FI).sort((a, b) => a[1].localeCompare(b[1], 'fi'))
-      .map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
-    html += `<label>Attribuutti:</label><select id="fqAttr">${opts}</select>`;
+    html += `<label>Attribuutti:</label><select id="fqAttr">${attrOptions()}</select>`;
   }
 
   // Yhteiset lisäsuodattimet (filters-taulukossa luetellut)
@@ -297,9 +307,7 @@ function renderInputs(query, inputDiv, finds) {
     </details>`;
   }
   if (query.filters?.includes('attr')) {
-    const opts = '<option value="">Kaikki attribuutit</option>' + Object.entries(ATTR_FI).sort((a, b) => a[1].localeCompare(b[1], 'fi'))
-      .map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
-    html += `<label style="font-size:0.85em;">Attribuuttisuodatin:</label><select id="fqAttrFilter" style="margin-bottom:0;">${opts}</select>`;
+    html += `<label style="font-size:0.85em;">Attribuuttisuodatin:</label><select id="fqAttrFilter" style="margin-bottom:0;"><option value="">Kaikki attribuutit</option>${attrOptions()}</select>`;
   }
   inputDiv.innerHTML = html;
 
