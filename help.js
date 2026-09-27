@@ -11,9 +11,9 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.6</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.7</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Attribuutit näytetään nyt <b>virallisilla englanninkielisillä nimillä</b> (vanhat suomennokset olivat pielessä); negatiiviset attribuutit ("Ei: ...") ovat myös valittavissa. <b>D/T-ruudukko: monityyppiruutujen alareunaan pinottu väripalkki</b> näyttää kaikkien tyyppien osuudet (tausta = yleisin tyyppi, tooltip erittelee lukumäärät).</li>
+                <li><strong>27.9.2026:</strong> D/T-ruudukkoon <b>rivi- ja sarakekohtaiset yhteensä-summat</b> + kokonaismäärä oikeaan alakulmaan (kuten geocache.fi-taulukoissa).</li>
             </ul>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> <b>🔍 Löytöhaut</b> — uusi näkymä Tilastot-osiossa. Kyselyjä GPX-tuotuun löytödataan: <b>Kalenteripäivähaku</b> (mitä löysit tiettynä päivänä kaikkina vuosina + puuttuvat tyypit + D/T-kattavuus), <b>Kuukauden D/T-taulukko</b>, <b>Viikonpäivän D/T-taulukko</b> ja <b>Attribuuttihaku</b>. Kaikissa näytetään klassinen 9×9 D/T-ruudukko ja/tai löytölista. Rakenne on tehty laajennettavaksi — uusia hakuja on helppo lisätä toiveiden mukaan.</li>
@@ -23,6 +23,8 @@ export const renderHelp = (content, app) => {
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.15.6</strong><br>
+                    - 27.9.2026: Attribuutit virallisilla englanninkielisillä nimillä + negatiiviset valittavissa; D/T-ruudukon monityyppiväripalkit.<br><br>
                     <strong>v2.15.5</strong><br>
                     - 27.9.2026: Löytöhaut: maasuuodatin kaikkiin hakuihin.<br><br>
                     <strong>v2.15.4</strong><br>

@@ -96,14 +96,18 @@ function dtMatrix(finds) {
   }
   const filled = Object.keys(cells).length;
   const usedTypes = new Set();
-  const head = `<tr><th>D\\T</th>${DT_VALUES.map(t => `<th>${t}</th>`).join('')}</tr>`;
-  const rows = DT_VALUES.map(d =>
-    `<tr><th>${d}</th>${DT_VALUES.map(t => {
+  const head = `<tr><th>D\\T</th>${DT_VALUES.map(t => `<th>${t}</th>`).join('')}<th>yht</th></tr>`;
+  const colTotals = DT_VALUES.map(() => 0);
+  let grandTotal = 0;
+  const rows = DT_VALUES.map(d => {
+    let rowTotal = 0;
+    const tds = DT_VALUES.map((t, ti) => {
       const byType = cells[`${d}|${t}`];
       if (!byType) return '<td></td>';
       const segs = Object.entries(byType).sort((a, b) => b[1] - a[1]);
       const topType = +segs[0][0];
       const total = segs.reduce((a, s) => a + s[1], 0);
+      rowTotal += total; colTotals[ti] += total; grandTotal += total;
       if (topType >= 0) usedTypes.add(topType);
       const c = TYPE_COLORS[topType] || '#a6e3a1';
       // Pinottu väripalkki: jokaisen tyypin osuus ruudussa; monityyppiruudut näkyvät selkeästi
@@ -111,8 +115,10 @@ function dtMatrix(finds) {
         segs.map(([ty, n]) => `<span style="flex:${n}; background:${TYPE_COLORS[ty] || '#888'};"></span>`).join('') + `</div>`;
       const tip = segs.map(([ty, n]) => `${TYPE_NAMES[ty] || '?'} ${n}`).join(', ');
       return `<td style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700;" title="${tip}">${total}${bar}</td>`;
-    }).join('')}</tr>`
-  ).join('');
+    }).join('');
+    return `<tr><th>${d}</th>${tds}<th>${rowTotal || ''}</th></tr>`;
+  }).join('');
+  const totalsRow = `<tr><th>yht</th>${colTotals.map(n => `<th>${n || ''}</th>`).join('')}<th style="color:var(--c-green);">${grandTotal || ''}</th></tr>`;
   const legend = usedTypes.size
     ? `<div class="type-coverage" style="margin-top:8px;">${[...usedTypes].sort((a, b) => a - b).map(i =>
         `<span class="type-chip" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]};">${TYPE_NAMES[i]}</span>`).join('')}</div>
@@ -120,7 +126,7 @@ function dtMatrix(finds) {
     : '';
   return {
     filled, total: DT_VALUES.length * DT_VALUES.length,
-    html: `<div class="fq-scroll"><table class="dt-matrix">${head}${rows}</table></div>${legend}`
+    html: `<div class="fq-scroll"><table class="dt-matrix">${head}${rows}${totalsRow}</table></div>${legend}`
   };
 }
 
