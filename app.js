@@ -32,9 +32,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v71';
-const APP_DISPLAY_VERSION = '2.15.1';
-const APP_SW_CACHE = 'mk-porttaali-v71';
+const APP_VERSION = 'v72';
+const APP_DISPLAY_VERSION = '2.15.2';
+const APP_SW_CACHE = 'mk-porttaali-v72';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -161,6 +161,7 @@ window.app = {
             <div class="launcher-grid">
                 <button class="launcher-btn btn-primary" onclick="app.router('generator')"><span class="launcher-icon">🖼️</span>Kuvageneraattori</button>
                 <button class="launcher-btn btn-green" onclick="app.router('stats')"><span class="launcher-icon">📊</span>Tilastot${lockIcon}</button>
+                <button class="launcher-btn btn-teal" onclick="app.router('stats_queries')"><span class="launcher-icon">🔍</span>Löytöhaut${lockIcon}</button>
                 <button class="launcher-btn btn-peach" onclick="app.router('converters')"><span class="launcher-icon">🧮</span>Muuntimet${isLocked ? ' 🔒' : ''}</button>
                 <button class="launcher-btn btn-sky" onclick="app.router('links')"><span class="launcher-icon">🌐</span>Linkkikirjasto</button>
                 <button class="launcher-btn btn-blue" onclick="app.router('settings')"><span class="launcher-icon">⚙️</span>Asetukset</button>
@@ -449,8 +450,8 @@ function renderGeneratorView(content) {
 
     content.innerHTML = `
       <div class="card">
-        <h1>Kuvageneraattori</h1>
-        <div style="margin:0 0 8px; font-size:0.75em; opacity:0.6;">Hakee kuvat Geocache.fi-palvelusta • v${APP_DISPLAY_VERSION} • ${APP_UPDATED_AT}</div>
+        <h1>Kuvageneraattori <span class="badge badge-extra" style="font-size:0.4em; vertical-align:middle;">Geocache.fi</span></h1>
+        <div style="margin:0 0 8px; font-size:0.75em; opacity:0.6;">Luo tilastokuvia Geocache.fi-palvelun kuvageneraattorilla • v${APP_DISPLAY_VERSION} • ${APP_UPDATED_AT}</div>
 
         <div class="gen-form">
         <div class="gen-quick-links">
