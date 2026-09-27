@@ -111,16 +111,47 @@ function flagEmoji(name) {
     return String.fromCodePoint(...iso.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
 }
 
+// Groundspeak-muistiset nimet -> maailma.geojson:n properties.name (maailmakarttaa varten)
+const GEO_ALIASES = {
+    'United States': 'United States of America',
+    'Serbia': 'Republic of Serbia',
+    'Bahamas': 'The Bahamas',
+    'North Macedonia': 'Macedonia',
+    'Czechia': 'Czech Republic',
+    'Timor-Leste': 'East Timor',
+    'Eswatini': 'Swaziland',
+    "Côte d'Ivoire": 'Ivory Coast', 'Cote d\'Ivoire': 'Ivory Coast',
+    'Democratic Republic of Congo': 'Democratic Republic of the Congo',
+    'Republic of Congo': 'Republic of the Congo', 'Congo': 'Republic of the Congo',
+    'Palestine': 'West Bank', 'Palestinian Territory': 'West Bank',
+    'Myanmar (Burma)': 'Myanmar', 'Burma': 'Myanmar',
+    'Tanzania': 'United Republic of Tanzania',
+    'Kyrgyz Republic': 'Kyrgyzstan',
+    'Slovak Republic': 'Slovakia',
+    'Brunei Darussalam': 'Brunei',
+    "Lao People's Democratic Republic": 'Laos', 'Lao PDR': 'Laos',
+    'Viet Nam': 'Vietnam',
+    'Iran': 'Iran', 'Iran (Islamic Republic of)': 'Iran', 'Iran, Islamic Republic of': 'Iran',
+    'Russian Federation': 'Russia',
+    'Bolivia (Plurinational State of)': 'Bolivia',
+    'Venezuela (Bolivarian Republic of)': 'Venezuela',
+    'Syrian Arab Republic': 'Syria',
+    'Republic of Moldova': 'Moldova'
+};
+
 export const loadOtherCountries = async (db, user, content) => {
     content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Ladataan...</p></div>`;
     try {
-        const [otherSnap, seSnap, noSnap, eeSnap] = await Promise.all([
+        const [otherSnap, seSnap, noSnap, eeSnap, statsSnap] = await Promise.all([
             getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds')),
             getDoc(doc(db, 'users', user.uid, 'sweden', 'finds')),
             getDoc(doc(db, 'users', user.uid, 'norway', 'finds')),
-            getDoc(doc(db, 'users', user.uid, 'estonia', 'finds'))
+            getDoc(doc(db, 'users', user.uid, 'estonia', 'finds')),
+            getDoc(doc(db, 'stats', user.uid))
         ]);
         const countries = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
+        const fiCount = Object.values(statsSnap.exists() ? (statsSnap.data().municipalities || {}) : {})
+            .reduce((a, e) => a + ((e?.ids || []).length || (e?.s || []).reduce((x, y) => x + y, 0)), 0);
 
         // Kuntakarttamaat ensin — samassa listassa, laajennettavat + kartta-linkki
         const countMunis = snap => Object.values(snap.exists() ? (snap.data().municipalities || {}) : {})
@@ -135,7 +166,7 @@ export const loadOtherCountries = async (db, user, content) => {
             .map(([name, e]) => ({ name, ids: e.ids || [], count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
             .sort((a, b) => b.count - a.count);
 
-        if (!entries.length && !mapCountries.length) {
+        if (!entries.length && !mapCountries.length && !fiCount) {
             content.innerHTML = `
             <div class="card">
                 <div class="view-header"><h1>Muut maat</h1>
@@ -197,10 +228,60 @@ export const loadOtherCountries = async (db, user, content) => {
         content.innerHTML = `
         <div class="card">
             <div class="view-header"><h1>Muut maat</h1>
-            <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
+            <div style="display:flex; gap:6px;">
+                <button class="btn btn-sm" id="ocMapBtn" title="Maailmankartta löydetyistä maista">🗺️ Kartta</button>
+                <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button>
+            </div></div>
+            <div id="ocMapWrap" style="display:none; margin:10px 0 14px;">
+                <div id="ocMap" style="height:340px; border-radius:10px; overflow:hidden;"></div>
+                <div style="font-size:0.8em; margin-top:6px;"><span style="color:#a6e3a1;">■</span> Löydetty maa &nbsp;<span style="color:#585b70;">■</span> Ei löytöjä</div>
+            </div>
             <p style="font-size:0.85em; opacity:0.75;">Löydöt maittain — avaa maa nähdäksesi löytölistan. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
             <div class="oc-table">${mapRows}${otherRows}</div>
         </div>`;
+
+        // 🗺️ Maailmankartta: löydetyt maat väritettynä (laiska init)
+        const mapBtn = document.getElementById('ocMapBtn');
+        const mapWrap = document.getElementById('ocMapWrap');
+        mapBtn.onclick = async () => {
+            const show = mapWrap.style.display === 'none';
+            mapWrap.style.display = show ? 'block' : 'none';
+            if (!show || mapWrap.dataset.init) return;
+            mapWrap.dataset.init = '1';
+            const mapEl = document.getElementById('ocMap');
+            try {
+                const geo = await fetch('./maailma.geojson').then(r => r.json());
+                const canon = n => GEO_ALIASES[n] || n;
+                const found = new Map(); // geojson-nimi -> {fi, count}
+                const addFound = (name, fi, count) => {
+                    const g = canon(name);
+                    const cur = found.get(g) || { fi, count: 0 };
+                    cur.count += count;
+                    found.set(g, cur);
+                };
+                mapCountries.forEach(c => addFound({ Ruotsi: 'Sweden', Norja: 'Norway', Viro: 'Estonia' }[c.name], c.name, c.count));
+                entries.forEach(e => addFound(e.name, countryNameFi(e.name), e.count));
+                if (fiCount > 0) addFound('Finland', 'Suomi', fiCount);
+
+                const map = L.map('ocMap', { zoomControl: false }).setView([40, 15], 2);
+                L.control.zoom({ position: 'bottomright' }).addTo(map);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OSM &amp; CARTO', subdomains: 'abcd', maxZoom: 10, minZoom: 2
+                }).addTo(map);
+                const layer = L.geoJSON(geo, {
+                    style: f => found.has(canon(f.properties.name))
+                        ? { color: '#1e1e2e', weight: 0.6, fillColor: '#a6e3a1', fillOpacity: 0.55 }
+                        : { color: '#585b70', weight: 0.6, fillColor: '#313244', fillOpacity: 0.15 }
+                }).addTo(map);
+                layer.eachLayer(l => {
+                    const info = found.get(canon(l.feature.properties.name));
+                    l.bindTooltip(info ? `${info.fi}: ${info.count} löytöä` : countryNameFi(l.feature.properties.name), { sticky: true });
+                });
+            } catch (e) {
+                console.error('Maailmankartta:', e);
+                mapEl.innerHTML = '<p style="padding:15px; font-size:0.85em;">Karttaa ei saatu ladattua.</p>';
+            }
+        };
 
         // Maarivin avaus -> laiska löytölistan lataus
         const idsByName = {};

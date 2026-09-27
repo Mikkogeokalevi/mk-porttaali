@@ -11,9 +11,9 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.16.2</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Muut maat -lista on nyt <b>kompakti maalista</b>: lippu + nimi + lukumäärä yhdellä rivillä, klikkaus avaa löytölistan. <b>Ruotsi, Norja ja Viro ovat nyt mukana listassa</b> (alussa) — niiden avatussa kohdassa on myös suora linkki kuntakarttaan. Skaalautuu kymmeniin maihin.</li>
+                <li><strong>27.9.2026:</strong> <b>🗺️ Maailmankartta Muut maat -näkymässä:</b> uusi "Kartta"-nappi näyttää maailmankartan jossa löydetyt maat on väritetty vihreällä (sis. Suomi, Ruotsi, Norja, Viro). Maan päälle viemällä näkyy nimi ja löytömäärä. Kartta toimii myös offline-tilassa.</li>
             </ul>
 
 
@@ -21,6 +21,8 @@ export const renderHelp = (content, app) => {
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.16.2</strong><br>
+                    - 27.9.2026: Muut maat kompaktiksi maalistaksi lipuilla; Ruotsi/Norja/Viro mukana + kartta-linkit.<br><br>
                     <strong>v2.16.1</strong><br>
                     - 27.9.2026: Sortattavat löytölistat kaikissa näkymissä; korjaus ulkomaiden karttojen löytölistan layoutiin.<br><br>
                     <strong>v2.16.0</strong><br>
