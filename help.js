@@ -11,14 +11,16 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.8</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.16.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Etusivun Kuvageneraattori-nappiin lisätty pieni "geocache.fi"-alateksti, jotta palvelun lähde näkyy jo etusivulla.</li>
+                <li><strong>27.9.2026:</strong> <b>Maakohtaiset löytölistat:</b> 🌐 Muut maat -näkymän maakortit avautuvat klikkaamalla ja näyttävät kaikki maan löydöt (koodi linkkeinä, tyyppi, pvm, D/T). Sama "📋 Näytä löydöt maassa" -lista löytyy nyt myös Ruotsin, Norjan ja Viron kuntakarttojen alta. Listat latautuvat vasta kun ne avataan.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.15.8</strong><br>
+                    - 27.9.2026: Etusivun Kuvageneraattori-nappiin "geocache.fi"-alateksti.<br><br>
                     <strong>v2.15.7</strong><br>
                     - 27.9.2026: D/T-ruudukon rivi-/sarakesummat + kokonaissumma; GC-koodit linkeiksi; asetukset-sivun spinneri korjattu; löytöhaut-mobiilikorjauksia.<br><br>
                     <strong>v2.15.6</strong><br>

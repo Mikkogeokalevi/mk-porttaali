@@ -146,7 +146,7 @@ function typeCoverage(finds) {
 }
 
 // Löytölista (uusimmat ensin), katkaistaan limit-kohdalla
-function findsList(finds, limit = 300) {
+export function findsList(finds, limit = 300) {
   const sorted = [...finds].sort((a, b) => (a.day < b.day ? 1 : -1));
   const rows = sorted.slice(0, limit).map(f =>
     `<tr><td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td><td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td><td>${f.day || '—'}</td><td>${f.D || '—'} / ${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`

@@ -1,6 +1,7 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
-import { assignFindToFinnishMunicipality } from "./gpxImport.js";
+import { assignFindToFinnishMunicipality, countryNameFi } from "./gpxImport.js";
+import { loadFinds, findsList } from "./findsQuery.js";
 
 // Maanimet jotka reititetään Suomeen — näille voi tehdä käsin kunta-määrityksen
 const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
@@ -118,14 +119,18 @@ export const loadOtherCountries = async (db, user, content) => {
                     </div>
                 </details>` : '';
             return `
-            <div class="panel" style="padding:12px 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                    <strong style="font-size:1.05em;">${e.name}</strong>
-                    <span class="badge badge-premium">${e.count} löytöä</span>
-                </div>
-                <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ') || '—'}</div>
+            <details class="panel oc-country" data-name="${e.name}" style="padding:12px 14px;">
+                <summary style="cursor:pointer; list-style:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <strong style="font-size:1.05em;">${e.name}</strong>
+                        <span class="badge badge-premium">${e.count} löytöä</span>
+                    </div>
+                    <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ') || '—'}</div>
+                    <div style="font-size:0.72em; color:var(--c-blue); margin-top:4px;">▸ Näytä löydöt</div>
+                </summary>
+                <div class="oc-list" style="margin-top:10px;"></div>
                 ${fixBlock}
-            </div>`;
+            </details>`;
         }).join('');
 
         content.innerHTML = `
@@ -135,6 +140,32 @@ export const loadOtherCountries = async (db, user, content) => {
             <p style="font-size:0.85em; opacity:0.75;">Löydöt maista, joille ei ole vielä kuntakarttaa. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
             <div style="display:grid; gap:8px;">${rows}</div>
         </div>`;
+
+        // Maakortin avaus -> laiska löytölistan lataus (ids-pohjainen, fallback maanimelle)
+        const idsByName = {};
+        for (const e of entries) idsByName[e.name] = new Set(e.ids);
+        content.querySelectorAll('details.oc-country').forEach(det => {
+            det.addEventListener('toggle', async () => {
+                if (!det.open || det.dataset.loaded) return;
+                det.dataset.loaded = '1';
+                const name = det.dataset.name;
+                const listEl = det.querySelector('.oc-list');
+                listEl.innerHTML = '<p style="font-size:0.85em; opacity:0.7;">Ladataan löytöjä…</p>';
+                try {
+                    const finds = await loadFinds(db, user.uid);
+                    const idSet = idsByName[name];
+                    const hits = idSet && idSet.size
+                        ? finds.filter(f => idSet.has(f.code))
+                        : finds.filter(f => f.country === countryNameFi(name));
+                    listEl.innerHTML = hits.length
+                        ? findsList(hits, 500)
+                        : '<p style="font-size:0.85em; opacity:0.7;">Ei kätkökohtaista dataa — aja GPX-tuonti uudelleen, niin löydöt listautuvat tänne.</p>';
+                } catch (err) {
+                    console.error('Maakohtainen löytölista:', err);
+                    listEl.innerHTML = '<p style="color:var(--c-red); font-size:0.85em;">Lataus epäonnistui.</p>';
+                }
+            });
+        });
 
         // Käsin tehtävät kunta-määritykset (Suomen aliakset, esim. kuntaa puuttuva löytö)
         content.querySelectorAll('select.fix-kunta-other').forEach(sel => {

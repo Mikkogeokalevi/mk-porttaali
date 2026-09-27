@@ -3,6 +3,7 @@
 
 import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./locationHelpers.js";
+import { loadFinds, findsList } from "./findsQuery.js";
 
 // Kätkötyypit Suomen karttojen tyyliin
 const CACHE_TYPES = [
@@ -376,6 +377,11 @@ async function renderCountryMap(content, db, user, app, config) {
         <span style="color: #f38ba8;">■ Etsittävä</span> &nbsp;
         <span style="color: #f9e2af;">■ Nykyinen kunta</span>
       </div>
+
+      <details id="${config.id}FindsDetails" style="margin:4px 12px 14px;">
+        <summary style="cursor:pointer; font-size:0.88em; color:var(--subtext-color);">📋 Näytä löydöt maassa</summary>
+        <div id="${config.id}FindsList" style="margin-top:8px;"></div>
+      </details>
     </div>
   `;
 
@@ -394,6 +400,25 @@ async function renderCountryMap(content, db, user, app, config) {
   const gpxTimeEl = document.getElementById(`${config.id}GpxTime`);
   const userMarker = L.layerGroup().addTo(map);
   const nameToLayer = new Map();
+
+  // Löytölistan laiska lataus: avataan vasta kun käyttäjä klikkaa
+  const findsDetails = document.getElementById(`${config.id}FindsDetails`);
+  findsDetails?.addEventListener('toggle', async () => {
+    if (!findsDetails.open || findsDetails.dataset.loaded) return;
+    findsDetails.dataset.loaded = '1';
+    const listEl = document.getElementById(`${config.id}FindsList`);
+    listEl.innerHTML = '<p style="font-size:0.85em; opacity:0.7;">Ladataan löytöjä…</p>';
+    try {
+      const finds = await loadFinds(db, user.uid);
+      const hits = finds.filter(f => f.country === config.name);
+      listEl.innerHTML = hits.length
+        ? `<p style="font-size:0.8em; opacity:0.7; margin:0 0 6px;">${hits.length} löytöä maassa ${config.name}</p>` + findsList(hits, 500)
+        : '<p style="font-size:0.85em; opacity:0.7;">Ei kätkökohtaista löytödataa. Tuo löydöt GPX-tiedostosta, niin ne listautuvat tänne.</p>';
+    } catch (e) {
+      console.error('Maakohtainen löytölista:', e);
+      listEl.innerHTML = '<p style="color:var(--c-red); font-size:0.85em;">Lataus epäonnistui.</p>';
+    }
+  });
 
   // Jos käyttäjä zoomaa/panoroi manuaalisesti, keskeytetään automaattinen seuranta 10 s ajaksi
   map.on('dragstart', () => { manualOverrideUntil = Date.now() + 10000; });
