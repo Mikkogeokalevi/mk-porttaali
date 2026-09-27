@@ -474,26 +474,27 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         if (typeIdx >= 0) entry.s[typeIdx]++;
         entry.r = kuntaToRegion[loc] || 'Muu';
         report.finland.seen.add(loc);
-        const y = day.slice(0, 4) || 'unknown';
-        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
       } else report.duplicates++;
+      // findsdata kirjataan aina (myös duplikaatit) — täydentää mahdolliset aiemmin puuttuneet kirjaukset
+      const y = day.slice(0, 4) || 'unknown';
+      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
     } else if (bucket === 'foreign') {
       const docData = countryDocs[country];
       const entry = docData[loc] = ensureEntryShape(docData[loc]);
       if (addFindTo(entry, p.code, typeIdx)) {
-        const y = day.slice(0, 4) || 'unknown';
-        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
+        report.countries[country] = (report.countries[country] || 0) + 1;
       } else report.duplicates++;
-      report.countries[country] = (report.countries[country] || 0) + 1;
+      const y = day.slice(0, 4) || 'unknown';
+      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
     } else {
       // Muut maat
       const cname = country || 'Tuntematon';
       const entry = otherData[cname] = ensureEntryShape(otherData[cname]);
       if (addFindTo(entry, p.code, typeIdx)) {
-        const y = day.slice(0, 4) || 'unknown';
-        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')];
         report.other[cname] = (report.other[cname] || 0) + 1;
       } else report.duplicates++;
+      const y = day.slice(0, 4) || 'unknown';
+      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')];
     }
   }
 
