@@ -2,6 +2,7 @@ import { doc, updateDoc, deleteDoc, setDoc, Timestamp } from "https://www.gstati
 import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import * as Auth from "./auth.js";
 import * as GpxImport from "./gpxImport.js";
+import { maakuntienKunnat } from "./data.js";
 
 // Kopioitu admin.js:stä datan tuontia varten (tarvitaan "älykkääseen" parsintaan)
 const SUOMEN_MAAKUNNAT = [
@@ -10,6 +11,12 @@ const SUOMEN_MAAKUNNAT = [
     "Pohjois-Karjala", "Pohjois-Pohjanmaa", "Pohjois-Savo", "Päijät-Häme", "Satakunta",
     "Uusimaa", "Varsinais-Suomi"
 ];
+
+// GPX-tuonnin "ei osumaa" -kätköille käsin tehtävä kunta-määritys
+const FI_COUNTRY_NAMES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
+const FI_KUNTA_OPTIONS = [...new Set(Object.values(maakuntienKunnat).flat())]
+    .sort((a, b) => a.localeCompare(b, 'fi'))
+    .map(k => `<option value="${k}">${k}</option>`).join('');
 
 export const renderSettingsView = (content, db, user, app) => {
     // 1. Kirjautumistarkistus
@@ -351,11 +358,38 @@ export const renderSettingsView = (content, db, user, app) => {
                         ${report.nearest ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">${report.nearest} kätköä oli kuntarajan ulkopuolella (saari/reunavesi) — merkittiin lähimpään.</p>` : ''}
                         ${report.unmatchedList && report.unmatchedList.length ? `
                             <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Kuntiin osumattomat (maa tunnettu, kunta ei löytynyt):</p>
-                            <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.6;">
-                                ${report.unmatchedList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — ${u.country} — ${u.day || 'ei pvm'} — ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)}</li>`).join('')}
+                            <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.8;">
+                                ${report.unmatchedList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — ${u.country} — ${u.day || 'ei pvm'} — ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)}${FI_COUNTRY_NAMES.has(u.country) ? `
+                                    <select class="fix-kunta" data-code="${u.code}" data-type="${u.type || ''}" data-cname="${u.country}" data-day="${u.day || ''}" style="width:auto; display:inline-block; margin:2px 0 0 6px; padding:4px 28px 4px 6px; font-size:0.95em;">
+                                        <option value="">→ merkitse kuntaan…</option>${FI_KUNTA_OPTIONS}
+                                    </select>` : ''}</li>`).join('')}
                             </ul>` : ''}
                         ${report.unknownTypes.length ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">Tuntemattomat kätkötyypit: ${report.unknownTypes.join(', ')}</p>` : ''}
                     </div>`;
+
+                    // Käsin tehtävät kunta-määritykset osumattomille Suomen kätköille
+                    gpxReport.querySelectorAll('select.fix-kunta').forEach(sel => {
+                        sel.onchange = async () => {
+                            const kunta = sel.value;
+                            if (!kunta) return;
+                            sel.disabled = true;
+                            try {
+                                await GpxImport.assignFindToFinnishMunicipality(db, user.uid, {
+                                    code: sel.dataset.code,
+                                    typeName: sel.dataset.type,
+                                    fromCname: sel.dataset.cname,
+                                    kunta,
+                                    day: sel.dataset.day
+                                });
+                                const li = sel.closest('li');
+                                li.innerHTML = `✅ <strong>${sel.dataset.code}</strong> merkitty kuntaan <strong>${kunta}</strong>`;
+                            } catch (err2) {
+                                console.error('Kunta-määritys:', err2);
+                                sel.disabled = false;
+                                alert('Merkintä epäonnistui: ' + err2.message);
+                            }
+                        };
+                    });
                 } catch (err) {
                     console.error('GPX-tuonti:', err);
                     gpxStatus.textContent = '';

@@ -1,5 +1,12 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
+import { assignFindToFinnishMunicipality } from "./gpxImport.js";
+
+// Maanimet jotka reititetään Suomeen — näille voi tehdä käsin kunta-määrityksen
+const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
+const FI_KUNTA_OPTIONS = [...new Set(Object.values(maakuntienKunnat).flat())]
+    .sort((a, b) => a.localeCompare(b, 'fi'))
+    .map(k => `<option value="${k}">${k}</option>`).join('');
 
 /* KONFIGURAATIO */
 const CACHE_TYPES = [
@@ -81,7 +88,7 @@ export const loadOtherCountries = async (db, user, content) => {
         const snap = await getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds'));
         const countries = snap.exists() ? (snap.data().countries || {}) : {};
         const entries = Object.entries(countries)
-            .map(([name, e]) => ({ name, count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
+            .map(([name, e]) => ({ name, ids: e.ids || [], count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
             .sort((a, b) => b.count - a.count);
 
         if (!entries.length) {
@@ -95,14 +102,31 @@ export const loadOtherCountries = async (db, user, content) => {
         }
 
         const TYPE_NAMES = ['Tradi','Multi','Webcam','Mysse','Letteri','Öörtti','Miitti','Virtu','Cito','Wherigo','Com.Cel','Mega','No Loc','Juhla'];
-        const rows = entries.map(e => `
+        const rows = entries.map(e => {
+            // Suomeksi merkityt mutta kuntaa puuttuvat löydöt voi merkitä käsin kuntaan
+            const fixable = FI_COUNTRY_ALIASES.has(e.name) && e.ids.length;
+            const fixBlock = fixable ? `
+                <details style="margin-top:8px;">
+                    <summary style="font-size:0.8em; color:var(--warning-color);">Kuntaa ei tunnistettu — merkitse käsin:</summary>
+                    <div style="margin-top:6px;">
+                        ${e.ids.map(code => `<div style="display:flex; gap:8px; align-items:center; margin:5px 0; font-size:0.85em;">
+                            <strong>${code}</strong>
+                            <select class="fix-kunta-other" data-code="${code}" data-cname="${e.name}" style="flex:1; margin:0; padding:6px;">
+                                <option value="">→ valitse kunta…</option>${FI_KUNTA_OPTIONS}
+                            </select>
+                        </div>`).join('')}
+                    </div>
+                </details>` : '';
+            return `
             <div class="panel" style="padding:12px 14px;">
                 <div style="display:flex; justify-content:space-between; align-items:baseline;">
                     <strong style="font-size:1.05em;">${e.name}</strong>
                     <span class="badge badge-premium">${e.count} löytöä</span>
                 </div>
                 <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ') || '—'}</div>
-            </div>`).join('');
+                ${fixBlock}
+            </div>`;
+        }).join('');
 
         content.innerHTML = `
         <div class="card">
@@ -111,6 +135,27 @@ export const loadOtherCountries = async (db, user, content) => {
             <p style="font-size:0.85em; opacity:0.75;">Löydöt maista, joille ei ole vielä kuntakarttaa. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
             <div style="display:grid; gap:8px;">${rows}</div>
         </div>`;
+
+        // Käsin tehtävät kunta-määritykset (Suomen aliakset, esim. kuntaa puuttuva löytö)
+        content.querySelectorAll('select.fix-kunta-other').forEach(sel => {
+            sel.onchange = async () => {
+                const kunta = sel.value;
+                if (!kunta) return;
+                sel.disabled = true;
+                try {
+                    await assignFindToFinnishMunicipality(db, user.uid, {
+                        code: sel.dataset.code,
+                        fromCname: sel.dataset.cname,
+                        kunta
+                    });
+                    loadOtherCountries(db, user, content); // päivitä näkymä
+                } catch (err) {
+                    console.error('Kunta-määritys:', err);
+                    sel.disabled = false;
+                    alert('Merkintä epäonnistui: ' + err.message);
+                }
+            };
+        });
     } catch (e) {
         console.error(e);
         content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Lataus epäonnistui.</p></div>`;

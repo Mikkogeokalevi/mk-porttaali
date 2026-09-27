@@ -3,7 +3,7 @@
 // Parsii <wpt>-pisteet sujuvasti merkkijonosta (ei DOM-puuta muistiin),
 // osumattelee kunta-polygoneihin ja tallentaa Firestoreen.
 
-import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { collection, doc, getDoc, getDocs, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
 import { COUNTRY_CONFIGS } from "./map_countries.js";
 
@@ -405,6 +405,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   onStatus('Ladataan tallennettuja tietoja...');
   const statsSnap = await getDoc(doc(db, 'stats', uid));
   const existingFi = statsSnap.exists() ? (statsSnap.data().municipalities || {}) : {};
+  const fiFixes = statsSnap.exists() ? (statsSnap.data().fixes || {}) : {}; // käsin merkityt kunta-määritykset (code -> kunta)
   const fiHasIds = Object.values(existingFi).some(e => Array.isArray(e?.ids));
   const fiReplace = !fiHasIds; // ensimmäinen GPX-tuonti korvaa copy/paste-datan (ei duplikaattiriskiä)
 
@@ -442,20 +443,26 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     const country = p.country || '';
     let loc = null, bucket = 'other';
 
-    const isFinland = FI_COUNTRY_ALIASES.has(country);
-    const targetSet = isFinland ? fiSet : COUNTRY_TO_SET[country];
-    if (targetSet && targetSet.length) {
-      loc = matchInFeatureSet(targetSet, p.lat, p.lon);
-      if (!loc) { loc = nearestInFeatureSet(targetSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
-      if (!loc) {
-        // Maa tunnistettu mutta kunta ei osu -> jää maatason löydöksi ("muut maat")
-        report.unmatched++;
-        if (report.unmatchedList.length < 100) {
-          report.unmatchedList.push({ code: p.code, type: p.type, country: p.country || '?', lat: p.lat, lon: p.lon, day });
+    const fixLoc = fiFixes[p.code]; // käsin merkitty kunta-määritys ohittaa polygonit
+    if (fixLoc) {
+      loc = fixLoc;
+      bucket = 'finland';
+    } else {
+      const isFinland = FI_COUNTRY_ALIASES.has(country);
+      const targetSet = isFinland ? fiSet : COUNTRY_TO_SET[country];
+      if (targetSet && targetSet.length) {
+        loc = matchInFeatureSet(targetSet, p.lat, p.lon);
+        if (!loc) { loc = nearestInFeatureSet(targetSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
+        if (!loc) {
+          // Maa tunnistettu mutta kunta ei osu -> jää maatason löydöksi ("muut maat")
+          report.unmatched++;
+          if (report.unmatchedList.length < 100) {
+            report.unmatchedList.push({ code: p.code, type: p.type, country: p.country || '?', lat: p.lat, lon: p.lon, day });
+          }
+          bucket = 'other';
+        } else {
+          bucket = isFinland ? 'finland' : 'foreign';
         }
-        bucket = 'other';
-      } else {
-        bucket = isFinland ? 'finland' : 'foreign';
       }
     }
 
@@ -538,4 +545,70 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   }
 
   return report;
+}
+
+// ---------- Käsin tehty kunta-määritys ----------
+// Merkitsee "ei osumaa" -kätkön valittuun Suomen kuntaan:
+// 1) stats/{uid}.municipalities[kunta] += löytö + fixes[code]=kunta (tulevat tuonnit käyttävät määritystä)
+// 2) other_countries-merkinnästä poisto
+// 3) findsdata-sijainti päivitetään
+export async function assignFindToFinnishMunicipality(db, uid, { code, typeName = '', fromCname = 'Finland', kunta, day = '' } = {}) {
+  if (!code || !kunta) throw new Error('Kätkökoodi tai kunta puuttuu.');
+  let typeIdx = GPX_TYPE_TO_INDEX[typeName] !== undefined ? GPX_TYPE_TO_INDEX[typeName] : -1;
+  let recDay = day || '';
+
+  // Jos tyyppi tai pvm ei ole tiedossa (esim. Muut maat -näkymästä), etsitään findsdatasta
+  if (typeIdx === -1 || !recDay) {
+    try {
+      const fSnap = await getDocs(collection(db, 'users', uid, 'findsdata'));
+      for (const d of fSnap.docs) {
+        const rec = d.data().finds?.[code];
+        if (rec) {
+          if (typeIdx === -1) typeIdx = +rec[0];
+          if (!recDay) recDay = rec[1] || '';
+          break;
+        }
+      }
+    } catch {}
+  }
+
+  const kuntaToRegion = {};
+  for (const [mk, ks] of Object.entries(maakuntienKunnat)) {
+    for (const k of ks) kuntaToRegion[k] = mk;
+  }
+
+  const statsSnap = await getDoc(doc(db, 'stats', uid));
+  const sData = statsSnap.exists() ? statsSnap.data() : {};
+  const municipalities = sData.municipalities || {};
+  const fixes = sData.fixes || {};
+  const entry = municipalities[kunta] = ensureEntryShape(municipalities[kunta]);
+  if (!entry.ids.includes(code)) {
+    entry.ids.push(code);
+    if (typeIdx >= 0 && typeIdx < TYPE_COUNT) entry.s[typeIdx]++;
+  }
+  entry.r = kuntaToRegion[kunta] || entry.r || 'Muu';
+  fixes[code] = kunta;
+  await setDoc(doc(db, 'stats', uid), { municipalities, fixes, updatedAt: Timestamp.now() }, { merge: true });
+
+  // Poisto other_countries-merkinnästä
+  const otherSnap = await getDoc(doc(db, 'users', uid, 'other_countries', 'finds'));
+  const countries = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
+  const oe = countries[fromCname];
+  if (oe && Array.isArray(oe.ids) && oe.ids.includes(code)) {
+    oe.ids = oe.ids.filter(c => c !== code);
+    if (Array.isArray(oe.s) && typeIdx >= 0 && oe.s[typeIdx] > 0) oe.s[typeIdx]--;
+    if (!oe.ids.length) delete countries[fromCname];
+    await setDoc(doc(db, 'users', uid, 'other_countries', 'finds'), { countries, updatedAt: Timestamp.now() });
+  }
+
+  // findsdata-sijainti päivitetään kunnaksi
+  if (recDay) {
+    const y = recDay.slice(0, 4) || 'unknown';
+    const fSnap = await getDoc(doc(db, 'users', uid, 'findsdata', y));
+    const rec = fSnap.exists() ? fSnap.data().finds?.[code] : null;
+    if (rec) {
+      rec[4] = kunta;
+      await setDoc(doc(db, 'users', uid, 'findsdata', y), { finds: { [code]: rec } }, { merge: true });
+    }
+  }
 }
