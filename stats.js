@@ -64,8 +64,54 @@ export const renderStatsDashboard = (content, app) => {
             <button class="launcher-btn btn-peach" onclick="app.router('stats_external')">
                 <span class="launcher-icon">📈</span>Kuvatilastot (Geocache.fi)
             </button>
+            <button class="launcher-btn btn-sky" onclick="app.router('stats_other')">
+                <span class="launcher-icon">🌐</span>Muut maat
+            </button>
         </div>
     </div>`;
+};
+
+// --- MUUT MAAT (GPX-tuotavat löydöt muista maista) ---
+export const loadOtherCountries = async (db, user, content) => {
+    content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Ladataan...</p></div>`;
+    try {
+        const snap = await getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds'));
+        const countries = snap.exists() ? (snap.data().countries || {}) : {};
+        const entries = Object.entries(countries)
+            .map(([name, e]) => ({ name, count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
+            .sort((a, b) => b.count - a.count);
+
+        if (!entries.length) {
+            content.innerHTML = `
+            <div class="card">
+                <div class="view-header"><h1>Muut maat</h1>
+                <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
+                <p>Ei löytöjä muista maista. Tuo löytösi GPX-tiedostosta Asetukset-sivulla — löydöt tallentuvat tänne automaattisesti maittain.</p>
+            </div>`;
+            return;
+        }
+
+        const TYPE_NAMES = ['Tradi','Multi','Webcam','Mysse','Letteri','Öörtti','Miitti','Virtu','Cito','Wherigo','Com.Cel','Mega','No Loc','Juhla'];
+        const rows = entries.map(e => `
+            <div class="panel" style="padding:12px 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <strong style="font-size:1.05em;">${e.name}</strong>
+                    <span class="badge badge-premium">${e.count} löytöä</span>
+                </div>
+                <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ') || '—'}</div>
+            </div>`).join('');
+
+        content.innerHTML = `
+        <div class="card">
+            <div class="view-header"><h1>Muut maat</h1>
+            <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
+            <p style="font-size:0.85em; opacity:0.75;">Löydöt maista, joille ei ole vielä kuntakarttaa. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
+            <div style="display:grid; gap:8px;">${rows}</div>
+        </div>`;
+    } catch (e) {
+        console.error(e);
+        content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Lataus epäonnistui.</p></div>`;
+    }
 };
 
 // --- APUFUNKTIOT ---

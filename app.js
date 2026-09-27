@@ -31,9 +31,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v66';
-const APP_DISPLAY_VERSION = '2.13.3';
-const APP_SW_CACHE = 'mk-porttaali-v66';
+const APP_VERSION = 'v67';
+const APP_DISPLAY_VERSION = '2.14.0';
+const APP_SW_CACHE = 'mk-porttaali-v67';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -106,7 +106,7 @@ window.app = {
       const nav = document.getElementById('mainNav');
       if (nav) nav.classList.remove('open');
 
-      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'country_maps', 'sweden_map', 'norway_map', 'estonia_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
+      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'stats_other', 'country_maps', 'sweden_map', 'norway_map', 'estonia_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
       
       if (protectedViews.includes(targetView) && !window.app.currentUser) {
           sessionStorage.setItem('mk_post_login_view', targetView);
@@ -197,6 +197,7 @@ window.app = {
       case 'stats_all': if (checkPremium(content)) Stats.loadAllStats(db, window.app.currentUser, content); break;
       case 'stats_top': if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content); break;
       case 'stats_external': if (checkPremium(content)) Stats.loadExternalStats(content); break;
+      case 'stats_other': if (checkPremium(content)) Stats.loadOtherCountries(db, window.app.currentUser, content); break;
       
       case 'converters': 
         if (checkPremium(content)) {

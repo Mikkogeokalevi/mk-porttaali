@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v66'; // PÄIVITETTY: v65 -> v66
+const CACHE_NAME = 'mk-porttaali-v67'; // PÄIVITETTY: v66 -> v67
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const ASSETS_TO_CACHE = [
   './map_all.js',
   './map_countries.js',     // <--- UUSI TIEDOSTO LISÄTTY (Ruotsi/Norja/Viro-kuntakartat)
   './locationHelpers.js',  // <--- UUSI TIEDOSTO LISÄTTY (paikannus-zoom ja wake lock)
+  './gpxImport.js',        // <--- UUSI TIEDOSTO LISÄTTY (GPX/ZIP -tuonti Suomi + ulkomaat + muut maat)
   './sverige_kommuner.geojson',
   './norge_kommuner.geojson',
   './viro_vald.geojson',

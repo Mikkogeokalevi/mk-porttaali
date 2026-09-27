@@ -11,14 +11,17 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.3</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.14.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, vähemmän selaamista ennen "Luo kuva" -painiketta. Pikapohjat ja suosikkihaut olivat käytännössä samaa listaa, joten ne yhdistettiin yhdeksi "Pikapohjat"-toiminnoksi. Versiotiedot yhdistetty yhdeksi riviksi yläosaan.</li>
+                <li><strong>27.9.2026:</strong> <b>GPX-tuonti Suomen tilastoihin ja kaikkiin maihin kerralla.</b> Asetuksissa voi nyt tuoda "My Finds" -kyselyn tai Pocket Queryn (.zip tai .gpx) — toimii myös puhelimella ilman copy/pastea. Tuonti päivittää Suomen kuntatilastot sekä Ruotsin, Norjan ja Viron kuntakartat samalla kertaa.</li>
+                <li><strong>27.9.2026:</strong> Uusi <b>🌐 Muut maat</b> -näkymä Tilastot-osiossa: löydöt maista, joille ei ole vielä kuntakarttaa (esim. Kreikka, Latvia, Islanti), tallentuvat automaattisesti ja näkyvät maittain.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.13.3</strong><br>
+                    - 27.9.2026: Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, vähemmän selaamista ennen "Luo kuva" -painiketta. Pikapohjat ja suosikkihaut olivat käytännössä samaa listaa, joten ne yhdistettiin yhdeksi "Pikapohjat"-toiminnoksi. Versiotiedot yhdistetty yhdeksi riviksi yläosaan.<br><br>
                     <strong>v2.13.2</strong><br>
                     - 27.9.2026: Mobiilikäytettävyyttä parannettu: karttojen korkeus mukautuu nyt selaimen osoitepalkin liikkeisiin (ei enää hyppimistä), pienet painikkeet ovat suurempia kosketuskohteita, pitkät tekstit mahtuvat etusivun nappeihin, admin-välilehdet murtuvat tarvittaessa ja sivua voi zoomata sormin.<br><br>
                     <strong>v2.13.1</strong><br>
@@ -105,8 +108,16 @@ export const renderHelp = (content, app) => {
         <h4>Omien löytöjen tuonti <span class="badge badge-premium">PREMIUM</span></h4>
         <p>Jotta kartat toimivat, sovelluksen täytyy tietää löytösi. Datan tuonti tapahtuu <strong>Asetukset</strong>-sivun alalaidasta:</p>
         
+        <div class="panel panel-success" style="margin-bottom:10px;">
+            <strong>Vaihtoehto A: GPX-tuonti (suositeltu, toimii puhelimella):</strong>
+            <ol style="margin-left:15px; padding-left:0; line-height:1.6;">
+                <li>Lataa geocaching.com:sta <strong>My Finds</strong> -kysely tai Pocket Query (zip tai .gpx).</li>
+                <li>Palaa MK Porttaaliin → <strong>Asetukset</strong> → <strong>📁 Valitse GPX/ZIP-tiedosto</strong>.</li>
+                <li>Tuonti päivittää kerralla: Suomen kuntatilastot + Ruotsin, Norjan ja Viron kuntakartat + "Muut maat" -yhteenvedon.</li>
+            </ol>
+        </div>
         <div class="panel panel-accent">
-            <strong>Näin tuot tiedot (Askel askeleelta):</strong>
+            <strong>Vaihtoehto B: Geocache.fi-taulukko (vain Suomi, helpoin tietokoneella):</strong>
             <ol style="margin-left:15px; padding-left:0; line-height:1.6;">
                 <li>Avaa <strong>Geocache.fi</strong> ja kirjaudu sisään.</li>
                 <li>Mene omaan profiiliisi ja valitse välilehti <strong>Tilastot</strong>.</li>

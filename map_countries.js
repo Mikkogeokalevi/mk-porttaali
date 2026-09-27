@@ -39,7 +39,7 @@ const GPX_TYPE_TO_INDEX = {
   'Groundspeak Block Party': 6
 };
 
-const COUNTRY_CONFIGS = {
+export const COUNTRY_CONFIGS = {
   sweden: {
     id: 'sweden',
     flag: '🇸🇪',
