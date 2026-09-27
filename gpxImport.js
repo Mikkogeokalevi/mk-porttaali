@@ -29,7 +29,9 @@ export const GPX_TYPE_TO_INDEX = {
   'Wherigo Cache': 9,
   'Community Celebration Event': 10,
   'Mega-Event': 11,
-  'Giga-Event': 11,
+  'Mega-Event Cache': 11,
+  'Giga-Event': 13,
+  'Giga-Event Cache': 13,
   'Lost and Found Event': 6,
   'Locationless (Reverse) Cache': 12,
   'Groundspeak Block Party': 13,
@@ -390,6 +392,8 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     Estonia: eeGeo ? buildFeatureSet(eeGeo, f => COUNTRY_CONFIGS.estonia.nameProperty(f.properties)) : []
   };
   const COUNTRY_TO_SET = { 'Finland': fiSet, 'Sweden': countrySets.Sweden, 'Norway': countrySets.Norway, 'Estonia': countrySets.Estonia };
+  // Geocaching.com kirjaa Ahvenanmaan maaksi 'Aland Islands' — reititetään Suomeen
+  const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
 
   // Kunta -> maakunta -kartta
   const kuntaToRegion = {};
@@ -411,6 +415,8 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   }
   const otherSnap = await getDoc(doc(db, 'users', uid, 'other_countries', 'finds'));
   const otherData = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
+  // Siivoa: Ahvenanmaa-alias joutunut aiemmin "muihin maihin" — uudelleentuonti reitittää ne Suomeen
+  for (const alias of ['Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']) delete otherData[alias];
 
   const findsByYear = {}; // '2023' -> {code: [t,d,D,T,loc,attrs]} ja 'unknown'
 
@@ -436,15 +442,12 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     const country = p.country || '';
     let loc = null, bucket = 'other';
 
-    const targetSet = COUNTRY_TO_SET[country];
-    if (country === 'Finland' && fiSet.length) {
-      loc = matchInFeatureSet(fiSet, p.lat, p.lon);
-      if (!loc) { loc = nearestInFeatureSet(fiSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
-      bucket = 'finland';
-    } else if (targetSet && targetSet.length) {
+    const isFinland = FI_COUNTRY_ALIASES.has(country);
+    const targetSet = isFinland ? fiSet : COUNTRY_TO_SET[country];
+    if (targetSet && targetSet.length) {
       loc = matchInFeatureSet(targetSet, p.lat, p.lon);
       if (!loc) { loc = nearestInFeatureSet(targetSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
-      bucket = 'foreign';
+      bucket = isFinland ? 'finland' : 'foreign';
     }
 
     // Maa tunnistettu mutta kunta ei löytynyt -> laske maatason löydöksi
@@ -487,6 +490,15 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
 
   report.finland.municipalities = Object.keys(fi).length;
   report.finland.newMunicipalities = report.finland.seen ? report.finland.seen.size : 0;
+  // Kokonaismäärät tallennetusta datasta (ei vain tämän ajon uudet) — raportti näyttää aina kaikki maat
+  report.countryTotals = {};
+  for (const [country, docData] of Object.entries(countryDocs)) {
+    report.countryTotals[country] = Object.values(docData).reduce((a, e) => a + (e?.ids?.length || 0), 0);
+  }
+  report.otherTotals = {};
+  for (const [name, e] of Object.entries(otherData)) {
+    report.otherTotals[name] = e?.ids?.length || 0;
+  }
 
   // Tallennus
   onStatus('Tallennetaan Firestoreen...');

@@ -328,8 +328,14 @@ export const renderSettingsView = (content, db, user, app) => {
                     const fiInfo = report.finland.replaced
                         ? `Suomi: ${report.finland.municipalities} kuntaa (korvasi aiemman datan)`
                         : `Suomi: ${report.finland.municipalities} kuntaa (uusia löytöjä lisätty)`;
-                    const countryLines = Object.entries(report.countries).map(([c, n]) => `${GpxImport.countryNameFi(c)}: ${n} löytöä`);
-                    const otherLines = Object.entries(report.other).map(([c, n]) => `${GpxImport.countryNameFi(c)}: ${n} löytöä`);
+                    const countryLines = Object.entries(report.countryTotals || {}).map(([c, n]) => {
+                        const newN = report.countries[c] || 0;
+                        return `${GpxImport.countryNameFi(c)}: ${n} löytöä${newN < n ? ` (+${newN} uutta)` : ''}`;
+                    });
+                    const otherLines = Object.entries(report.otherTotals || {}).map(([c, n]) => {
+                        const newN = report.other[c] || 0;
+                        return `${GpxImport.countryNameFi(c)}: ${n} löytöä${newN < n ? ` (+${newN} uutta)` : ''}`;
+                    });
 
                     gpxReport.innerHTML = `
                     <div style="background:rgba(166, 227, 161, 0.1); border:1px solid #a6e3a1; padding:15px; border-radius:8px;">

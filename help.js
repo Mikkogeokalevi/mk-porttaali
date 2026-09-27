@@ -11,7 +11,10 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.14.0</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.14.2</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>27.9.2026:</strong> Ahvenanmaan löydöt ("Aland Islands") reititetään nyt Suomen kuntatilastoihin — geocaching.com merkitsee ne omaksi maakseen, mutta geocache.fi-tyyliin kuuluvat Suomeen. Aja GPX-tuonti uudelleen, niin ne siirtyvät kuntiin.</li>
+            </ul>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> <b>GPX-tuonti Suomen tilastoihin ja kaikkiin maihin kerralla.</b> Asetuksissa voi nyt tuoda "My Finds" -kyselyn tai Pocket Queryn (.zip tai .gpx) — toimii myös puhelimella ilman copy/pastea. Tuonti päivittää Suomen kuntatilastot sekä Ruotsin, Norjan ja Viron kuntakartat samalla kertaa.</li>
                 <li><strong>27.9.2026:</strong> Tuonti tallentaa jokaisen löydön tarkan tiedon: kätkötyyppi, <b>oma löytöpäivämäärä</b> (poimitaan omasta "Found it"-lokista, ei piilotuspäivä), D/T-arvosanat ja kätköattribuutit — mahdollistaa tulevat haut päivän, tyypin, D/T:n tai attribuutin mukaan. Data tallentuu vuosittain, joten se skaalautuu yli 20 000 löydön.</li>
@@ -21,6 +24,10 @@ export const renderHelp = (content, app) => {
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.14.1</strong><br>
+                    - 27.9.2026: GPX-tuonnin korjauksia: Mega-Event/Giga-Event -tyyppivaihtoehdot lisätty; tuontiraportti näyttää maiden kokonaislukumäärät eikä vain uusia.<br><br>
+                    <strong>v2.14.0</strong><br>
+                    - 27.9.2026: GPX-tuonti Suomen tilastoihin ja kaikkiin maihin kerralla (zip tai gpx, toimii puhelimella). Tallentaa per löytö: tyyppi, oma löytöpäivä (omasta "Found it"-lokista), D/T ja attribuutit — vuosittain tallennettuna, skaalautuu yli 20 000 löytöön. Uusi "Muut maat" -näkymä Tilastoissa.<br><br>
                     <strong>v2.13.3</strong><br>
                     - 27.9.2026: Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, vähemmän selaamista ennen "Luo kuva" -painiketta. Pikapohjat ja suosikkihaut olivat käytännössä samaa listaa, joten ne yhdistettiin yhdeksi "Pikapohjat"-toiminnoksi. Versiotiedot yhdistetty yhdeksi riviksi yläosaan.<br><br>
                     <strong>v2.13.2</strong><br>
