@@ -32,9 +32,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v77';
-const APP_DISPLAY_VERSION = '2.15.7';
-const APP_SW_CACHE = 'mk-porttaali-v77';
+const APP_VERSION = 'v78';
+const APP_DISPLAY_VERSION = '2.15.8';
+const APP_SW_CACHE = 'mk-porttaali-v78';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -159,7 +159,7 @@ window.app = {
             </div>
 
             <div class="launcher-grid">
-                <button class="launcher-btn btn-primary" onclick="app.router('generator')"><span class="launcher-icon">🖼️</span>Kuvageneraattori</button>
+                <button class="launcher-btn btn-primary" onclick="app.router('generator')"><span class="launcher-icon">🖼️</span>Kuvageneraattori<span style="font-size:0.68em; font-weight:400; opacity:0.75;">geocache.fi</span></button>
                 <button class="launcher-btn btn-green" onclick="app.router('stats')"><span class="launcher-icon">📊</span>Tilastot${lockIcon}</button>
                 <button class="launcher-btn btn-teal" onclick="app.router('stats_queries')"><span class="launcher-icon">🔍</span>Löytöhaut${lockIcon}</button>
                 <button class="launcher-btn btn-peach" onclick="app.router('converters')"><span class="launcher-icon">🧮</span>Muuntimet${isLocked ? ' 🔒' : ''}</button>
