@@ -83,6 +83,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **27.9.2026**: Versio 2.15.4: Kalenteripäivähakuun päiväväli (alkaa/asti pp+kk, wrap vuodenvaihteen yli) + vuosirajaus (yearFrom/yearTo input-kentät); "asti"-selectit peilaavat "alkaa"-valintoja kunnes käyttäjä muuttaa niitä.
 - **27.9.2026**: Versio 2.15.3: Löytöhaut laajennettu — FINDS_QUERIES-tuki `filters:['types','attr']`-lisäsuodattimille (UI hoitaa automaattisesti, `applyFilters`-apuri); TYPE_COLORS[14]-taulukko; dtMatrix värittää ruudun yleisimmän tyypin värillä + legenda; typeCoverage/lista myös värilliset; uusi all-dt -kysely (koko D/T-matriisi vapailla suodattimilla).
 - **27.9.2026**: Versio 2.15.2: Löytöhaut-launcher lisätty etusivun launcher-gridiin (btn-teal, premium-lukko kuten Tilastot); Kuvageneraattori-otsikkoon Geocache.fi-badge (badge-extra) ja selkeytetty alaotsikkoteksti.
 - **27.9.2026**: Versio 2.15.1: korjaus — findsdata-kirjaukset tehdään nyt KAIKISTA löydöistä (aiemmin vain uusista ei-duplikaateista), joten keskeytyneen ensimmäisen tuonnin jälkeen uudelleenajo täydentää puuttuvat löydöt. Vaikutti Löytöhaut-näkymään (vain 7 löytöä näkyi).

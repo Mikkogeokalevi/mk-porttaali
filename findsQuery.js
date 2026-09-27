@@ -133,19 +133,30 @@ const FINDS_QUERIES = [
   {
     id: 'day-search',
     title: 'Kalenteripäivähaku',
-    desc: 'Kaikki tietynä kalenteripäivänä (pp.kk.) tehdyt löydöt kaikkina vuosina — puuttuvat tyypit ja D/T-kattavuus.',
+    desc: 'Yksittäinen päivä tai päiväväli (pp.kk.–pp.kk., voi ylittää vuodenvaihteen) kaikkina vuosina tai valittuna vuosina — puuttuvat tyypit ja D/T-kattavuus.',
     input: 'day',
     filters: ['types', 'attr'],
     run(finds, input) {
       const { month, day } = input;
-      const mmdd = `-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const hits = applyFilters(finds.filter(f => f.day.endsWith(mmdd)), input);
+      const m2 = input.month2 || month, d2 = input.day2 || day;
+      const a = month * 100 + day, b = m2 * 100 + d2;
+      const inRange = f => {
+        const v = (+f.day.slice(5, 7)) * 100 + (+f.day.slice(8, 10));
+        return a <= b ? (v >= a && v <= b) : (v >= a || v <= b); // väli voi ylittää vuodenvaihteen
+      };
+      const yOk = f => {
+        const y = +f.day.slice(0, 4);
+        return (!input.yearFrom || y >= input.yearFrom) && (!input.yearTo || y <= input.yearTo);
+      };
+      const hits = applyFilters(finds.filter(f => f.day.length >= 10 && inRange(f) && yOk(f)), input);
+      const label = a === b ? `${day}.${month}.` : `${day}.${month}.–${d2}.${m2}.`;
+      const yr = (input.yearFrom || input.yearTo) ? ` (${input.yearFrom || '…'}–${input.yearTo || '…'})` : '';
       const cov = typeCoverage(hits);
       const mx = dtMatrix(hits);
       return [
-        { title: `Kätkötyypit ${day}.${month}. — ${cov.found}/${cov.total} löydetty`, html: cov.html },
+        { title: `Kätkötyypit ${label}${yr} — ${cov.found}/${cov.total} löydetty`, html: cov.html },
         { title: `D/T-kattavuus — ${mx.filled}/${mx.total}`, html: mx.html },
-        { title: `Löydöt (${hits.length})`, html: hits.length ? findsList(hits) : '<p>Ei löytöjä tänä päivänä.</p>' }
+        { title: `Löydöt (${hits.length})`, html: hits.length ? findsList(hits) : '<p>Ei löytöjä valitulla välillä.</p>' }
       ];
     }
   },
@@ -222,14 +233,21 @@ const FINDS_QUERIES = [
 
 // ---------- Näkymä ----------
 
-function renderInputs(query, inputDiv) {
+function renderInputs(query, inputDiv, finds) {
   let html = `<p style="font-size:0.8em;opacity:0.7;margin:5px 0 0;">${query.desc}</p>`;
   if (query.input === 'day') {
     const dayOpts = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
     const monOpts = MONTHS_FI.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
-    html += `<div style="display:flex; gap:10px;">
-      <div style="flex:1;"><label>Päivä:</label><select id="fqDay">${dayOpts}</select></div>
-      <div style="flex:2;"><label>Kuukausi:</label><select id="fqMonth">${monOpts}</select></div></div>`;
+    const years = [...new Set(finds.filter(f => f.day.length >= 10).map(f => +f.day.slice(0, 4)))].sort((a, b) => a - b);
+    const yrOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    html += `<div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div><label style="font-size:0.75em;">Päivä alkaen</label><select id="fqDay">${dayOpts}</select></div>
+      <div><label style="font-size:0.75em;">Kk alkaen</label><select id="fqMonth">${monOpts}</select></div>
+      <div><label style="font-size:0.75em;">Päivä asti</label><select id="fqDay2">${dayOpts}</select></div>
+      <div><label style="font-size:0.75em;">Kk asti</label><select id="fqMonth2">${monOpts}</select></div></div>
+    <div style="display:flex; gap:8px;">
+      <div style="flex:1;"><label style="font-size:0.75em;">Vuosi alkaen</label><select id="fqYearFrom" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div>
+      <div style="flex:1;"><label style="font-size:0.75em;">Vuosi asti</label><select id="fqYearTo" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div></div>`;
   } else if (query.input === 'month') {
     html += `<label>Kuukausi:</label><select id="fqMonth">${MONTHS_FI.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select>`;
   } else if (query.input === 'weekday') {
@@ -254,6 +272,16 @@ function renderInputs(query, inputDiv) {
     html += `<label style="font-size:0.85em;">Attribuuttisuodatin:</label><select id="fqAttrFilter" style="margin-bottom:0;">${opts}</select>`;
   }
   inputDiv.innerHTML = html;
+
+  // Kalenteripäivähaku: "asti"-kentät seuraavat "alkaa"-kenttiä kunnes käyttäjä muuttaa niitä
+  const d1 = inputDiv.querySelector('#fqDay'), m1 = inputDiv.querySelector('#fqMonth');
+  const d2 = inputDiv.querySelector('#fqDay2'), m2 = inputDiv.querySelector('#fqMonth2');
+  if (d1 && d2) {
+    let touched = false;
+    [d2, m2].forEach(s => s.addEventListener('change', () => touched = true));
+    d1.onchange = () => { if (!touched) d2.value = d1.value; };
+    m1.onchange = () => { if (!touched) m2.value = m1.value; };
+  }
 
   // Tyyppichipit togglettaviksi
   inputDiv.querySelectorAll('.fq-type').forEach(ch => {
@@ -302,8 +330,8 @@ export const renderFindsQueries = async (db, user, content) => {
   const inputDiv = document.getElementById('fqInput');
   const resultDiv = document.getElementById('fqResult');
 
-  querySel.onchange = () => { renderInputs(FINDS_QUERIES[+querySel.value], inputDiv); resultDiv.innerHTML = ''; };
-  renderInputs(FINDS_QUERIES[0], inputDiv);
+  querySel.onchange = () => { renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; };
+  renderInputs(FINDS_QUERIES[0], inputDiv, finds);
 
   document.getElementById('fqRun').onclick = () => {
     const q = FINDS_QUERIES[+querySel.value];
@@ -315,6 +343,10 @@ export const renderFindsQueries = async (db, user, content) => {
     const input = {
       month: +document.getElementById('fqMonth')?.value || null,
       day: +document.getElementById('fqDay')?.value || null,
+      month2: +document.getElementById('fqMonth2')?.value || null,
+      day2: +document.getElementById('fqDay2')?.value || null,
+      yearFrom: +document.getElementById('fqYearFrom')?.value || null,
+      yearTo: +document.getElementById('fqYearTo')?.value || null,
       weekday: document.getElementById('fqWeekday')?.value ?? null,
       attr: document.getElementById('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: document.getElementById('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
