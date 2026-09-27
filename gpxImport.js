@@ -425,7 +425,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   const report = {
     totalFound: points.length,
     finland: { municipalities: 0, newMunicipalities: 0, replaced: fiReplace },
-    countries: {}, other: {}, duplicates: 0, nearest: 0, unmatched: 0, unknownTypes: []
+    countries: {}, other: {}, duplicates: 0, nearest: 0, unmatched: 0, unmatchedList: [], unknownTypes: []
   };
 
   onStatus(`Osumatellaan ${points.length} pistettä kuntiin...`);
@@ -447,35 +447,37 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     if (targetSet && targetSet.length) {
       loc = matchInFeatureSet(targetSet, p.lat, p.lon);
       if (!loc) { loc = nearestInFeatureSet(targetSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
-      bucket = isFinland ? 'finland' : 'foreign';
+      if (!loc) {
+        // Maa tunnistettu mutta kunta ei osu -> jää maatason löydöksi ("muut maat")
+        report.unmatched++;
+        if (report.unmatchedList.length < 100) {
+          report.unmatchedList.push({ code: p.code, type: p.type, country: p.country || '?', lat: p.lat, lon: p.lon, day });
+        }
+        bucket = 'other';
+      } else {
+        bucket = isFinland ? 'finland' : 'foreign';
+      }
     }
 
-    // Maa tunnistettu mutta kunta ei löytynyt -> laske maatason löydöksi
-    if (loc === null && bucket !== 'other') bucket = 'other';
-
     if (bucket === 'finland') {
-      if (loc) {
-        const entry = fi[loc] = ensureEntryShape(fi[loc]);
-        if (!report.finland.seen) report.finland.seen = new Set();
-        if (!entry.ids.includes(p.code)) {
-          entry.ids.push(p.code);
-          if (typeIdx >= 0) entry.s[typeIdx]++;
-          entry.r = kuntaToRegion[loc] || 'Muu';
-          report.finland.seen.add(loc);
-          const y = day.slice(0, 4) || 'unknown';
-          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
-        } else report.duplicates++;
-      } else report.unmatched++;
+      const entry = fi[loc] = ensureEntryShape(fi[loc]);
+      if (!report.finland.seen) report.finland.seen = new Set();
+      if (!entry.ids.includes(p.code)) {
+        entry.ids.push(p.code);
+        if (typeIdx >= 0) entry.s[typeIdx]++;
+        entry.r = kuntaToRegion[loc] || 'Muu';
+        report.finland.seen.add(loc);
+        const y = day.slice(0, 4) || 'unknown';
+        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
+      } else report.duplicates++;
     } else if (bucket === 'foreign') {
-      if (loc) {
-        const docData = countryDocs[country];
-        const entry = docData[loc] = ensureEntryShape(docData[loc]);
-        if (addFindTo(entry, p.code, typeIdx)) {
-          const y = day.slice(0, 4) || 'unknown';
-          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
-        } else report.duplicates++;
-        report.countries[country] = (report.countries[country] || 0) + 1;
-      } else report.unmatched++;
+      const docData = countryDocs[country];
+      const entry = docData[loc] = ensureEntryShape(docData[loc]);
+      if (addFindTo(entry, p.code, typeIdx)) {
+        const y = day.slice(0, 4) || 'unknown';
+        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
+      } else report.duplicates++;
+      report.countries[country] = (report.countries[country] || 0) + 1;
     } else {
       // Muut maat
       const cname = country || 'Tuntematon';

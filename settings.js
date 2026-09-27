@@ -349,6 +349,11 @@ export const renderSettingsView = (content, db, user, app) => {
                         ${countryLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌍 ${countryLines.join(' • ')}</p>` : ''}
                         ${otherLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌐 Muut maat: ${otherLines.join(' • ')}</p>` : ''}
                         ${report.nearest ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">${report.nearest} kätköä oli kuntarajan ulkopuolella (saari/reunavesi) — merkittiin lähimpään.</p>` : ''}
+                        ${report.unmatchedList && report.unmatchedList.length ? `
+                            <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Kuntiin osumattomat (maa tunnettu, kunta ei löytynyt):</p>
+                            <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.6;">
+                                ${report.unmatchedList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — ${u.country} — ${u.day || 'ei pvm'} — ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)}</li>`).join('')}
+                            </ul>` : ''}
                         ${report.unknownTypes.length ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">Tuntemattomat kätkötyypit: ${report.unknownTypes.join(', ')}</p>` : ''}
                     </div>`;
                 } catch (err) {
