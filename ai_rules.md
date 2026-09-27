@@ -83,6 +83,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **27.9.2026**: Versio 2.17.2: D/T-ruudun klikkaus suodattaa löytölistan (td data-dv/data-tv → rivien data-d/data-t vertailu); .fq-dtfilter-ilmoitus + .fq-dt-reset "Näytä kaikki".
 - **27.9.2026**: Versio 2.17.1: D/T-ruudukon mobiili-infopopup — td[data-break]='ty:n;...', delegoitu click-kuuntelija avaa .dt-popupin ruudun kohdalle; sulkeutuu klikkauksesta muualle / scrollista / Esc:stä.
 - **27.9.2026**: Versio 2.17.0: Maailmankartta Muut maat -näkymään — `maailma.geojson` (johan/world.geo.json, 180 maata, `properties.name`), GEO_ALIASES-nimimuunnokset (United States→United States of America jne.), löydetyt maat vihreällä + tooltip löytömäärällä; laiska init ocMapBtn-togglella; sw.js asset-listaan.
 - **27.9.2026**: Versio 2.16.2: Muut maat kompaktiksi rivilistaksi (.oc-row: lippu+nimi+count+caret, CSS style.css:ssä). SE/NO/EE mukana listassa (kind='map', country-match + "Avaa kuntakartta"-nappi). COUNTRY_ISO-mappaus stats.js:ssä → flagEmoji (regional indicator; Windows näyttää ISO-kirjaimet). HUOM: help.js "Uutta"-osion päivitys tehdään KOKO lohkon korvauksena — älä jätä vanhoja li-tagien sisältöjä roikkumaan (kaksi kertaa jo rikkoutunut).

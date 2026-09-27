@@ -1251,6 +1251,17 @@ summary:hover { color: var(--accent-color); }
   cursor: pointer;
 }
 
+/* D/T-ruudun listasuodatuksen ilmoituspalkki */
+.fq-dtfilter {
+  font-size: 0.8em;
+  color: var(--subtext-color);
+  margin-bottom: 6px;
+}
+.fq-dt-reset {
+  color: var(--c-blue);
+  cursor: pointer;
+}
+
 /* Löytölista */
 .finds-table {
   border-collapse: collapse;

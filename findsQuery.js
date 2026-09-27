@@ -115,7 +115,7 @@ function dtMatrix(finds) {
         segs.map(([ty, n]) => `<span style="flex:${n}; background:${TYPE_COLORS[ty] || '#888'};"></span>`).join('') + `</div>`;
       const tip = segs.map(([ty, n]) => `${TYPE_NAMES[ty] || '?'} ${n}`).join(', ');
       const breakAttr = segs.map(([ty, n]) => `${ty}:${n}`).join(';'); // mobiilipopupia varten
-      return `<td data-break="${breakAttr}" style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700; cursor:pointer;" title="${tip}">${total}${bar}</td>`;
+      return `<td data-break="${breakAttr}" data-dv="${d}" data-tv="${t}" style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700; cursor:pointer;" title="${tip}">${total}${bar}</td>`;
     }).join('');
     return `<tr><th>${d}</th>${tds}<th>${rowTotal || ''}</th></tr>`;
   }).join('');
@@ -162,16 +162,42 @@ export function findsList(finds, limit = 300) {
     (sorted.length > limit ? `<p style="font-size:0.8em;opacity:0.7;">Näytetään ${limit} / ${sorted.length} löytöä (uusimmat ensin).</p>` : '');
 }
 
-// ---------- D/T-ruudukon mobiili-infopopup ----------
-// Mobiilissa title-tooltip ei toimi — klikkaus ruutuun avaa pienen popupin,
-// joka sulkeutuu kun klikataan mistä tahansa muualta (tai samaa ruutua uudelleen).
+// ---------- D/T-ruudukon mobiili-infopopup + listasuodatus ----------
+// Mobiilissa title-tooltip ei toimi — klikkaus ruutuun avaa pienen popupin JA
+// suodattaa alla olevan löytölistan kyseiseen D/T-ruutuun.
+// Popup sulkeutuu kun klikataan mistä tahansa muualta (tai samaa ruutua uudelleen).
 let dtPopup = null;
 function closeDtPopup() { if (dtPopup) { dtPopup.remove(); dtPopup = null; } }
+function dtFilterList(res, dv, tv) {
+  let shown = 0;
+  res.querySelectorAll('.finds-table tbody tr').forEach(r => {
+    const ok = parseFloat(r.dataset.d) === parseFloat(dv) && parseFloat(r.dataset.t) === parseFloat(tv);
+    r.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  });
+  res.querySelector('.fq-dtfilter')?.remove();
+  const table = res.querySelector('.finds-table');
+  if (table) {
+    const note = document.createElement('div');
+    note.className = 'fq-dtfilter';
+    note.innerHTML = `Ruutu D${dv}/T${tv}: ${shown} löytöä · <b class="fq-dt-reset">Näytä kaikki</b>`;
+    table.closest('.fq-scroll')?.before(note);
+  }
+}
 document.addEventListener('click', e => {
+  // "Näytä kaikki" -palautus löytölistan suodatukseen
+  if (e.target.closest('.fq-dt-reset')) {
+    const res = document.getElementById('fqResult');
+    res?.querySelectorAll('.finds-table tbody tr').forEach(r => r.style.display = '');
+    res?.querySelector('.fq-dtfilter')?.remove();
+    return;
+  }
   const td = e.target.closest('.dt-matrix td[data-break]');
   if (!td) { closeDtPopup(); return; }
   if (dtPopup?._for === td) { closeDtPopup(); return; }
   closeDtPopup();
+  const res = document.getElementById('fqResult');
+  if (res) dtFilterList(res, td.dataset.dv, td.dataset.tv);
   dtPopup = document.createElement('div');
   dtPopup.className = 'dt-popup';
   dtPopup._for = td;
@@ -179,7 +205,7 @@ document.addEventListener('click', e => {
     const [ty, n] = p.split(':');
     return `<div style="display:flex; justify-content:space-between; gap:12px; padding:3px 0;">
       <span style="color:${TYPE_COLORS[+ty] || '#888'}; font-weight:600;">${TYPE_NAMES[+ty] || '?'}</span><span>${n}</span></div>`;
-  }).join('');
+  }).join('') + `<div style="font-size:0.72em; opacity:0.6; margin-top:5px; border-top:1px solid rgba(127,127,127,0.25); padding-top:4px;">Lista rajattu tähän ruutuun · klikkaa sulkeaksesi</div>`;
   document.body.appendChild(dtPopup);
   const r = td.getBoundingClientRect();
   const pw = dtPopup.offsetWidth, ph = dtPopup.offsetHeight;
@@ -431,10 +457,11 @@ export const renderFindsQueries = async (db, user, content) => {
   const inputDiv = document.getElementById('fqInput');
   const resultDiv = document.getElementById('fqResult');
 
-  querySel.onchange = () => { renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; };
+  querySel.onchange = () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; };
   renderInputs(FINDS_QUERIES[0], inputDiv, finds);
 
   document.getElementById('fqRun').onclick = () => {
+    closeDtPopup();
     const q = FINDS_QUERIES[+querySel.value];
     // Valitut tyyppisuodattimet (jos näkyvissä)
     const typeChips = inputDiv.querySelectorAll('.fq-type');

@@ -11,10 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.1</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.2</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> D/T-ruudukon ruutuja voi nyt <b>klikata/koskettaa</b> — pieni popup näyttää ruudun tyyppijakauman (myös mobiilissa, missä hover ei toimi). Sulkeutuu klikkaamalla muualta tai samaa ruutua uudelleen.</li>
+                <li><strong>27.9.2026:</strong> D/T-ruudukon ruudun klikkaus <b>suodattaa nyt myös löytölistan</b> kyseiseen ruutuun (esim. D3.5/T4). Listan yläpuolelle ilmestyy ilmoitus + "Näytä kaikki" -palautus.</li>
             </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;">2.17.1: D/T-ruudukon klikattava tyyppijakauma-popup (mobiiliystävällinen).</div>
 
 
 
