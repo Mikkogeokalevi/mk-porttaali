@@ -36,6 +36,7 @@
 - Ruotsin kuntakartta -kokonaisuus julkaistaan uutena minor-versiona `2.10.0`.
 - Norjan ja Viron kuntakartat yhdistetään kuntakarttoihin versiona `2.11.0`.
 - Kuntakarttojen paikannus seuraa sijaintia jatkuvasti, zoomaa nopeuden mukaan ja pitää näytön päällä versiona `2.12.0`.
+- Koko sovelluksen ulkoasu-uudistus (yhtenäinen design system `style.css`:ssä) julkaistaan versiona `2.13.0`.
 - Kun käyttäjänäkyvä versio muuttuu, päivitä vähintään `index.html`, `app.js`:n `APP_DISPLAY_VERSION`, etusivun logon alainen versionumero, `help.js`:n version otsikko/historia ja tarvittaessa sovelluksen tekninen cache-versio erikseen.
 - Etusivulla näytetään `APP_DISPLAY_VERSION` logon alla ja siitä pääsee Ohjeet & Tuki -sivulle.
 - Kuntakarttojen GPX-tuonnin viimeisin ajankohta tallennetaan `lastGpxImport`-kenttään ja näytetään karttanäkymässä.
@@ -52,6 +53,9 @@
 - Suorituskyky: isot datamäärät ladataan osissa, käytetään välimuistia.
 - Virheenkäsittely: selkeät virheilmoitukset käyttäjälle.
 - PWA: toimii myös offline-tilassa Service Workerin avulla.
+- UI: käytä style.css:n yhteisiä luokkia, älä lisää uusia inline-<style>-blokkeja näkymiin.
+- UI-luokat (style.css): `.view-header` (otsikko + takaisin-nappi), `.btn-sm`, `.btn-block`, värinapit `.btn-green/-yellow/-peach/-sky/-blue/-mauve/-teal/-red/-danger`, `.launcher-grid` + `.launcher-btn` + `.launcher-icon` (ikoniruudukot), `.panel` (+ `-dashed/-accent/-success/-warn/-danger/-info`), `.badge-free/-premium/-extra/-admin/-pending/-approved/-blocked`, karttanäkymille `.map-shell/.map-toolbar/.toolbar-actions/.map-subbar/.map-area/.map-loading/.map-footer`.
+- Header pysyy mustana (`#000`), koska logossa (`mklogo.png`) on kiinteä musta tausta.
 
 ## Vanhat säännöt
 - `help.js`: Ohjetta ja versiotietoja ei saa tiivistää, lyhentää tai poistaa ilman erillista pyyntöä.
@@ -79,6 +83,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **27.9.2026**: Versio 2.13.0: ulkoasu-uudistus. `style.css` kirjoitettu uusiksi (poistettu tuplakoodi, lisätty yhteiset komponenttiluokat); näkymien inline-`<style>`-blokit poistettu (settings, admin, links, stats) ja yläpalkit, napit, paneelit ja badget yhtenäistetty; etusivu ja maa-/tilastovalitsimet ikoniruudukoiksi; SW cache v63.
 - **5.9.2026**: Versio 2.12.2: paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua (≤40→18, 40–70→17, 70–100→16, >100→14).
 - **5.9.2026**: Versio 2.12.1: paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa.
 - **3.9.2026**: Versio 2.12.0: kuntakarttojen paikannus seuraa sijaintia automaattisesti, zoomaa nopeuden mukaan ja pitää näytön päällä mobiililaitteilla Wake Lock API:lla; paikannuksen sammutuksen jälkeen viimeisin sijainti jää punaiseksi palloksi ja manuaalinen zoom/pan keskeyttää automaattisen seurannan 10 sekunniksi; Viron kuntakartan GPX-tuonti tunnistaa saarilla olevat kätköt lähimmän kunnan kaaren avulla.

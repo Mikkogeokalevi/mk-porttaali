@@ -5,23 +5,24 @@ export const renderHelp = (content, app) => {
 
     content.innerHTML = `
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div class="view-header" style="margin-bottom:20px;">
             <h1>Ohjeet & Tuki</h1>
-            <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Etusivulle</button>
+            <button class="btn btn-sm" onclick="app.router('home')">⬅ Etusivulle</button>
         </div>
-        
-        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:30px; border-left:4px solid #a6e3a1;">
-            <h3 style="margin-top:0; color:#a6e3a1;">🚀 Uutta versiossa 2.12.2</h3>
+
+        <div class="panel panel-success" style="margin-bottom:30px;">
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>27.9.2026:</strong> Uudistettu ulkoasu koko sovellukseen: yhtenäinen ja selkeämpi design, etusivun ikoniruudukko, siistitty navigaatio (aktiivinen sivu korostuu valikossa), uusittu kirjautumissivu ja Premium-hinnasto sekä yhtenäiset yläpalkit tilastoissa, asetuksissa, ylläpidossa, linkkikirjastossa ja karttanäkymissä. Toiminnot pysyvät ennallaan.</li>
                 <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua: ≤40 km/h → 18, 40–70 km/h → 17, 70–100 km/h → 16, yli 100 km/h → 14.</li>
                 <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa, jotta kartta näyttää tarkemmin.</li>
                 <li><strong>3.9.2026:</strong> Kuntakarttojen paikannus seuraa sijaintiasi automaattisesti kun liikut. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin esimerkiksi 100 km/h nopeudessa. Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkilla rajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus myös pitää näytön päällä Androidilla, iPhone/iPadillä ja muilla mobiililaitteilla, joissa selain tukee Wake Lock -rajapintaa.</li>
                 <li><strong>3.9.2026:</strong> GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.</li>
             </ul>
 
-            <details style="margin-top:15px; cursor:pointer;">
-                <summary style="opacity:0.7; font-size:0.9em;">Näytä aiempi historia</summary>
-                <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #555; font-size:0.9em; opacity:0.8;">
+            <details style="margin-top:15px; margin-bottom:0;">
+                <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
+                <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
                     <strong>v2.9.1</strong><br>
                     - 10.7.2026: Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.<br>
                     - 10.7.2026: Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.<br>
@@ -80,21 +81,21 @@ export const renderHelp = (content, app) => {
             </li>
         </ul>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
         <h3>⚙️ 2. Asetukset & Datan tuonti</h3>
         
-        <h4>Perustiedot <span style="font-size:0.7em; background:#bac2de; color:#1e1e2e; padding:2px 5px; border-radius:4px;">FREE</span></h4>
+        <h4>Perustiedot <span class="badge badge-free">FREE</span></h4>
         <p>Asetukset-sivulla hallinnoit profiiliasi. Tärkeimmät kohdat:</p>
         <ul style="line-height:1.6; padding-left:20px;">
             <li><strong>Geocache.fi ID:</strong> Pakollinen, jotta linkit (esim. profiiliin tai kuntakarttaan) ohjautuvat oikein. Löydät tämän Geocache.fi-profiilisi osoiteriviltä (id=...).</li>
             <li><strong>Kaverilista:</strong> Tallenna kavereiden nimimerkkejä, jotta voit generoida heille kuvia nopeasti.</li>
         </ul>
 
-        <h4>Omien löytöjen tuonti <span style="font-size:0.7em; background:#fab387; color:#1e1e2e; padding:2px 5px; border-radius:4px;">PREMIUM</span></h4>
+        <h4>Omien löytöjen tuonti <span class="badge badge-premium">PREMIUM</span></h4>
         <p>Jotta kartat toimivat, sovelluksen täytyy tietää löytösi. Datan tuonti tapahtuu <strong>Asetukset</strong>-sivun alalaidasta:</p>
         
-        <div style="background:#313244; padding:15px; border-radius:8px; border:1px solid #45475a;">
+        <div class="panel panel-accent">
             <strong>Näin tuot tiedot (Askel askeleelta):</strong>
             <ol style="margin-left:15px; padding-left:0; line-height:1.6;">
                 <li>Avaa <strong>Geocache.fi</strong> ja kirjaudu sisään.</li>
@@ -107,9 +108,9 @@ export const renderHelp = (content, app) => {
             </ol>
         </div>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
-        <h3>🗺️ 3. Kartat & Tilastot <span style="font-size:0.7em; background:#fab387; color:#1e1e2e; padding:2px 5px; border-radius:4px;">PREMIUM</span></h3>
+        <h3>🗺️ 3. Kartat & Tilastot <span class="badge badge-premium">PREMIUM</span></h3>
         <p>MK Porttaali tarjoaa edistyneitä karttoja haasteiden suorittamiseen.</p>
 
         <h4>Triplettijahti</h4>
@@ -138,14 +139,14 @@ export const renderHelp = (content, app) => {
             <li><strong>Tyhjennys:</strong> 🗑️-nappi poistaa kaikki valitun maan kuntakartan merkinnät.</li>
         </ul>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
-        <h3>🧭 Reissuapuri <span style="font-size:0.7em; background:#b4befe; color:#1e1e2e; padding:2px 5px; border-radius:4px;">EXTRA</span></h3>
+        <h3>🧭 Reissuapuri <span class="badge badge-extra">EXTRA</span></h3>
         <p>Reissuapuri on matkakohtainen työkalu reissukuntien, löydettyjen kätköjen ja reissulistojen hallintaan kartalla. Se on erillinen lisäominaisuus, jonka ylläpito voi halutessaan kytkeä käyttöön käyttäjäkohtaisesti.</p>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
-        <h3>🖼️ 4. Kuvageneraattori <span style="font-size:0.7em; background:#bac2de; color:#1e1e2e; padding:2px 5px; border-radius:4px;">FREE</span></h3>
+        <h3>🖼️ 4. Kuvageneraattori <span class="badge badge-free">FREE</span></h3>
         <p>Luo visuaalisia tilastoja jaettavaksi somessa tai profiilisivulla. Generaattori hakee kuvat suoraan Geocache.fi:n rajapinnasta.</p>
         <ul>
             <li><strong>Matriisi:</strong> D/T-taulukko väritettynä.</li>
@@ -158,9 +159,9 @@ export const renderHelp = (content, app) => {
         <p><strong>Suosikkihaut:</strong> Tallenna usein käyttämäsi haku suosikiksi ja hallitse niitä <em>Suosikkihaut</em>-valikosta. Voit käyttää, nimetä uudelleen, päivittää, järjestää ja poistaa suosikkeja.</p>
         <p><strong>Viimeksi käytetyt:</strong> Generaattori muistaa enintään kahdeksan viimeisintä hakua käyttäjäkohtaisesti. Sama haku ei synny listalle duplikaattina, vaan sen käyttöaika päivittyy. Listan voi tyhjentää <em>Tyhjennä</em>-painikkeella.</p>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
-        <h3>🧮 5. Muuntimet & Työkalut <span style="font-size:0.7em; background:#fab387; color:#1e1e2e; padding:2px 5px; border-radius:4px;">PREMIUM</span></h3>
+        <h3>🧮 5. Muuntimet & Työkalut <span class="badge badge-premium">PREMIUM</span></h3>
         <p>Sisältää <strong>yli 20 erilaista työkalua</strong> ja satoja yksiköitä mysteerien ratkointiin ja kenttätyöskentelyyn. Työkalut toimivat myös offline-tilassa.</p>
         
         <ul style="line-height:1.6; padding-left:20px;">
@@ -171,7 +172,7 @@ export const renderHelp = (content, app) => {
             <li><strong>Sähkö & Fysiikka:</strong> Ohmin laki, Teho, Energia.</li>
         </ul>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
         <h3>🌐 6. Linkkikirjasto</h3>
         <p>Linkkikirjastosta löydät kootusti tärkeimmät ulkoiset palvelut:</p>
@@ -181,7 +182,7 @@ export const renderHelp = (content, app) => {
             <li><strong>Checkerit & Ratkojat:</strong> Geocheck, Jigidi-ratkojat ja muut apuvälineet.</li>
         </ul>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
         <h3>⚠️ Vastuuvapaus & Käyttöehdot</h3>
         <p>MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua, olla tilapäisesti pois käytöstä tai päättyä kokonaan ilman ennakkoilmoitusta.</p>
@@ -190,13 +191,13 @@ export const renderHelp = (content, app) => {
             <li>Premium-tilaukset ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</li>
         </ul>
 
-        <hr style="border-color:var(--border-color); margin:20px 0;">
+        <hr>
 
         <h3>💎 Premium-tilaus</h3>
         <p>MK Porttaalin kehitys ja ylläpito vaatii resursseja. Premium-tilauksella tuet palvelua ja saat käyttöösi kaikki tehotyökalut.</p>
         
-        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; border-left:4px solid #fab387; margin-bottom:20px;">
-            <h4 style="margin-top:0; color:#fab387;">Hinnasto</h4>
+        <div class="panel panel-warn">
+            <h4 style="margin-top:0; color:var(--c-peach);">Hinnasto</h4>
             <ul style="list-style:none; padding:0; margin:0; line-height:1.8;">
                 <li>• <strong>Testi (1 vko):</strong> 1 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-1VK)</span></li>
                 <li>• <strong>Jakso (1 kk):</strong> 2 € <span style="opacity:0.6; font-size:0.9em;">(Koodi: T-1KK)</span></li>
@@ -206,8 +207,8 @@ export const renderHelp = (content, app) => {
             </ul>
         </div>
 
-        <div style="background:#181825; padding:15px; border-radius:8px; border:1px solid #45475a;">
-            <strong style="color:#fab387;">Kuinka tilaan?</strong>
+        <div class="panel" style="background:var(--bg-mantle);">
+            <strong style="color:var(--c-peach);">Kuinka tilaan?</strong>
             <ol style="margin-left:15px; padding-left:0; line-height:1.6; margin-bottom:15px;">
                 <li>Mene sovelluksessa kohtaan <strong>⚙️ Asetukset</strong> ja tarkista oma <strong>MK-tunnuksesi</strong> (esim. <code>${mkCode}</code>).</li>
                 <li>Suorita maksu <strong>MobilePaylla</strong> numeroon <strong>[NUMERO PUUTTUU]</strong>.</li>

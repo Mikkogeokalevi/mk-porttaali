@@ -298,20 +298,20 @@ function getCacheIdFromWpt(wpt) {
 export function renderCountrySelector(content, app) {
   content.innerHTML = `
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <div class="view-header">
         <h1>Kuntakartat</h1>
-        <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Etusivulle</button>
+        <button class="btn btn-sm" onclick="app.router('home')">⬅ Etusivulle</button>
       </div>
       <p>Valitse maa, jonka kuntakartan haluat avata:</p>
-      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:10px; margin-top:15px;">
-        <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('sweden_map')">
-          <span style="font-size:2em;">🇸🇪</span><br>Ruotsi
+      <div class="launcher-grid">
+        <button class="launcher-btn btn-yellow" onclick="app.router('sweden_map')">
+          <span class="launcher-icon">🇸🇪</span>Ruotsi
         </button>
-        <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('norway_map')">
-          <span style="font-size:2em;">🇳🇴</span><br>Norja
+        <button class="launcher-btn btn-blue" onclick="app.router('norway_map')">
+          <span class="launcher-icon">🇳🇴</span>Norja
         </button>
-        <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('estonia_map')">
-          <span style="font-size:2em;">🇪🇪</span><br>Viro
+        <button class="launcher-btn btn-green" onclick="app.router('estonia_map')">
+          <span class="launcher-icon">🇪🇪</span>Viro
         </button>
       </div>
     </div>
@@ -339,32 +339,32 @@ async function renderCountryMap(content, db, user, app, config) {
   let countryBounds;
 
   content.innerHTML = `
-    <div class="card" style="height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; position: relative;">
-      <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border-color); z-index: 1001; flex-wrap: wrap; gap: 8px;">
-        <h2 style="margin: 0; font-size: 1.2em;">${config.flag} ${config.name}-kuntakartta</h2>
-        <span id="${config.id}LocationStatus" style="font-size: 0.85em; opacity: 0.9; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
-        <div style="display: flex; gap: 10px;">
-          <button id="${config.id}ImportBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
+    <div class="card map-shell">
+      <div class="map-toolbar">
+        <h2>${config.flag} ${config.name}-kuntakartta</h2>
+        <span id="${config.id}LocationStatus" style="font-size: 0.85em; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
+        <div class="toolbar-actions">
+          <button id="${config.id}ImportBtn" class="btn btn-sm" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
           <input type="file" id="${config.id}GpxInput" accept=".gpx,.xml" style="display:none">
-          <button id="${config.id}LocateBtn" class="btn" style="margin: 0; padding: 5px 10px; font-size: 1.2em;" title="Paikanna ja seuraa sijaintia">📍</button>
-          <button id="${config.id}ClearBtn" class="btn" style="margin: 0; padding: 5px 10px;" title="Tyhjennä löydöt">🗑️</button>
-          <button class="btn" onclick="app.router('country_maps')" style="margin: 0; padding: 5px 10px;">⬅ Takaisin</button>
+          <button id="${config.id}LocateBtn" class="btn btn-sm" style="font-size: 1.1em;" title="Paikanna ja seuraa sijaintia">📍</button>
+          <button id="${config.id}ClearBtn" class="btn btn-sm" title="Tyhjennä löydöt">🗑️</button>
+          <button class="btn btn-sm" onclick="app.router('country_maps')">⬅ Takaisin</button>
         </div>
       </div>
 
-      <div style="padding: 8px 10px; background: var(--input-bg); border-bottom: 1px solid var(--border-color); font-size: 0.85em; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+      <div class="map-subbar">
         <span>Klikkaa kuntaa merkitäksesi löydetyksi. Voit myös tuoda löydöt GPX-tiedostosta.</span>
-        <span id="${config.id}Stats" style="font-weight: bold;"></span>
+        <span id="${config.id}Stats" style="font-weight: bold; color: var(--text-color);"></span>
       </div>
-      <div id="${config.id}GpxTime" style="padding: 4px 10px; background: var(--input-bg); border-bottom: 1px solid var(--border-color); font-size: 0.8em; opacity: 0.8; text-align: right;"></div>
+      <div id="${config.id}GpxTime" class="map-subbar" style="padding: 4px 12px; font-size: 0.8em; justify-content: flex-end;"></div>
 
-      <div id="${config.id}Map" style="flex: 1; width: 100%; background: #aad3df;">
-        <div id="${config.id}MapLoading" style="padding: 20px; color: black; background: white; opacity: 0.9; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; border-radius: 8px;">
+      <div id="${config.id}Map" class="map-area">
+        <div id="${config.id}MapLoading" class="map-loading">
           Ladataan ${config.name}-kuntakarttaa...
         </div>
       </div>
 
-      <div style="padding: 10px; background: var(--card-bg); font-size: 0.8em; text-align: center; border-top: 1px solid var(--border-color);">
+      <div class="map-footer">
         <span style="color: #a6e3a1;">■ Löydetty</span> &nbsp;
         <span style="color: #f38ba8;">■ Etsittävä</span> &nbsp;
         <span style="color: #f9e2af;">■ Nykyinen kunta</span>

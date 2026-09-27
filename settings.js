@@ -27,7 +27,7 @@ export const renderSettingsView = (content, db, user, app) => {
     const isPremium = app.userPlan === 'premium' || app.userRole === 'admin';
 
     // Tyylit input-kentille (16px estää zoomauksen mobiilissa)
-    const inputStyle = "width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; background: #181825; border: 1px solid #45475a; color: white; border-radius: 4px; font-size: 16px;";
+    const inputStyle = "font-size: 16px;";
 
     // 3. Tilauksen tilan näyttäminen
     let planDisplay = 'Ilmainen';
@@ -43,16 +43,6 @@ export const renderSettingsView = (content, db, user, app) => {
         }
     }
 
-    // 4. Injektoidaan CSS-tyylit raporttia varten (vain tälle sivulle)
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .stat-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
-        .stat-box { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid #45475a; text-align:center; }
-        .stat-box span { display:block; font-size:1.4em; font-weight:bold; margin-top:5px; }
-        .col-val { display: block; font-weight: bold; color: #fab387; font-size: 1.1em; }
-    `;
-    content.appendChild(style);
-
     // 5. Rakennetaan Import-osion HTML (näkyy vain Premiumille)
     let importHtml = '';
     
@@ -61,7 +51,7 @@ export const renderSettingsView = (content, db, user, app) => {
         <div style="margin-top:25px; border-top:1px solid var(--border-color); padding-top:20px;">
             <h3>📥 Tuo omat tilastot</h3>
             
-            <div style="background:rgba(66, 135, 245, 0.1); border:1px solid #4287f5; padding:15px; border-radius:8px; margin-bottom:15px; font-size:0.9em; line-height:1.5;">
+            <div class="panel panel-info" style="font-size:0.9em; line-height:1.5;">
                 <strong style="color:#89b4fa;">💡 Vinkki: Tämä on helpointa tehdä tietokoneella!</strong>
                 <p style="margin:5px 0 10px 0; opacity:0.9;">Data synkronoituu automaattisesti tähän puhelimeen, kun tallennat sen PC:llä.</p>
                 
@@ -73,17 +63,17 @@ export const renderSettingsView = (content, db, user, app) => {
                 </ol>
             </div>
             
-            <details style="margin-bottom:10px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
-                <summary style="cursor:pointer; color:#fab387; font-size:0.9em;">⚙️ Sarakkeiden asetukset (Jos tripletti on väärin)</summary>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:5px;">
-                    <div><label style="font-size:0.8em;">Tradi:</label><input type="number" id="impColTradi" value="1" style="width:50px; padding:5px; border-radius:4px; border:1px solid #555; background:#222; color:white;"></div>
-                    <div><label style="font-size:0.8em;">Multi:</label><input type="number" id="impColMulti" value="2" style="width:50px; padding:5px; border-radius:4px; border:1px solid #555; background:#222; color:white;"></div>
-                    <div><label style="font-size:0.8em;">Mysse:</label><input type="number" id="impColMysse" value="4" style="width:50px; padding:5px; border-radius:4px; border:1px solid #555; background:#222; color:white;"></div>
+            <details>
+                <summary style="color:var(--c-peach); font-size:0.9em;">⚙️ Sarakkeiden asetukset (Jos tripletti on väärin)</summary>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; padding:0 14px 10px;">
+                    <div><label style="font-size:0.8em;">Tradi:</label><input type="number" id="impColTradi" value="1" style="width:70px; padding:6px; margin:4px 0;"></div>
+                    <div><label style="font-size:0.8em;">Multi:</label><input type="number" id="impColMulti" value="2" style="width:70px; padding:6px; margin:4px 0;"></div>
+                    <div><label style="font-size:0.8em;">Mysse:</label><input type="number" id="impColMysse" value="4" style="width:70px; padding:6px; margin:4px 0;"></div>
                 </div>
             </details>
 
-            <textarea id="impInput" rows="5" style="width:100%; background:#181825; color:#cdd6f4; border:1px solid #45475a; padding:10px; font-size:16px; border-radius:4px; white-space:pre;" placeholder="Liitä taulukko tähän..."></textarea>
-            <button class="btn btn-primary" id="impBtn" style="margin-top:10px; width:100%;">Prosessoi & Tallenna</button>
+            <textarea id="impInput" rows="5" style="font-size:16px; white-space:pre;" placeholder="Liitä taulukko tähän..."></textarea>
+            <button class="btn btn-primary btn-block" id="impBtn" style="margin-top:0;">Prosessoi & Tallenna</button>
             
             <div id="impLog" style="margin-top:20px;"></div>
         </div>
@@ -100,26 +90,29 @@ export const renderSettingsView = (content, db, user, app) => {
     let dangerZoneHtml = '';
     if (app.userRole !== 'admin') {
         dangerZoneHtml = `
-            <h3 style="color:#f38ba8;">⚠️ Vaaravyöhyke</h3>
-            <button class="btn" style="background:#f38ba8; color:#1e1e2e; border:none; width:100%; padding:12px;" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>
+            <div class="panel panel-danger">
+                <h3 style="color:var(--c-red); margin-bottom:5px;">⚠️ Vaaravyöhyke</h3>
+                <p style="font-size:0.9em; margin-bottom:0;">Tilin poisto poistaa kaikki tietosi ja tilastosi pysyvästi.</p>
+                <button class="btn btn-danger btn-block" onclick="app.deleteMyAccount()">❌ Poista käyttäjätilini pysyvästi</button>
+            </div>
         `;
     }
 
     // 6. Kootaan koko sivun HTML
     content.innerHTML += `
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="view-header">
             <h1>Omat Asetukset</h1>
-            <button class="btn" onclick="app.router('home')">⬅ Etusivulle</button>
+            <button class="btn btn-sm" onclick="app.router('home')">⬅ Etusivulle</button>
         </div>
 
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-top:20px; border-left:4px solid var(--accent-color);">
+        <div class="panel panel-accent" style="margin-top:20px;">
             <h3 style="margin-top:0;">👤 Käyttäjätili</h3>
             <p><strong>Sähköposti:</strong> ${email}</p>
             <p><strong>Tilaus:</strong> ${planDisplay}</p>
-            
-            <div style="margin:15px 0; padding:15px; background:#181825; border:1px dashed #fab387; border-radius:6px; text-align:center;">
-                <p style="margin:0; font-size:0.8em; color:#fab387; text-transform:uppercase; letter-spacing:1px;">Sinun MK-tunnuksesi</p>
+
+            <div style="margin:15px 0 0; padding:15px; background:var(--bg-mantle); border:1px dashed var(--c-peach); border-radius:var(--border-radius-sm); text-align:center;">
+                <p style="margin:0; font-size:0.8em; color:var(--c-peach); text-transform:uppercase; letter-spacing:1px;">Sinun MK-tunnuksesi</p>
                 <strong style="font-size:2em; letter-spacing:2px; display:block; margin-top:5px;">${shortId}</strong>
                 <p style="margin:5px 0 0 0; font-size:0.7em; opacity:0.5;">Käytä tätä maksuviestissä</p>
             </div>
@@ -133,7 +126,7 @@ export const renderSettingsView = (content, db, user, app) => {
             <label>Geocache.fi ID-numero:</label>
             <input type="number" id="setGcId" value="${gcId}" placeholder="esim. 306478" style="${inputStyle}">
             
-            <button class="btn btn-primary" style="width:100%;" onclick="app.saveSettings()">Tallenna tiedot</button>
+            <button class="btn btn-primary btn-block" onclick="app.saveSettings()">Tallenna tiedot</button>
         </div>
 
         ${importHtml}
@@ -145,9 +138,9 @@ export const renderSettingsView = (content, db, user, app) => {
             <input type="text" id="newFriendName" placeholder="Nimimerkki" style="${inputStyle} margin-bottom:0;">
             <input type="number" id="newFriendId" placeholder="ID" style="${inputStyle} margin-bottom:0; width:80px;">
         </div>
-        <button class="btn btn-primary" style="width:100%; margin-bottom:15px;" onclick="app.addFriend()">Lisää kaveri</button>
-        
-        <div id="friendListContainer" style="max-height:300px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px;">
+        <button class="btn btn-primary btn-block" style="margin:0 0 15px;" onclick="app.addFriend()">Lisää kaveri</button>
+
+        <div id="friendListContainer" class="panel" style="max-height:300px; overflow-y:auto; padding:10px;">
             Ladataan...
         </div>
         

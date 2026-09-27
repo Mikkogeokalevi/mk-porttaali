@@ -199,64 +199,14 @@ const LINKS = [
 export const renderLinksView = (content) => {
     let html = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div class="view-header">
                 <h1>Linkkikirjasto</h1>
-                <button class="btn" onclick="app.router('home')" style="padding:5px 10px;">⬅ Takaisin</button>
+                <button class="btn btn-sm" onclick="app.router('home')">⬅ Takaisin</button>
             </div>
-            
-            <style>
-                .link-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-                
-                .link-category { 
-                    margin: 30px 0 15px 0; 
-                    border-bottom: 2px solid var(--border-color); 
-                    padding-bottom: 5px; 
-                    color: var(--accent-color); 
-                    font-size: 1.2em; 
-                    font-weight: bold; 
-                    display: flex; align-items: center; gap: 10px; 
-                }
-                
-                .link-card {
-                    background: rgba(255,255,255,0.03); 
-                    border: 1px solid var(--border-color);
-                    border-radius: 12px; 
-                    padding: 15px; 
-                    text-decoration: none; 
-                    color: var(--text-color);
-                    display: flex; 
-                    align-items: center; 
-                    gap: 15px; 
-                    transition: all 0.2s ease;
-                    position: relative; 
-                    overflow: hidden;
-                }
-                
-                /* Hover-efekti tietokoneella */
-                .link-card:hover { 
-                    background: rgba(255,255,255,0.08); 
-                    transform: translateY(-2px); 
-                    border-color: var(--accent-color); 
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                }
-                
-                /* Aktiivinen efekti mobiilissa (kun painetaan) */
-                .link-card:active {
-                    transform: scale(0.98);
-                    background: rgba(255,255,255,0.1); 
-                }
-                
-                .link-icon { font-size: 2em; opacity: 0.9; width: 40px; text-align: center; flex-shrink: 0; }
-                .link-info { flex: 1; min-width: 0; /* Estää tekstin leviämisen */ }
-                .link-title { display: block; font-weight: bold; font-size: 1.1em; color: var(--text-color); margin-bottom: 3px; }
-                .link-desc { display: block; font-size: 0.85em; opacity: 0.7; line-height: 1.3; }
-                .link-arrow { opacity: 0.3; font-size: 1.2em; margin-left: 5px; }
-                .link-card:hover .link-arrow { opacity: 1; color: var(--accent-color); }
-            </style>
     `;
 
     LINKS.forEach(cat => {
-        html += `<div class="link-category"><span style="font-size:1.3em;">${cat.icon}</span> ${cat.category}</div>`;
+        html += `<div class="link-category">${cat.category}</div>`;
         html += `<div class="link-grid">`;
         
         cat.items.forEach(item => {

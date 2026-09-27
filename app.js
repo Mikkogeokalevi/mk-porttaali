@@ -31,10 +31,10 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v62';
-const APP_DISPLAY_VERSION = '2.12.2';
-const APP_SW_CACHE = 'mk-porttaali-v62';
-const APP_UPDATED_AT = '5.9.2026';
+const APP_VERSION = 'v63';
+const APP_DISPLAY_VERSION = '2.13.0';
+const APP_SW_CACHE = 'mk-porttaali-v63';
+const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
 
@@ -58,15 +58,10 @@ window.app = {
     const content = document.getElementById('appContent');
     if (content) {
       content.innerHTML = `
-        <div style="text-align: center; margin-top: 50px; padding: 20px;">
-          <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid var(--accent-color); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-          <p style="margin-top: 15px; color: var(--subtext-color);">Ladataan...</p>
+        <div class="loading-wrap">
+          <div class="spinner"></div>
+          <p class="muted" style="margin-top:15px;">Ladataan...</p>
         </div>
-        <style>
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        </style>
       `;
     }
 
@@ -102,24 +97,21 @@ window.app = {
           return;
       }
 
-      // YHTEINEN TYYLI LOGOLLE (App Icon -tyyli: pyöristys + varjo)
-      const logoStyle = "height: 120px; width: auto; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 15px;";
+      const isLocked = window.app.userPlan === 'free' && window.app.userRole !== 'admin';
+      const lockIcon = isLocked ? ' 🔒' : '';
 
       switch(targetView) {
       case 'home':
         // GUEST VIEW (KIRJAUTUMATON)
         if (!window.app.currentUser) {
             content.innerHTML = `
-              <div class="card" style="text-align:center; padding: 40px 20px;">
-                <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
-                <p style="margin-top:8px; font-size:0.85em; opacity:0.7; cursor:pointer;" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</p>
-                <div style="font-size:3em; margin: 10px 0;">🔐</div>
-                <p>Kirjaudu sisään käyttääksesi työkaluja.</p>
-                <div style="margin-top:30px;">
-                    <button class="btn btn-primary" onclick="app.router('login_view')">Kirjaudu sisään</button>
-                    <p style="margin-top:15px; font-size:0.9em; opacity:0.7;">tai</p>
-                    <button class="btn" onclick="app.router('login_view')">Luo uusi tunnus</button>
-                </div>
+              <div class="card home-card">
+                <img src="mklogo.png" alt="MK Porttaali" class="app-logo">
+                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</span></div>
+                <p class="muted" style="margin-top:15px;">Geokätköilijän työkalupakki: tilastot, kartat, kuvageneraattori ja muuntimet.</p>
+                <div class="divider"><span>Kirjaudu jatkaaksesi</span></div>
+                <button class="btn btn-primary btn-block" onclick="app.router('login_view')">Kirjaudu sisään</button>
+                <button class="btn btn-block" onclick="app.router('login_view')">Luo uusi tunnus</button>
               </div>
             `;
             return;
@@ -128,43 +120,34 @@ window.app = {
         // LOGGED IN VIEW (KIRJAUTUNUT)
         let adminButton = '';
         if (window.app.userRole === 'admin') {
-            adminButton = `
-                <button class="btn" style="background-color:#f38ba8; color:#1e1e2e; font-weight:bold;" onclick="app.router('admin')">🔧 Ylläpito</button>
-            `;
+            adminButton = `<button class="launcher-btn btn-red" onclick="app.router('admin')"><span class="launcher-icon">🔧</span>Ylläpito</button>`;
         }
 
         let reissuapuriButton = '';
         if (window.app.userRole === 'admin' || window.app.reissuapuriEnabled) {
-            reissuapuriButton = `<button class="btn" style="background-color:#94e2d5; color:#1e1e2e; font-weight:bold;" onclick="app.router('reissuapuri')">🧭 Reissuapuri</button>`;
+            reissuapuriButton = `<button class="launcher-btn btn-teal" onclick="app.router('reissuapuri')"><span class="launcher-icon">🧭</span>Reissuapuri</button>`;
         }
-        
+
         let statusBadge = '';
-        if (window.app.userRole === 'admin') statusBadge = '<div style="background:#cba6f7; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">ADMIN</div>';
-        else if (window.app.userPlan === 'premium') statusBadge = '<div style="background:#fab387; color:#1e1e2e; padding:4px 8px; border-radius:4px; font-size:0.8em; font-weight:bold; display:inline-block; margin-top:5px;">PREMIUM</div>';
+        if (window.app.userRole === 'admin') statusBadge = '<span class="badge badge-admin" style="font-size:0.85em;">ADMIN</span>';
+        else if (window.app.userPlan === 'premium') statusBadge = '<span class="badge badge-premium" style="font-size:0.85em;">PREMIUM</span>';
 
         content.innerHTML = `
           <div class="card">
-            <div style="text-align:center; padding: 10px 0 20px 0;">
-                <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle}">
-                <br>
-                ${statusBadge}
-                <p style="margin-top:8px; font-size:0.85em; opacity:0.7; cursor:pointer;" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</p>
+            <div class="home-card" style="padding-bottom:5px;">
+                <img src="mklogo.png" alt="MK Porttaali" class="app-logo">
+                <div>${statusBadge}</div>
+                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</span></div>
             </div>
-            
-            <div style="display:grid; gap:10px; margin-top:15px;">
-                <button class="btn btn-primary" onclick="app.router('generator')">Avaa Kuvageneraattori</button>
-                <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold;" onclick="app.router('stats')">Tilastot ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
-                <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold;" onclick="app.router('country_maps')">🗺️ Kuntakartat ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : ''}</button>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold;" onclick="app.router('converters')">Muuntimet ${window.app.userPlan === 'free' && window.app.userRole !== 'admin' ? '🔒' : '↗'}</button>
-                    <button class="btn" style="background-color: #89dceb; color:#1e1e2e; font-weight:bold;" onclick="app.router('links')">Linkkikirjasto 🌐</button>
-                </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold;" onclick="app.router('settings')">⚙️ Asetukset</button>
-                    <button class="btn" style="background-color: #cba6f7; color:#1e1e2e; font-weight:bold;" onclick="app.router('help')">Ohjeet & Tuki</button>
-                </div>
+            <div class="launcher-grid">
+                <button class="launcher-btn btn-primary" onclick="app.router('generator')"><span class="launcher-icon">🖼️</span>Kuvageneraattori</button>
+                <button class="launcher-btn btn-green" onclick="app.router('stats')"><span class="launcher-icon">📊</span>Tilastot${lockIcon}</button>
+                <button class="launcher-btn btn-yellow" onclick="app.router('country_maps')"><span class="launcher-icon">🗺️</span>Kuntakartat${lockIcon}</button>
+                <button class="launcher-btn btn-peach" onclick="app.router('converters')"><span class="launcher-icon">🧮</span>Muuntimet${isLocked ? ' 🔒' : ''}</button>
+                <button class="launcher-btn btn-sky" onclick="app.router('links')"><span class="launcher-icon">🌐</span>Linkkikirjasto</button>
+                <button class="launcher-btn btn-blue" onclick="app.router('settings')"><span class="launcher-icon">⚙️</span>Asetukset</button>
+                <button class="launcher-btn btn-mauve" onclick="app.router('help')"><span class="launcher-icon">📖</span>Ohjeet &amp; Tuki</button>
                 ${reissuapuriButton}
                 ${adminButton}
             </div>
@@ -182,7 +165,7 @@ window.app = {
           </div>
         `;
         break;
-      case 'locked_view': content.innerHTML = `<div class="card" style="text-align:center;"><h1 style="color:#fab387;">⏳ Odottaa hyväksyntää</h1><button class="btn" onclick="app.logout()">Kirjaudu ulos</button></div>`; break;
+      case 'locked_view': content.innerHTML = `<div class="card home-card"><h1 style="color:var(--c-peach);">⏳ Odottaa hyväksyntää</h1><p>Tilisi odottaa ylläpitäjän hyväksyntää.</p><button class="btn" onclick="app.logout()">Kirjaudu ulos</button></div>`; break;
 
       case 'stats': if (checkPremium(content)) Stats.renderStatsDashboard(content, window.app); break;
       case 'stats_triplet': if (checkPremium(content)) Stats.loadTripletData(db, window.app.currentUser, content); break;
@@ -211,24 +194,24 @@ window.app = {
 
       case 'login_view':
         content.innerHTML = `
-          <div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
-            <img src="mklogo.png" alt="MK Porttaali" style="${logoStyle} margin-top:10px;">
+          <div class="card auth-card">
+            <img src="mklogo.png" alt="MK Porttaali" class="app-logo" style="margin-top:10px;">
             <h1 id="authTitle" style="margin-bottom:20px;">Kirjaudu</h1>
-            
+
             <div style="text-align:left;">
                 <input type="email" id="email" placeholder="Sähköposti" style="margin-bottom:10px;">
                 <input type="password" id="password" placeholder="Salasana" style="margin-bottom:10px;">
                 <div id="registerFields" class="hidden">
                     <input type="text" id="regNick" placeholder="Nimimerkki" style="margin-bottom:10px; border-color:var(--accent-color);">
                 </div>
-                <button id="btnLogin" class="btn btn-primary" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
-                <button id="btnRegister" class="btn hidden" style="background-color:#a6e3a1; color:#1e1e2e;" onclick="app.handleRegister()">Luo uusi tili</button>
+                <button id="btnLogin" class="btn btn-primary btn-block" onclick="app.handleEmailLogin()">Kirjaudu sisään</button>
+                <button id="btnRegister" class="btn btn-green btn-block hidden" onclick="app.handleRegister()">Luo uusi tili</button>
                 <div id="loginError" class="error-msg"></div>
                 <div class="divider"><span>TAI</span></div>
                 <button class="btn btn-google" onclick="app.loginGoogle()">Kirjaudu Googlella</button>
                 <p style="text-align:center; margin-top:20px; font-size:0.9em;">
-                    <span id="toggleText">Eikö sinulla ole tiliä?</span> 
-                    <a href="#" onclick="app.toggleAuthMode(); return false;" style="color:var(--accent-color); font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
+                    <span id="toggleText">Eikö sinulla ole tiliä?</span>
+                    <a href="#" onclick="app.toggleAuthMode(); return false;" style="font-weight:bold;"><span id="toggleLink">Rekisteröidy tästä</span></a>
                 </p>
             </div>
           </div>
@@ -251,7 +234,7 @@ window.app = {
       console.error('Virhe näkymän lataamisessa:', error);
       if (content) {
         content.innerHTML = `
-          <div class="card" style="text-align: center; padding: 40px;">
+          <div class="card home-card" style="padding: 40px;">
             <h2 style="color: var(--error-color);">❌ Virhe</h2>
             <p>Näkymän lataaminen epäonnistui.</p>
             <button class="btn" onclick="location.reload()">Lataa sivu uudelleen</button>
@@ -348,14 +331,14 @@ function checkPremium(content) {
     const nick = window.app.savedNickname || "Nimetön";
 
     content.innerHTML = `
-        <div class="card" style="text-align:center; padding:30px 20px;">
+        <div class="card" style="text-align:center;">
             <div style="font-size:3.5em; margin-bottom:10px; filter: drop-shadow(0 0 10px rgba(250, 179, 135, 0.3));">💎</div>
-            <h2 style="color:#fab387; margin-top:0;">Premium-ominaisuus</h2>
-            <p style="opacity:0.8; margin-bottom:25px;">Tämä toiminto vaatii aktiivisen Premium-tilauksen.</p>
-            
-            <div style="text-align:left; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; margin-bottom:20px;">
-                <strong style="display:block; margin-bottom:10px; color:#cdd6f4;">Mitä saat Premiumilla?</strong>
-                <ul style="margin:0; padding-left:20px; line-height:1.6; color:#a6adc8;">
+            <h2 style="color:var(--c-peach); margin-top:0;">Premium-ominaisuus</h2>
+            <p style="margin-bottom:25px;">Tämä toiminto vaatii aktiivisen Premium-tilauksen.</p>
+
+            <div class="panel" style="text-align:left;">
+                <strong style="display:block; margin-bottom:10px; color:var(--text-color);">Mitä saat Premiumilla?</strong>
+                <ul style="margin:0; padding-left:20px; line-height:1.6;">
                     <li>🗺️ <strong>Interaktiiviset kartat</strong> (Tripletti, kunnat)</li>
                     <li>📊 <strong>Tarkat tilastot</strong> (Top-listat, puutteet)</li>
                     <li>🧮 <strong>Laajat koordinaattimuuntimet</strong></li>
@@ -364,43 +347,43 @@ function checkPremium(content) {
             </div>
 
             <h3 style="margin-bottom:10px;">Hinnasto</h3>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #94e2d5;">
-                    <div style="font-weight:bold; color:#94e2d5;">1 VKO</div>
-                    <div style="font-size:1.2em;">1 €</div>
-                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1VK</div>
+            <div class="price-grid">
+                <div class="price-card" style="--pc:#94e2d5;">
+                    <div class="price-name">1 VKO</div>
+                    <div class="price-value">1 €</div>
+                    <div class="price-code">Koodi: T-1VK</div>
                 </div>
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89dceb;">
-                    <div style="font-weight:bold; color:#89dceb;">1 KK</div>
-                    <div style="font-size:1.2em;">2 €</div>
-                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1KK</div>
+                <div class="price-card" style="--pc:#89dceb;">
+                    <div class="price-name">1 KK</div>
+                    <div class="price-value">2 €</div>
+                    <div class="price-code">Koodi: T-1KK</div>
                 </div>
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #89b4fa;">
-                    <div style="font-weight:bold; color:#89b4fa;">3 KK</div>
-                    <div style="font-size:1.2em;">3 €</div>
-                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-3KK</div>
+                <div class="price-card" style="--pc:#89b4fa;">
+                    <div class="price-name">3 KK</div>
+                    <div class="price-value">3 €</div>
+                    <div class="price-code">Koodi: T-3KK</div>
                 </div>
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #a6e3a1;">
-                    <div style="font-weight:bold; color:#a6e3a1;">6 KK</div>
-                    <div style="font-size:1.2em;">5 €</div>
-                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-6KK</div>
+                <div class="price-card" style="--pc:#a6e3a1;">
+                    <div class="price-name">6 KK</div>
+                    <div class="price-value">5 €</div>
+                    <div class="price-code">Koodi: T-6KK</div>
                 </div>
-                <div style="background:#313244; padding:10px; border-radius:6px; border:1px solid #fab387;">
-                    <div style="font-weight:bold; color:#fab387;">12 KK (Vuosi)</div>
-                    <div style="font-size:1.2em;">10 €</div>
-                    <div style="font-size:0.7em; opacity:0.6;">Koodi: T-1V</div>
+                <div class="price-card" style="--pc:#fab387; grid-column: 1 / -1;">
+                    <div class="price-name">12 KK (Vuosi)</div>
+                    <div class="price-value">10 €</div>
+                    <div class="price-code">Koodi: T-1V</div>
                 </div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin:20px 0; border:1px dashed #fab387;">
-                <p style="margin:0 0 10px 0; font-size:0.9em; opacity:0.8;">Maksa MobilePaylla ja kirjoita viestiin:</p>
-                <div style="background:#181825; padding:10px; border-radius:4px; font-family:monospace; font-size:1.1em; color:#fab387;">
+            <div class="panel panel-dashed" style="border-color:var(--c-peach);">
+                <p style="margin:0 0 10px 0; font-size:0.9em;">Maksa MobilePaylla ja kirjoita viestiin:</p>
+                <div style="background:var(--bg-mantle); padding:10px; border-radius:4px; font-family:monospace; font-size:1.05em; color:var(--c-peach);">
                     ${nick} ${idCode} [TUOTEKOODI]
                 </div>
-                <p style="margin:5px 0 0 0; font-size:0.8em; opacity:0.5;">Esim: ${nick} ${idCode} T-1V</p>
+                <p style="margin:8px 0 0 0; font-size:0.8em; color:var(--subtext-color);">Esim: ${nick} ${idCode} T-1V</p>
             </div>
-            <p style="font-size:0.85em; opacity:0.7; margin-top:5px;">MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua, olla tilapäisesti pois käytöstä tai päättyä kokonaan ilman ennakkoilmoitusta. Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</p>
-            
+            <p style="font-size:0.85em; margin-top:5px;">MK Porttaali on harrasteprojekti ja tarjotaan sellaisena kuin se on. Toimivuutta ei taata, ja palvelu voi muuttua, olla tilapäisesti pois käytöstä tai päättyä kokonaan ilman ennakkoilmoitusta. Premium-maksut ovat vapaaehtoinen tuki projektille, eikä maksuja palauteta.</p>
+
             <button class="btn" onclick="app.router('home')">⬅ Palaa etusivulle</button>
         </div>
     `;
@@ -436,10 +419,10 @@ function renderGeneratorView(content) {
           <button class="btn" type="button" onclick="app.resetGeneratorForm()" style="padding:6px 10px; font-size:0.85em;">Nollaa</button>
         </div>
 
-        <div id="genQuickTemplatePanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
+        <div id="genQuickTemplatePanel" class="panel panel-dashed hidden">
           <label style="display:block; margin-bottom:6px;">Omat pikapohjat:</label>
           <p style="margin:0 0 10px 0; font-size:0.85em; opacity:0.75;">Tallenna ensin nykyiset generaattoriasetukset omaksi pikapohjaksi. Pikapohjat näkyvät tässä ja niitä voi hallita suosikkihakujen hallinnassa.</p>
-          <select id="genQuickTemplateSelect" style="width:100%; padding:8px; margin-bottom:10px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;" onchange="app.applySelectedGeneratorQuickTemplate()">
+          <select id="genQuickTemplateSelect" style="margin-bottom:10px;" onchange="app.applySelectedGeneratorQuickTemplate()">
             <option value="">-- Valitse pikapohja --</option>
           </select>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -448,30 +431,30 @@ function renderGeneratorView(content) {
           </div>
         </div>
 
-        <div id="genQuickFriendPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
+        <div id="genQuickFriendPanel" class="panel panel-dashed hidden">
           <label style="display:block; margin-bottom:6px;">Valitse tallennettu kaveri:</label>
-          <select id="friendSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;" onchange="if(this.value) document.getElementById('genUser').value = this.value">
+          <select id="friendSelect" onchange="if(this.value) document.getElementById('genUser').value = this.value">
               <option value="">-- Valitse tallennettu kaveri --</option>
           </select>
         </div>
 
-        <div id="genQuickRecentPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:10px;">
+        <div id="genQuickRecentPanel" class="panel panel-dashed hidden">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
             <label style="margin:0;">Viimeksi käytetyt:</label>
-            <button class="btn" type="button" onclick="app.clearGeneratorRecents()" style="padding:4px 8px; font-size:0.8em;">Tyhjennä</button>
+            <button class="btn btn-sm" type="button" onclick="app.clearGeneratorRecents()">Tyhjennä</button>
           </div>
-          <select id="genRecentSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
+          <select id="genRecentSelect">
             <option value="">-- Valitse viimeksi käytetty --</option>
           </select>
         </div>
 
-        <div id="genQuickPresetPanel" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+        <div id="genQuickPresetPanel" class="panel panel-dashed hidden">
           <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>
           <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;">
-            <select id="genPresetSelect" style="width:100%; padding:8px; background:#313244; color:#fff; border:1px solid #45475a; border-radius:4px;">
+            <select id="genPresetSelect" style="margin-bottom:0;">
               <option value="">-- Valitse suosikkihaku --</option>
             </select>
-            <button class="btn" type="button" title="Muokkaa suosikkihakuja" onclick="app.openGeneratorPresetManager()" style="padding:8px 12px;">✎</button>
+            <button class="btn btn-sm" type="button" title="Muokkaa suosikkihakuja" onclick="app.openGeneratorPresetManager()">✎</button>
           </div>
           <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä suosikiksi.</p>
         </div>
@@ -503,7 +486,7 @@ function renderGeneratorView(content) {
           </div>
         </div>
         
-        <div id="yearSpecificFilters" class="hidden" style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px dashed var(--border-color); margin-bottom:15px;">
+        <div id="yearSpecificFilters" class="panel panel-dashed hidden">
             <label>Sijainnin tyyppi:</label>
             <div class="gen-accordion-field">
               <select id="genLocType" onchange="app.handleLocTypeChange()">
@@ -654,13 +637,13 @@ function renderGeneratorView(content) {
       </div>
 
       <div id="genPresetModal" class="modal-overlay" style="display:none;">
-        <div style="width:min(700px, 92vw); max-height: 80vh; overflow:auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;">
+        <div class="modal-box" style="max-width:700px; overflow:auto;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
             <div>
               <div style="font-weight:bold; font-size:1.1em;">Muokkaa suosikkihakuja</div>
               <div style="opacity:0.7; font-size:0.85em;">Tallennus: kirjautuneena Firestore, muuten paikallisesti laitteelle.</div>
             </div>
-            <button class="btn" type="button" onclick="app.closeGeneratorPresetManager()">Sulje</button>
+            <button class="btn btn-sm" type="button" onclick="app.closeGeneratorPresetManager()">Sulje</button>
           </div>
 
           <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px;">

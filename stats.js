@@ -48,21 +48,21 @@ export const renderStatsDashboard = (content, app) => {
     <div class="card">
         <h1>Tilastot</h1>
         <p>Valitse tarkasteltava tilasto:</p>
-        <div class="stats-dashboard-grid">
-            <button class="btn" style="background-color: #a6e3a1; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_triplet')">
-                <span style="font-size:2em;">🏆</span><br>Triplettijahti
+        <div class="launcher-grid">
+            <button class="launcher-btn btn-green" onclick="app.router('stats_triplet')">
+                <span class="launcher-icon">🏆</span>Triplettijahti
             </button>
-            <button class="btn" style="background-color: #89b4fa; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_all')">
-                <span style="font-size:2em;">🗺️</span><br>Maakunnat & Löydöt
+            <button class="launcher-btn btn-blue" onclick="app.router('stats_all')">
+                <span class="launcher-icon">🗺️</span>Maakunnat &amp; Löydöt
             </button>
-            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('country_maps')">
-                <span style="font-size:2em;">🗺️</span><br>Kuntakartat
+            <button class="launcher-btn btn-yellow" onclick="app.router('country_maps')">
+                <span class="launcher-icon">�</span>Kuntakartat
             </button>
-            <button class="btn" style="background-color: #f9e2af; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_top')">
-                <span style="font-size:2em;">📊</span><br>Top-listat
+            <button class="launcher-btn btn-mauve" onclick="app.router('stats_top')">
+                <span class="launcher-icon">📊</span>Top-listat
             </button>
-            <button class="btn" style="background-color: #fab387; color:#1e1e2e; font-weight:bold; height:100px;" onclick="app.router('stats_external')">
-                <span style="font-size:2em;">📈</span><br>Kuvatilastot (Geocache.fi)
+            <button class="launcher-btn btn-peach" onclick="app.router('stats_external')">
+                <span class="launcher-icon">📈</span>Kuvatilastot (Geocache.fi)
             </button>
         </div>
     </div>`;
@@ -97,9 +97,9 @@ export const loadTopStats = async (db, user, content) => {
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <h2 style="margin:0;">Ranking</h2>
-                <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
+            <div class="view-header" style="margin-bottom:5px;">
+                <h2>Ranking</h2>
+                <button class="btn btn-sm" onclick="app.router('stats')">⬅ Takaisin</button>
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <label>Järjestä:</label>
@@ -196,11 +196,11 @@ export const loadAllStats = async (db, user, content) => {
             }
         </style>
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; flex-wrap:wrap; gap:10px;">
-                <h2 style="margin:0;">Löydöt maakunnittain</h2>
-                <div>
-                    <button class="btn btn-primary" onclick="app.router('stats_map_all')" style="margin:0; margin-right:5px;">🗺️ Avaa Kartta</button>
-                    <button class="btn" onclick="app.router('stats')" style="margin:0; padding:5px 10px;">⬅ Takaisin</button>
+            <div class="view-header" style="margin-bottom:5px;">
+                <h2>Löydöt maakunnittain</h2>
+                <div class="toolbar-actions" style="display:flex; gap:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="app.router('stats_map_all')">🗺️ Avaa Kartta</button>
+                    <button class="btn btn-sm" onclick="app.router('stats')">⬅ Takaisin</button>
                 </div>
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
@@ -361,11 +361,11 @@ export const loadTripletData = async (db, user, content) => {
 
         content.innerHTML = `
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px; flex-wrap: wrap; gap: 10px;">
-                <h1 style="margin:0;">Triplettijahti</h1>
-                <div>
-                    <button class="btn btn-primary" onclick="app.router('stats_map')" style="margin:0; margin-right: 5px;">🗺️ Avaa Kartta</button>
-                    <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+            <div class="view-header" style="margin-bottom:5px;">
+                <h1>Triplettijahti</h1>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="app.router('stats_map')">🗺️ Avaa Kartta</button>
+                    <button class="btn btn-sm" onclick="app.router('stats')">⬅ Takaisin</button>
                 </div>
             </div>
             <p style="font-size:0.85em; color:var(--success-color); margin-bottom:15px;">📅 Data päivitetty: <b>${updateTime}</b></p>
@@ -444,21 +444,11 @@ function initTripletLogic(fullData) {
 
         const sumDiv = document.getElementById('tripletStatsSummary');
         if(sumDiv) sumDiv.innerHTML = `
-            <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center; border:1px solid #a6e3a1;">
-                <div style="font-size:1.5em; color:#a6e3a1;">${completedCount}</div><div style="font-size:0.8em;">Valmiit</div>
-            </div>
-            <div style="flex:1; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center; border:1px solid #f38ba8;">
-                <div style="font-size:1.5em; color:#f38ba8;">${missingCount}</div><div style="font-size:0.8em;">Puuttuvat</div>
-            </div>`;
+            <div class="stat-box" style="flex:1; border-color:var(--c-green); color:var(--c-green);">Valmiit <span>${completedCount}</span></div>
+            <div class="stat-box" style="flex:1; border-color:var(--c-red); color:var(--c-red);">Puuttuvat <span>${missingCount}</span></div>`;
 
         container.innerHTML = html || '<p style="text-align:center; opacity:0.5;">Ei osumia.</p>';
     };
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .missing-badge { display:inline-block; padding:2px 6px; border:1px solid; border-radius:4px; font-size:0.8em; font-weight:bold; margin-left:3px; }
-    `;
-    document.head.appendChild(style);
 
     renderLists();
     document.getElementById('tripletSearch').addEventListener('input', renderLists);
@@ -486,9 +476,9 @@ export const loadExternalStats = async (content) => {
 
     content.innerHTML = `
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="view-header">
             <h1>Kuvatilastot</h1>
-            <button class="btn" onclick="app.router('stats')" style="margin:0;">⬅ Takaisin</button>
+            <button class="btn btn-sm" onclick="app.router('stats')">⬅ Takaisin</button>
         </div>
         <div class="input-group" style="margin-top:15px;">
             <label style="flex:1;">Käyttäjä:</label>

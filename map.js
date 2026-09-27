@@ -28,22 +28,22 @@ export const renderTripletMap = async (content, db, user, app) => {
     if (!user) { app.router('login_view'); return; }
 
     content.innerHTML = `
-        <div class="card" style="height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; position: relative;">
-            <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border-color); z-index: 1001;">
-                <h2 style="margin:0; font-size: 1.2em;">Triplettikartta</h2>
-                <div style="display:flex; gap:10px;">
-                    <button id="locateBtn" class="btn" style="margin:0; padding: 5px 10px; font-size:1.2em;" title="Paikanna minut">📍</button>
-                    <button class="btn" onclick="app.router('stats_triplet')" style="margin:0; padding: 5px 10px;">⬅ Takaisin</button>
+        <div class="card map-shell">
+            <div class="map-toolbar">
+                <h2>Triplettikartta</h2>
+                <div class="toolbar-actions">
+                    <button id="locateBtn" class="btn btn-sm" style="font-size:1.1em;" title="Paikanna minut">📍</button>
+                    <button class="btn btn-sm" onclick="app.router('stats_triplet')">⬅ Takaisin</button>
                 </div>
             </div>
-            
-            <div id="map" style="flex: 1; width: 100%; background: #aad3df;">
-                <div id="mapLoading" style="padding:20px; color:black; background:white; opacity:0.8; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:1000; border-radius:8px;">
+
+            <div id="map" class="map-area">
+                <div id="mapLoading" class="map-loading">
                     Ladataan karttaa...
                 </div>
             </div>
-            
-            <div style="padding: 10px; background: var(--card-bg); font-size: 0.8em; text-align: center; border-top: 1px solid var(--border-color);">
+
+            <div class="map-footer">
                 <span style="color:#a6e3a1;">■ Valmis</span> &nbsp;
                 <span style="color:#f9e2af;">■ Puuttuu 1</span> &nbsp;
                 <span style="color:#fab387;">■ Puuttuu 2</span> &nbsp;
