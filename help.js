@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div class="panel panel-success" style="margin-bottom:30px;">
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.3</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, pikatoimintolinkit kompaktimpana rivinä — vähemmän selaamista ennen "Luo kuva" -painiketta.</li>
+                <li><strong>27.9.2026:</strong> Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, vähemmän selaamista ennen "Luo kuva" -painiketta. Pikapohjat ja suosikkihaut olivat käytännössä samaa listaa, joten ne yhdistettiin yhdeksi "Pikapohjat"-toiminnoksi. Versiotiedot yhdistetty yhdeksi riviksi yläosaan.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">

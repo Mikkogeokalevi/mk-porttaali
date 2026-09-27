@@ -84,8 +84,7 @@ export function toggleGeneratorQuickPanel(panel) {
   const panels = {
     friend: getEl('genQuickFriendPanel'),
     recent: getEl('genQuickRecentPanel'),
-    preset: getEl('genQuickPresetPanel'),
-    template: getEl('genQuickTemplatePanel')
+    preset: getEl('genQuickPresetPanel')
   };
 
   const active = panels[panel];
@@ -202,17 +201,6 @@ export function refreshGeneratorRecents() {
   renderRecentOptions(recents);
 }
 
-export function applySelectedGeneratorQuickTemplate() {
-  const select = getQuickTemplateSelect();
-  if (!select || !select.value) return;
-  const presets = safeJsonParse(select.dataset.presets || '[]', []);
-  const preset = presets.find(item => item && item.id === select.value);
-  if (!preset) return;
-  applyGeneratorFormState(preset.state);
-  select.value = '';
-  scheduleSaveLastGeneratorState();
-}
-
 export function applySelectedGeneratorRecent() {
   const select = getRecentSelect();
   if (!select || !select.value) return;
@@ -313,14 +301,9 @@ function getPresetSelect() {
   return getEl('genPresetSelect');
 }
 
-function getQuickTemplateSelect() {
-  return getEl('genQuickTemplateSelect');
-}
-
 function renderPresetOptions(presets, selectedId = '') {
   const select = getPresetSelect();
-  const quickSelect = getQuickTemplateSelect();
-  if (!select && !quickSelect) return;
+  if (!select) return;
 
   const render = (target, placeholder) => {
     if (!target) return;
@@ -336,8 +319,7 @@ function renderPresetOptions(presets, selectedId = '') {
     target.dataset.presets = JSON.stringify(presets);
   };
 
-  render(select, '-- Valitse suosikkihaku --');
-  render(quickSelect, '-- Valitse pikapohja --');
+  render(select, '-- Valitse pikapohja --');
 }
 
 async function loadFirestorePresets(db, uid) {
@@ -458,8 +440,7 @@ function getDbAndUid() {
 
 export async function refreshGeneratorPresets() {
   const select = getPresetSelect();
-  const quickSelect = getQuickTemplateSelect();
-  if (!select && !quickSelect) return;
+  if (!select) return;
 
   const { db, uid } = getDbAndUid();
   try {

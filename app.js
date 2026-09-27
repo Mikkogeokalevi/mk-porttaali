@@ -331,7 +331,6 @@ window.app = {
   refreshGeneratorPresets: Gen.refreshGeneratorPresets,
   applySelectedGeneratorPreset: Gen.applySelectedGeneratorPreset,
   refreshGeneratorRecents: Gen.refreshGeneratorRecents,
-  applySelectedGeneratorQuickTemplate: Gen.applySelectedGeneratorQuickTemplate,
   applySelectedGeneratorRecent: Gen.applySelectedGeneratorRecent,
   resetGeneratorForm: Gen.resetGeneratorForm,
   openGeneratorPresetManager: Gen.openGeneratorPresetManager,
@@ -448,28 +447,14 @@ function renderGeneratorView(content) {
     content.innerHTML = `
       <div class="card">
         <h1>Kuvageneraattori</h1>
-        <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
-        <div style="margin-top:-6px; margin-bottom:10px; font-size:0.75em; opacity:0.6;">Versio: ${APP_VERSION} (SW cache: ${APP_SW_CACHE}) • Päivitetty: ${APP_UPDATED_AT}</div>
+        <div style="margin:0 0 8px; font-size:0.75em; opacity:0.6;">Hakee kuvat Geocache.fi-palvelusta • v${APP_DISPLAY_VERSION} • ${APP_UPDATED_AT}</div>
 
         <div class="gen-form">
         <div class="gen-quick-links">
-          <a href="#" onclick="app.toggleGeneratorQuickPanel('template'); return false;" style="color:var(--accent-color); text-decoration:none;">Pikapohjat</a>
-          <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
+          <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Pikapohjat</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('recent'); return false;" style="color:var(--accent-color); text-decoration:none;">Viimeksi käytetyt</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('friend'); return false;" style="color:var(--accent-color); text-decoration:none;">Valitse tallennettu kaveri</a>
           <button class="btn" type="button" onclick="app.resetGeneratorForm()" style="padding:6px 10px; font-size:0.85em;">Nollaa</button>
-        </div>
-
-        <div id="genQuickTemplatePanel" class="panel panel-dashed hidden">
-          <label style="display:block; margin-bottom:6px;">Omat pikapohjat:</label>
-          <p style="margin:0 0 10px 0; font-size:0.85em; opacity:0.75;">Tallenna ensin nykyiset generaattoriasetukset omaksi pikapohjaksi. Pikapohjat näkyvät tässä ja niitä voi hallita suosikkihakujen hallinnassa.</p>
-          <select id="genQuickTemplateSelect" style="margin-bottom:10px;" onchange="app.applySelectedGeneratorQuickTemplate()">
-            <option value="">-- Valitse pikapohja --</option>
-          </select>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()">Tallenna nykyinen pikapohjaksi</button>
-            <button class="btn" type="button" onclick="app.openGeneratorPresetManager()">Hallinnoi pikapohjia</button>
-          </div>
         </div>
 
         <div id="genQuickFriendPanel" class="panel panel-dashed hidden">
@@ -490,14 +475,15 @@ function renderGeneratorView(content) {
         </div>
 
         <div id="genQuickPresetPanel" class="panel panel-dashed hidden">
-          <label style="display:block; margin-bottom:6px;">Suosikkihaut:</label>
+          <label style="display:block; margin-bottom:6px;">Pikapohjat:</label>
           <div style="display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;">
             <select id="genPresetSelect" style="margin-bottom:0;">
-              <option value="">-- Valitse suosikkihaku --</option>
+              <option value="">-- Valitse pikapohja --</option>
             </select>
-            <button class="btn btn-sm" type="button" title="Muokkaa suosikkihakuja" onclick="app.openGeneratorPresetManager()">✎</button>
+            <button class="btn btn-sm" type="button" title="Hallinnoi pikapohjia" onclick="app.openGeneratorPresetManager()">✎</button>
           </div>
-          <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä suosikiksi.</p>
+          <button class="btn btn-primary" type="button" onclick="app.saveGeneratorPreset()" style="margin-top:10px;">Tallenna nykyinen pohjaksi</button>
+          <p style="margin:10px 0 0 0; font-size:0.8em; opacity:0.7;">Vinkki: viimeisin haku palautuu automaattisesti, vaikka et tallentaisi sitä pohjaksi.</p>
         </div>
 
         <label>Käyttäjätunnus:</label>
