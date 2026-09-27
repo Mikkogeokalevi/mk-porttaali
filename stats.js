@@ -82,28 +82,87 @@ export const renderStatsDashboard = (content, app) => {
     </div>`;
 };
 
-// --- MUUT MAAT (GPX-tuotavat löydöt muista maista) ---
+// --- MUUT MAAT (GPX-tuotavat löydöt maittain, SE/NO/EE mukana) ---
+// Maanimi -> ISO2 (lippu-emoji). Windows ei renderöi lippuja, mutta näyttää ISO-kirjaimet.
+const COUNTRY_ISO = {
+    'Finland':'FI','Sweden':'SE','Norway':'NO','Estonia':'EE','Latvia':'LV','Lithuania':'LT',
+    'Denmark':'DK','Germany':'DE','Poland':'PL','Russia':'RU','Iceland':'IS','United Kingdom':'GB',
+    'Ireland':'IE','France':'FR','Spain':'ES','Portugal':'PT','Italy':'IT','Greece':'GR','Malta':'MT',
+    'Cyprus':'CY','Croatia':'HR','Slovenia':'SI','Czechia':'CZ','Czech Republic':'CZ','Slovakia':'SK',
+    'Hungary':'HU','Romania':'RO','Bulgaria':'BG','Serbia':'RS','North Macedonia':'MK','Albania':'AL',
+    'Montenegro':'ME','Bosnia and Herzegovina':'BA','Kosovo':'XK','Ukraine':'UA','Belarus':'BY',
+    'Moldova':'MD','Austria':'AT','Switzerland':'CH','Netherlands':'NL','Belgium':'BE',
+    'Luxembourg':'LU','Aland Islands':'AX','Åland Islands':'AX','Turkey':'TR','Georgia':'GE',
+    'Armenia':'AM','Azerbaijan':'AZ','Kazakhstan':'KZ','United States':'US','Canada':'CA','Mexico':'MX',
+    'Thailand':'TH','Japan':'JP','South Korea':'KR','China':'CN','India':'IN','Australia':'AU',
+    'New Zealand':'NZ','Egypt':'EG','South Africa':'ZA','Israel':'IL','United Arab Emirates':'AE',
+    'Morocco':'MA','Kenya':'KE','Brazil':'BR','Argentina':'AR','Chile':'CL','Peru':'PE',
+    'Colombia':'CO','Cuba':'CU','Dominican Republic':'DO','Singapore':'SG','Malaysia':'MY',
+    'Indonesia':'ID','Vietnam':'VN','Hong Kong':'HK','Taiwan':'TW','Philippines':'PH','Nepal':'NP',
+    'Sri Lanka':'LK','Qatar':'QA','Saudi Arabia':'SA','Jordan':'JO','Oman':'OM','Bahrain':'BH',
+    'Kuwait':'KW','Tunisia':'TN','Algeria':'DZ','Jamaica':'JM','Mongolia':'MN','Lebanon':'LB',
+    'Andorra':'AD','Monaco':'MC','Liechtenstein':'LI','San Marino':'SM','Vatican City':'VA',
+    'Isle of Man':'IM','Jersey':'JE','Guernsey':'GG','Gibraltar':'GI','Faroe Islands':'FO',
+    'Greenland':'GL','Puerto Rico':'PR','Panama':'PA','Costa Rica':'CR','Uruguay':'UY'
+};
+function flagEmoji(name) {
+    const iso = COUNTRY_ISO[name];
+    if (!iso) return '🌐';
+    return String.fromCodePoint(...iso.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+}
+
 export const loadOtherCountries = async (db, user, content) => {
     content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Ladataan...</p></div>`;
     try {
-        const snap = await getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds'));
-        const countries = snap.exists() ? (snap.data().countries || {}) : {};
+        const [otherSnap, seSnap, noSnap, eeSnap] = await Promise.all([
+            getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds')),
+            getDoc(doc(db, 'users', user.uid, 'sweden', 'finds')),
+            getDoc(doc(db, 'users', user.uid, 'norway', 'finds')),
+            getDoc(doc(db, 'users', user.uid, 'estonia', 'finds'))
+        ]);
+        const countries = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
+
+        // Kuntakarttamaat ensin — samassa listassa, laajennettavat + kartta-linkki
+        const countMunis = snap => Object.values(snap.exists() ? (snap.data().municipalities || {}) : {})
+            .reduce((a, e) => a + ((e?.ids || []).length || (e?.s || []).reduce((x, y) => x + y, 0)), 0);
+        const mapCountries = [
+            { name: 'Ruotsi', router: 'sweden_map', snap: seSnap },
+            { name: 'Norja', router: 'norway_map', snap: noSnap },
+            { name: 'Viro', router: 'estonia_map', snap: eeSnap }
+        ].map(c => ({ ...c, count: countMunis(c.snap) })).filter(c => c.count > 0);
+
         const entries = Object.entries(countries)
             .map(([name, e]) => ({ name, ids: e.ids || [], count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
             .sort((a, b) => b.count - a.count);
 
-        if (!entries.length) {
+        if (!entries.length && !mapCountries.length) {
             content.innerHTML = `
             <div class="card">
                 <div class="view-header"><h1>Muut maat</h1>
                 <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
-                <p>Ei löytöjä muista maista. Tuo löytösi GPX-tiedostosta Asetukset-sivulla — löydöt tallentuvat tänne automaattisesti maittain.</p>
+                <p>Ei löytöjä Suomen ulkopuolelta. Tuo löytösi GPX-tiedostosta Asetukset-sivulla — löydöt tallentuvat tänne automaattisesti maittain.</p>
             </div>`;
             return;
         }
 
         const TYPE_NAMES = ['Tradi','Multi','Webcam','Mysse','Letteri','Öörtti','Miitti','Virtu','Cito','Wherigo','Com.Cel','Mega','No Loc','Juhla'];
-        const rows = entries.map(e => {
+
+        // Ruotsi/Norja/Viro: laajennettava rivi + linkki kuntakarttaan
+        const mapRows = mapCountries.map(c => `
+            <details class="oc-country" data-name="${c.name}" data-kind="map" data-router="${c.router}">
+                <summary class="oc-row">
+                    <span class="oc-flag">${flagEmoji({Ruotsi:'Sweden',Norja:'Norway',Viro:'Estonia'}[c.name])}</span>
+                    <span class="oc-name">${c.name}</span>
+                    <span class="oc-count">${c.count} löytöä</span>
+                    <span class="oc-caret">▸</span>
+                </summary>
+                <div class="oc-body">
+                    <button class="btn btn-sm" onclick="app.router('${c.router}')" style="margin:4px 0 8px;">🗺️ Avaa ${c.name}-kuntakartta</button>
+                    <div class="oc-list"></div>
+                </div>
+            </details>`).join('');
+
+        const otherRows = entries.map(e => {
             // Suomeksi merkityt mutta kuntaa puuttuvat löydöt voi merkitä käsin kuntaan
             const fixable = FI_COUNTRY_ALIASES.has(e.name) && e.ids.length;
             const fixBlock = fixable ? `
@@ -118,18 +177,20 @@ export const loadOtherCountries = async (db, user, content) => {
                         </div>`).join('')}
                     </div>
                 </details>` : '';
+            const typesLine = e.types.length ? `<div style="font-size:0.75em; opacity:0.6; margin:4px 0 6px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ')}</div>` : '';
             return `
-            <details class="panel oc-country" data-name="${e.name}" style="padding:12px 14px;">
-                <summary style="cursor:pointer; list-style:none;">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                        <strong style="font-size:1.05em;">${e.name}</strong>
-                        <span class="badge badge-premium">${e.count} löytöä</span>
-                    </div>
-                    <div style="font-size:0.8em; opacity:0.7; margin-top:4px;">${e.types.map(i => TYPE_NAMES[i] || '?').join(' • ') || '—'}</div>
-                    <div style="font-size:0.72em; color:var(--c-blue); margin-top:4px;">▸ Näytä löydöt</div>
+            <details class="oc-country" data-name="${e.name}" data-kind="other">
+                <summary class="oc-row">
+                    <span class="oc-flag">${flagEmoji(e.name)}</span>
+                    <span class="oc-name">${countryNameFi(e.name)}</span>
+                    <span class="oc-count">${e.count} löytöä</span>
+                    <span class="oc-caret">▸</span>
                 </summary>
-                <div class="oc-list" style="margin-top:10px;"></div>
-                ${fixBlock}
+                <div class="oc-body">
+                    ${typesLine}
+                    <div class="oc-list"></div>
+                    ${fixBlock}
+                </div>
             </details>`;
         }).join('');
 
@@ -137,11 +198,11 @@ export const loadOtherCountries = async (db, user, content) => {
         <div class="card">
             <div class="view-header"><h1>Muut maat</h1>
             <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
-            <p style="font-size:0.85em; opacity:0.75;">Löydöt maista, joille ei ole vielä kuntakarttaa. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
-            <div style="display:grid; gap:8px;">${rows}</div>
+            <p style="font-size:0.85em; opacity:0.75;">Löydöt maittain — avaa maa nähdäksesi löytölistan. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
+            <div class="oc-table">${mapRows}${otherRows}</div>
         </div>`;
 
-        // Maakortin avaus -> laiska löytölistan lataus (ids-pohjainen, fallback maanimelle)
+        // Maarivin avaus -> laiska löytölistan lataus
         const idsByName = {};
         for (const e of entries) idsByName[e.name] = new Set(e.ids);
         content.querySelectorAll('details.oc-country').forEach(det => {
@@ -154,9 +215,11 @@ export const loadOtherCountries = async (db, user, content) => {
                 try {
                     const finds = await loadFinds(db, user.uid);
                     const idSet = idsByName[name];
-                    const hits = idSet && idSet.size
-                        ? finds.filter(f => idSet.has(f.code))
-                        : finds.filter(f => f.country === countryNameFi(name));
+                    const hits = det.dataset.kind === 'map'
+                        ? finds.filter(f => f.country === name) // Ruotsi/Norja/Viro (suomenkielinen nimi)
+                        : (idSet && idSet.size
+                            ? finds.filter(f => idSet.has(f.code))
+                            : finds.filter(f => f.country === countryNameFi(name)));
                     listEl.innerHTML = hits.length
                         ? findsList(hits, 500)
                         : '<p style="font-size:0.85em; opacity:0.7;">Ei kätkökohtaista dataa — aja GPX-tuonti uudelleen, niin löydöt listautuvat tänne.</p>';

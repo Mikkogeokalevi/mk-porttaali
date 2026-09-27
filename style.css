@@ -1252,6 +1252,23 @@ summary:hover { color: var(--accent-color); }
 .finds-table th[data-k] { cursor: pointer; user-select: none; }
 .finds-table th[data-k]:hover { color: var(--c-blue); }
 
+/* Muut maat -kompakti maalista */
+details.oc-country { border-bottom: 1px solid var(--border-color); }
+details.oc-country:last-child { border-bottom: none; }
+details.oc-country > summary.oc-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 4px;
+  cursor: pointer;
+  list-style: none;
+}
+details.oc-country > summary.oc-row::-webkit-details-marker { display: none; }
+details.oc-country[open] > summary.oc-row .oc-caret { transform: rotate(90deg); }
+.oc-flag { font-size: 1.15em; width: 1.5em; text-align: center; flex-shrink: 0; }
+.oc-name { flex: 1; font-weight: 600; font-size: 0.95em; min-width: 0; }
+.oc-count { font-size: 0.8em; color: var(--subtext-color); white-space: nowrap; }
+.oc-caret { color: var(--c-blue); font-size: 0.8em; display: inline-block; transition: transform 0.15s; }
+.oc-body { padding: 4px 4px 12px 36px; }
+
 /* Tyyppikattavuus-sirut */
 .type-coverage { display: flex; flex-wrap: wrap; gap: 6px; }
 .type-chip {
