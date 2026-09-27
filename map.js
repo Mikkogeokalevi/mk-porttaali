@@ -32,7 +32,7 @@ export const renderTripletMap = async (content, db, user, app) => {
             <div class="map-toolbar">
                 <h2>Triplettikartta</h2>
                 <div class="toolbar-actions">
-                    <button id="locateBtn" class="btn btn-sm" style="font-size:1.1em;" title="Paikanna minut">📍</button>
+                    <button id="locateBtn" class="btn btn-sm" style="font-size:1.1em;" title="Paikanna minut" aria-label="Paikanna minut">📍</button>
                     <button class="btn btn-sm" onclick="app.router('stats_triplet')">⬅ Takaisin</button>
                 </div>
             </div>

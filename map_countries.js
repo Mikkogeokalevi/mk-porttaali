@@ -353,8 +353,8 @@ async function renderCountryMap(content, db, user, app, config) {
         <div class="toolbar-actions">
           <button id="${config.id}ImportBtn" class="btn btn-sm" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>
           <input type="file" id="${config.id}GpxInput" accept=".gpx,.xml" style="display:none">
-          <button id="${config.id}LocateBtn" class="btn btn-sm" style="font-size: 1.1em;" title="Paikanna ja seuraa sijaintia">📍</button>
-          <button id="${config.id}ClearBtn" class="btn btn-sm" title="Tyhjennä löydöt">🗑️</button>
+          <button id="${config.id}LocateBtn" class="btn btn-sm" style="font-size: 1.1em;" title="Paikanna ja seuraa sijaintia" aria-label="Paikanna ja seuraa sijaintia">📍</button>
+          <button id="${config.id}ClearBtn" class="btn btn-sm" title="Tyhjennä löydöt" aria-label="Tyhjennä löydöt">🗑️</button>
           <button class="btn btn-sm" onclick="app.router('country_maps')">⬅ Takaisin</button>
         </div>
       </div>

@@ -773,6 +773,7 @@ summary:hover { color: var(--accent-color); }
   width: 100%;
   max-width: 500px;
   max-height: 82vh;
+  max-height: 82dvh;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
@@ -832,6 +833,7 @@ summary:hover { color: var(--accent-color); }
   width: 100%;
   max-width: 420px;
   max-height: 82vh;
+  max-height: 82dvh;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
@@ -851,6 +853,7 @@ summary:hover { color: var(--accent-color); }
 
 .map-shell {
   height: 90vh;
+  height: 90dvh;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -871,7 +874,7 @@ summary:hover { color: var(--accent-color); }
 }
 .map-toolbar h2 { margin: 0; font-size: 1.15em; }
 .map-toolbar .btn { margin: 0; }
-.map-toolbar .toolbar-actions { display: flex; gap: 8px; }
+.map-toolbar .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .map-subbar {
   padding: 8px 12px;
@@ -996,6 +999,7 @@ summary:hover { color: var(--accent-color); }
 .user-meta { font-size: 0.85em; display: flex; flex-direction: column; gap: 2px; margin: 5px 0; color: var(--subtext-color); }
 .user-meta div { display: flex; align-items: center; gap: 8px; }
 .user-actions { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+.user-actions .btn { margin-top: 0; }
 .user-actions select { width: auto; margin: 0; padding: 6px 30px 6px 8px; }
 
 .product-btn {
@@ -1163,4 +1167,19 @@ summary:hover { color: var(--accent-color); }
   main { padding: 14px; }
   .card { padding: 18px; }
   h1 { font-size: 1.35rem; }
+
+  /* Isommat kosketuskohteet pienillä näytöillä */
+  .btn-sm { padding: 9px 14px; }
+
+  /* Pitkät tekstit (esim. "Ulkomaiden kuntakartat") mahtuvat nappeihin */
+  .launcher-btn {
+    font-size: 0.88rem;
+    min-height: 72px;
+    padding: 12px 6px;
+    overflow-wrap: anywhere;
+  }
+  .launcher-icon { font-size: 1.5em; }
+
+  /* Admin-välilehdet saavat murtua */
+  .tabs { flex-wrap: wrap; }
 }
