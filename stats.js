@@ -67,6 +67,9 @@ export const renderStatsDashboard = (content, app) => {
             <button class="launcher-btn btn-sky" onclick="app.router('stats_other')">
                 <span class="launcher-icon">🌐</span>Muut maat
             </button>
+            <button class="launcher-btn btn-teal" onclick="app.router('stats_queries')">
+                <span class="launcher-icon">🔍</span>Löytöhaut
+            </button>
         </div>
     </div>`;
 };

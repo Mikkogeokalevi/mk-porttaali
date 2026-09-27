@@ -1205,3 +1205,62 @@ summary:hover { color: var(--accent-color); }
   /* Admin-välilehdet saavat murtua */
   .tabs { flex-wrap: wrap; }
 }
+
+/* ---------- LÖYTÖHAUT (findsQuery.js) ---------- */
+
+.fq-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* 9x9 D/T-ruudukko */
+.dt-matrix {
+  border-collapse: collapse;
+  font-size: 0.78em;
+  width: 100%;
+  max-width: 480px;
+}
+.dt-matrix th, .dt-matrix td {
+  border: 1px solid var(--border-color);
+  padding: 4px 5px;
+  text-align: center;
+}
+.dt-matrix th {
+  color: var(--subtext-color);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.25);
+}
+.dt-matrix td.hit {
+  background: rgba(166, 227, 161, 0.18);
+  color: var(--c-green);
+  font-weight: 700;
+}
+
+/* Löytölista */
+.finds-table {
+  border-collapse: collapse;
+  font-size: 0.82em;
+  width: 100%;
+}
+.finds-table th, .finds-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.finds-table th { color: var(--subtext-color); font-weight: 600; }
+
+/* Tyyppikattavuus-sirut */
+.type-coverage { display: flex; flex-wrap: wrap; gap: 6px; }
+.type-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  border: 1px solid var(--border-color);
+}
+.type-chip.hit {
+  background: rgba(166, 227, 161, 0.15);
+  border-color: rgba(166, 227, 161, 0.4);
+  color: var(--c-green);
+}
+.type-chip.miss {
+  opacity: 0.45;
+  text-decoration: line-through;
+}

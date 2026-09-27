@@ -12,6 +12,7 @@ import { renderConvertersView } from "./converters.js";
 import * as MapView from "./map.js";
 import * as MapAllView from "./map_all.js";
 import * as MapCountriesView from "./map_countries.js";
+import * as FindsQuery from "./findsQuery.js";
 import { renderAdminView } from "./admin.js";
 import { renderSettingsView } from "./settings.js"; 
 
@@ -31,9 +32,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v69';
-const APP_DISPLAY_VERSION = '2.14.2';
-const APP_SW_CACHE = 'mk-porttaali-v69';
+const APP_VERSION = 'v70';
+const APP_DISPLAY_VERSION = '2.15.0';
+const APP_SW_CACHE = 'mk-porttaali-v70';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -106,7 +107,7 @@ window.app = {
       const nav = document.getElementById('mainNav');
       if (nav) nav.classList.remove('open');
 
-      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'stats_other', 'country_maps', 'sweden_map', 'norway_map', 'estonia_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
+      const protectedViews = ['stats', 'stats_triplet', 'stats_map', 'stats_map_all', 'stats_all', 'stats_top', 'stats_external', 'stats_other', 'stats_queries', 'country_maps', 'sweden_map', 'norway_map', 'estonia_map', 'admin', 'generator', 'settings', 'converters', 'links', 'reissuapuri'];
       
       if (protectedViews.includes(targetView) && !window.app.currentUser) {
           sessionStorage.setItem('mk_post_login_view', targetView);
@@ -198,6 +199,7 @@ window.app = {
       case 'stats_top': if (checkPremium(content)) Stats.loadTopStats(db, window.app.currentUser, content); break;
       case 'stats_external': if (checkPremium(content)) Stats.loadExternalStats(content); break;
       case 'stats_other': if (checkPremium(content)) Stats.loadOtherCountries(db, window.app.currentUser, content); break;
+      case 'stats_queries': if (checkPremium(content)) FindsQuery.renderFindsQueries(db, window.app.currentUser, content); break;
       
       case 'converters': 
         if (checkPremium(content)) {
