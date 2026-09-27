@@ -14,32 +14,35 @@ export const renderHelp = (content, app) => {
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.2</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> Mobiilikäytettävyyttä parannettu: karttojen korkeus mukautuu nyt selaimen osoitepalkin liikkeisiin (ei enää hyppimistä), pienet painikkeet ovat suurempia kosketuskohteita, pitkät tekstit mahtuvat etusivun nappeihin, admin-välilehdet murtuvat tarvittaessa ja sivua voi zoomata sormin.</li>
-                <li><strong>27.9.2026:</strong> Ylläpitäjän uusi esikatselu: Admin → Käyttäjät -listalla jokaisella käyttäjällä on nyt <strong>👁 Näytä</strong> -painike, jolla voit katsoa sovellusta kyseisen käyttäjän oikeuksilla (free/premium, Reissuapuri, admin-näkyvyys). Esikatselun aikana näytön alareunassa näkyy keltainen palkki, josta esikatselun voi lopettaa.</li>
-                <li><strong>27.9.2026:</strong> Korjattu tilastovalikon Kuntakartat-painikkeen rikkinäinen kuvake. Painike on nimetty uudelleen <strong>🌍 Ulkomaiden kuntakartat</strong> ja se on siirretty pois etusivulta — ulkomaan kuntakartat avautuvat nyt Tilastot-osion kautta. Suomen kunnat löytyvät edelleen Triplettijahti- ja Maakunnat &amp; Löydöt -osioista. Maiden liput näkyvät nyt myös tietokoneella (Windows ei näytä lippu-emojeja, joten liput on piirretty kuvina).</li>
-                <li><strong>27.9.2026:</strong> Uudistettu ulkoasu koko sovellukseen: yhtenäinen ja selkeämpi design, etusivun ikoniruudukko, siistitty navigaatio (aktiivinen sivu korostuu valikossa), uusittu kirjautumissivu ja Premium-hinnasto sekä yhtenäiset yläpalkit tilastoissa, asetuksissa, ylläpidossa, linkkikirjastossa ja karttanäkymissä. Toiminnot pysyvät ennallaan.</li>
-                <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua: ≤40 km/h → 18, 40–70 km/h → 17, 70–100 km/h → 16, yli 100 km/h → 14.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.13.1</strong><br>
+                    - 27.9.2026: Ylläpitäjän uusi esikatselu: Admin → Käyttäjät -listalla jokaisella käyttäjällä on nyt <b>👁 Näytä</b> -painike, jolla voit katsoa sovellusta kyseisen käyttäjän oikeuksilla (free/premium, Reissuapuri, admin-näkyvyys). Esikatselun aikana näytön alareunassa näkyy keltainen palkki, josta esikatselun voi lopettaa.<br>
+                    - 27.9.2026: Korjattu tilastovalikon Kuntakartat-painikkeen rikkinäinen kuvake. Painike nimettiin uudelleen <b>🌍 Ulkomaiden kuntakartat</b> -nimiseksi ja se siirrettiin pois etusivulta — ulkomaan kuntakartat avautuvat nyt Tilastot-osion kautta. Suomen kunnat löytyvät edelleen Triplettijahti- ja Maakunnat &amp; Löydöt -osioista. Maiden liput näkyvät nyt myös tietokoneella (Windows ei näytä lippu-emojeja, joten liput on piirretty kuvina).<br><br>
+                    <strong>v2.13.0</strong><br>
+                    - 27.9.2026: Uudistettu ulkoasu koko sovellukseen: yhtenäinen ja selkeämpi design, etusivun ikoniruudukko, siistitty navigaatio (aktiivinen sivu korostuu valikossa), uusittu kirjautumissivu ja Premium-hinnasto sekä yhtenäiset yläpalkit tilastoissa, asetuksissa, ylläpidossa, linkkikirjastossa ja karttanäkymissä. Toiminnot pysyvät ennallaan.<br><br>
+                    <strong>v2.12.2</strong><br>
+                    - 5.9.2026: Paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua: ≤40 km/h → 18, 40–70 km/h → 17, 70–100 km/h → 16, yli 100 km/h → 14.<br><br>
                     <strong>v2.12.1</strong><br>
                     - 5.9.2026: Paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa, jotta kartta näyttää tarkemmin.<br><br>
                     <strong>v2.12.0</strong><br>
                     - 3.9.2026: Kuntakarttojen paikannus seuraa sijaintiasi automaattisesti kun liikut. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin esimerkiksi 100 km/h nopeudessa. Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkilla rajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus myös pitää näytön päällä Androidilla, iPhone/iPadillä ja muilla mobiililaitteilla, joissa selain tukee Wake Lock -rajapintaa.<br>
                     - 3.9.2026: GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.<br><br>
-                    <strong>v2.9.1</strong><br>
-                    - 10.7.2026: Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.<br>
-                    - 10.7.2026: Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.<br>
-                    - 10.7.2026: Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.<br>
-                    - 10.7.2026: Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.<br>
-                    - 10.7.2026: Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.<br><br>
                     <strong>v2.11.0</strong><br>
                     - 2.9.2026: Uusi Kuntakartat-sivu, jolta avautuvat Ruotsin, Norjan ja Viron kuntakartat. Jokaiselle maalle voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.<br>
                     - 2.9.2026: GPX-tuonti tunnistaa kätkötyypit kaikilla kuntakartoilla, joten näet mitä eri tyyppejä kussakin kunnassa on jo löydetty ja mitkä puuttuvat.<br><br>
                     <strong>v2.10.0</strong><br>
                     - 2.9.2026: Lisätty interaktiivinen Ruotsi-kuntakartta, jossa voi merkitä löydetyt kunnat, paikantaa itsensä ja tuoda löydöt GPX-tiedostosta.<br>
                     - 2.9.2026: GPX-tuonti tunnistaa kätkötyypit kunnittain; popup näyttää löydetyt ja puuttuvat tyypit.<br><br>
+                    <strong>v2.9.1</strong><br>
+                    - 10.7.2026: Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.<br>
+                    - 10.7.2026: Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.<br>
+                    - 10.7.2026: Mobiilissa kartan kätkötyyppifiltterit on tiivistetty avattavaan paneeliin, jotta kartalle jää enemmän tilaa.<br>
+                    - 10.7.2026: Kuvageneraattorin pikapohjat muutettu käyttäjän omiksi tallennettaviksi ja hallittaviksi pohjiksi; valmiita oletuspohjia ei enää ole pakko käyttää.<br>
+                    - 10.7.2026: Kuvageneraattorin suosikki- ja viimeksi käytettyjen hakujen käsittelyä parannettu: duplikaatit poistuvat, viimeksi käytetty nousee ylimmäksi ja listan voi tyhjentää.<br><br>
                     <strong>v2.8 (aiemmat päivitykset)</strong><br>
                     - 2.2.2026: Muuntimet integroitu SPA:han: kaikki 32 kategoriaa iframe-ratkaisulla.<br>
                     - 2.2.2026: Välilehdet vaakarivissä kuten kannettavassa näkymässä.<br>

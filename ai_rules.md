@@ -64,7 +64,7 @@
 - `help.js`: Kysy aina kuluva päivämäärä ennen uusien päivityskohtien lisäämistä.
 - `help.js`: Vain uudet lisäykset saavat uuden päivämäärän; vanhat päivät pidetään ennallaan.
 - `help.js`: Kun versio pysyy samana, lisää päivitykselle päiväys versiohistoriaan.
-- `help.js`: "Uutta versiossa" -listassa pidetään vain 5 uusinta; vanhemmat saman version kohdat siirretään aiempaan historiaan.
+- `help.js` VERSIOHISTORIA — pakollinen ja saumaton AINA: "Uutta versiossa"-osiossa näytetään VAIN uusimman julkaistun version kohdat. Kaikki aiemmat versiot ovat historialistassa omalla `<strong>vX.Y.Z</strong>`-otsikollaan, uusin ensin. ÄLÄ KOSKAAN sekoita eri versioiden muutoksia samaan listaan tai otsikon alle — jokaisen version sisältö on luettavissa erikseen. Kun uusi versio julkaistaan: siirrä edellisen version kohdat historiaan omana versiona ja kirjoita uudet kohdat vain uudelle versiolle.
 - `app.js` ja `index.html`: Ohje-näkyma nimetään yhtenäisesti "Ohjeet & Tuki".
 - `sw.js`: Kun näkyviin tulee muutoksia mobiilissa, päivitä `CACHE_NAME` jotta uusi versio latautuu.
 - Reissuapuri integroidaan MK Porttaaliin SPA-näkymänä ja näytetään käyttäjille, joilla on Firestoressa reissuapuriEnabled=true (admin voi myös käyttää).
