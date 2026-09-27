@@ -1236,6 +1236,21 @@ summary:hover { color: var(--accent-color); }
   font-weight: 700;
 }
 
+/* D/T-ruudukon mobiili-infopopup */
+.dt-popup {
+  position: absolute;
+  z-index: 9999;
+  background: var(--bg-mantle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 12px;
+  font-size: 0.85em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  min-width: 130px;
+  max-width: 220px;
+  cursor: pointer;
+}
+
 /* Löytölista */
 .finds-table {
   border-collapse: collapse;

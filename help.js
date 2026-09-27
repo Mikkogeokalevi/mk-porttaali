@@ -11,16 +11,19 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.0</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.1</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> <b>🗺️ Maailmankartta Muut maat -näkymässä:</b> uusi "Kartta"-nappi näyttää maailmankartan jossa löydetyt maat on väritetty vihreällä (sis. Suomi, Ruotsi, Norja, Viro). Maan päälle viemällä näkyy nimi ja löytömäärä. Kartta toimii myös offline-tilassa.</li>
+                <li><strong>27.9.2026:</strong> D/T-ruudukon ruutuja voi nyt <b>klikata/koskettaa</b> — pieni popup näyttää ruudun tyyppijakauman (myös mobiilissa, missä hover ei toimi). Sulkeutuu klikkaamalla muualta tai samaa ruutua uudelleen.</li>
             </ul>
+
 
 
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.17.0</strong><br>
+                    - 27.9.2026: Maailmankartta Muut maat -näkymään (löydetyt maat vihreällä + löytömäärä-tooltip).<br><br>
                     <strong>v2.16.2</strong><br>
                     - 27.9.2026: Muut maat kompaktiksi maalistaksi lipuilla; Ruotsi/Norja/Viro mukana + kartta-linkit.<br><br>
                     <strong>v2.16.1</strong><br>

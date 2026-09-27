@@ -114,7 +114,8 @@ function dtMatrix(finds) {
       const bar = `<div style="display:flex; height:4px; border-radius:2px; overflow:hidden; margin-top:2px;">` +
         segs.map(([ty, n]) => `<span style="flex:${n}; background:${TYPE_COLORS[ty] || '#888'};"></span>`).join('') + `</div>`;
       const tip = segs.map(([ty, n]) => `${TYPE_NAMES[ty] || '?'} ${n}`).join(', ');
-      return `<td style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700;" title="${tip}">${total}${bar}</td>`;
+      const breakAttr = segs.map(([ty, n]) => `${ty}:${n}`).join(';'); // mobiilipopupia varten
+      return `<td data-break="${breakAttr}" style="background:${c}44; border-color:${c}; color:var(--text-color); font-weight:700; cursor:pointer;" title="${tip}">${total}${bar}</td>`;
     }).join('');
     return `<tr><th>${d}</th>${tds}<th>${rowTotal || ''}</th></tr>`;
   }).join('');
@@ -160,6 +161,36 @@ export function findsList(finds, limit = 300) {
   return `<div class="fq-scroll"><table class="finds-table"><thead><tr>${th('code', 'Koodi')}${th('type', 'Tyyppi')}${th('day', 'Pvm')}${th('d', 'D')}${th('t', 'T')}${th('loc', 'Sijainti')}</tr></thead><tbody>${rows}</tbody></table></div>` +
     (sorted.length > limit ? `<p style="font-size:0.8em;opacity:0.7;">Näytetään ${limit} / ${sorted.length} löytöä (uusimmat ensin).</p>` : '');
 }
+
+// ---------- D/T-ruudukon mobiili-infopopup ----------
+// Mobiilissa title-tooltip ei toimi — klikkaus ruutuun avaa pienen popupin,
+// joka sulkeutuu kun klikataan mistä tahansa muualta (tai samaa ruutua uudelleen).
+let dtPopup = null;
+function closeDtPopup() { if (dtPopup) { dtPopup.remove(); dtPopup = null; } }
+document.addEventListener('click', e => {
+  const td = e.target.closest('.dt-matrix td[data-break]');
+  if (!td) { closeDtPopup(); return; }
+  if (dtPopup?._for === td) { closeDtPopup(); return; }
+  closeDtPopup();
+  dtPopup = document.createElement('div');
+  dtPopup.className = 'dt-popup';
+  dtPopup._for = td;
+  dtPopup.innerHTML = td.dataset.break.split(';').map(p => {
+    const [ty, n] = p.split(':');
+    return `<div style="display:flex; justify-content:space-between; gap:12px; padding:3px 0;">
+      <span style="color:${TYPE_COLORS[+ty] || '#888'}; font-weight:600;">${TYPE_NAMES[+ty] || '?'}</span><span>${n}</span></div>`;
+  }).join('');
+  document.body.appendChild(dtPopup);
+  const r = td.getBoundingClientRect();
+  const pw = dtPopup.offsetWidth, ph = dtPopup.offsetHeight;
+  let left = Math.min(Math.max(8, r.left + r.width / 2 - pw / 2), window.innerWidth - pw - 8);
+  let top = r.bottom + window.scrollY + 6;
+  if (top + ph > window.scrollY + window.innerHeight - 8) top = r.top + window.scrollY - ph - 6;
+  dtPopup.style.left = left + 'px';
+  dtPopup.style.top = top + 'px';
+});
+document.addEventListener('scroll', closeDtPopup, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDtPopup(); });
 
 // Yksi delegoitu kuuntelija riittää kaikille finds-table-sorttauksille (myös dynaamisesti lisätyille)
 document.addEventListener('click', e => {
