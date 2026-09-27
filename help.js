@@ -11,14 +11,16 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.2</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.3</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Mobiilikäytettävyyttä parannettu: karttojen korkeus mukautuu nyt selaimen osoitepalkin liikkeisiin (ei enää hyppimistä), pienet painikkeet ovat suurempia kosketuskohteita, pitkät tekstit mahtuvat etusivun nappeihin, admin-välilehdet murtuvat tarvittaessa ja sivua voi zoomata sormin.</li>
+                <li><strong>27.9.2026:</strong> Kuvageneraattori tiivistetty mobiilikäyttöön: pienemmät välit ja kenttien otsikot, pikatoimintolinkit kompaktimpana rivinä — vähemmän selaamista ennen "Luo kuva" -painiketta.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.13.2</strong><br>
+                    - 27.9.2026: Mobiilikäytettävyyttä parannettu: karttojen korkeus mukautuu nyt selaimen osoitepalkin liikkeisiin (ei enää hyppimistä), pienet painikkeet ovat suurempia kosketuskohteita, pitkät tekstit mahtuvat etusivun nappeihin, admin-välilehdet murtuvat tarvittaessa ja sivua voi zoomata sormin.<br><br>
                     <strong>v2.13.1</strong><br>
                     - 27.9.2026: Ylläpitäjän uusi esikatselu: Admin → Käyttäjät -listalla jokaisella käyttäjällä on nyt <b>👁 Näytä</b> -painike, jolla voit katsoa sovellusta kyseisen käyttäjän oikeuksilla (free/premium, Reissuapuri, admin-näkyvyys). Esikatselun aikana näytön alareunassa näkyy keltainen palkki, josta esikatselun voi lopettaa.<br>
                     - 27.9.2026: Korjattu tilastovalikon Kuntakartat-painikkeen rikkinäinen kuvake. Painike nimettiin uudelleen <b>🌍 Ulkomaiden kuntakartat</b> -nimiseksi ja se siirrettiin pois etusivulta — ulkomaan kuntakartat avautuvat nyt Tilastot-osion kautta. Suomen kunnat löytyvät edelleen Triplettijahti- ja Maakunnat &amp; Löydöt -osioista. Maiden liput näkyvät nyt myös tietokoneella (Windows ei näytä lippu-emojeja, joten liput on piirretty kuvina).<br><br>

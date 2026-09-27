@@ -31,9 +31,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v65';
-const APP_DISPLAY_VERSION = '2.13.2';
-const APP_SW_CACHE = 'mk-porttaali-v65';
+const APP_VERSION = 'v66';
+const APP_DISPLAY_VERSION = '2.13.3';
+const APP_SW_CACHE = 'mk-porttaali-v66';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -451,7 +451,8 @@ function renderGeneratorView(content) {
         <p style="font-size:0.8em; opacity:0.7;">Hakee kuvat suoraan Geocache.fi-palvelusta.</p>
         <div style="margin-top:-6px; margin-bottom:10px; font-size:0.75em; opacity:0.6;">Versio: ${APP_VERSION} (SW cache: ${APP_SW_CACHE}) • Päivitetty: ${APP_UPDATED_AT}</div>
 
-        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 10px 0 10px 0; font-size:0.9em;">
+        <div class="gen-form">
+        <div class="gen-quick-links">
           <a href="#" onclick="app.toggleGeneratorQuickPanel('template'); return false;" style="color:var(--accent-color); text-decoration:none;">Pikapohjat</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('preset'); return false;" style="color:var(--accent-color); text-decoration:none;">Suosikkihaut</a>
           <a href="#" onclick="app.toggleGeneratorQuickPanel('recent'); return false;" style="color:var(--accent-color); text-decoration:none;">Viimeksi käytetyt</a>
@@ -503,7 +504,7 @@ function renderGeneratorView(content) {
         <div class="input-group">
             <input type="text" id="genUser" value="${defaultUser}" placeholder="esim. mikkokalevi" oninput="app.updateProfileLink()" autocomplete="off">
         </div>
-        <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:15px; font-size:0.9em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
+        <a id="gcProfileLink" href="#" target="_blank" style="display:block; margin-bottom:8px; font-size:0.85em; color:var(--accent-color); text-decoration:none;" class="hidden"></a>
 
         <label>Kuvan tyyppi:</label>
         <div class="gen-accordion-field">
@@ -632,7 +633,8 @@ function renderGeneratorView(content) {
           </div>
         </div>
 
-        <button class="btn btn-primary" onclick="app.generateStatImage()">Luo kuva</button>
+        <button class="btn btn-primary btn-block" onclick="app.generateStatImage()">Luo kuva</button>
+        </div>
       </div>
 
       <div id="resultArea" class="card hidden" style="text-align:center;">
