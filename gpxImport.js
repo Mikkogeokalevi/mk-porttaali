@@ -460,7 +460,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
           entry.r = kuntaToRegion[loc] || 'Muu';
           report.finland.seen.add(loc);
           const y = day.slice(0, 4) || 'unknown';
-          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs];
+          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
         } else report.duplicates++;
       } else report.unmatched++;
     } else if (bucket === 'foreign') {
@@ -469,7 +469,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         const entry = docData[loc] = ensureEntryShape(docData[loc]);
         if (addFindTo(entry, p.code, typeIdx)) {
           const y = day.slice(0, 4) || 'unknown';
-          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs];
+          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
         } else report.duplicates++;
         report.countries[country] = (report.countries[country] || 0) + 1;
       } else report.unmatched++;
@@ -479,7 +479,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       const entry = otherData[cname] = ensureEntryShape(otherData[cname]);
       if (addFindTo(entry, p.code, typeIdx)) {
         const y = day.slice(0, 4) || 'unknown';
-        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs];
+        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')];
         report.other[cname] = (report.other[cname] || 0) + 1;
       } else report.duplicates++;
     }
