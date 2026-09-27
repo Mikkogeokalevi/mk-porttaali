@@ -11,18 +11,21 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.0</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.13.1</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>27.9.2026:</strong> Ylläpitäjän uusi esikatselu: Admin → Käyttäjät -listalla jokaisella käyttäjällä on nyt <strong>👁 Näytä</strong> -painike, jolla voit katsoa sovellusta kyseisen käyttäjän oikeuksilla (free/premium, Reissuapuri, admin-näkyvyys). Esikatselun aikana näytön alareunassa näkyy keltainen palkki, josta esikatselun voi lopettaa.</li>
+                <li><strong>27.9.2026:</strong> Korjattu tilastovalikon Kuntakartat-painikkeen rikkinäinen kuvake. Painike on nimetty uudelleen <strong>🌍 Ulkomaiden kuntakartat</strong> ja se on siirretty pois etusivulta — ulkomaan kuntakartat avautuvat nyt Tilastot-osion kautta. Suomen kunnat löytyvät edelleen Triplettijahti- ja Maakunnat &amp; Löydöt -osioista. Maiden liput näkyvät nyt myös tietokoneella (Windows ei näytä lippu-emojeja, joten liput on piirretty kuvina).</li>
                 <li><strong>27.9.2026:</strong> Uudistettu ulkoasu koko sovellukseen: yhtenäinen ja selkeämpi design, etusivun ikoniruudukko, siistitty navigaatio (aktiivinen sivu korostuu valikossa), uusittu kirjautumissivu ja Premium-hinnasto sekä yhtenäiset yläpalkit tilastoissa, asetuksissa, ylläpidossa, linkkikirjastossa ja karttanäkymissä. Toiminnot pysyvät ennallaan.</li>
                 <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasot päivitetty vastaamaan vertailupalvelua: ≤40 km/h → 18, 40–70 km/h → 17, 70–100 km/h → 16, yli 100 km/h → 14.</li>
                 <li><strong>5.9.2026:</strong> Paikannuksen zoom-tasoja säädetty lähemmäs erityisesti alle 60 km/h nopeuksissa, jotta kartta näyttää tarkemmin.</li>
                 <li><strong>3.9.2026:</strong> Kuntakarttojen paikannus seuraa sijaintiasi automaattisesti kun liikut. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin esimerkiksi 100 km/h nopeudessa. Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkilla rajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus myös pitää näytön päällä Androidilla, iPhone/iPadillä ja muilla mobiililaitteilla, joissa selain tukee Wake Lock -rajapintaa.</li>
-                <li><strong>3.9.2026:</strong> GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.</li>
             </ul>
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.12.0</strong><br>
+                    - 3.9.2026: GPX-tuonti Viron kuntakartalle osaa nyt löytää saarilta olevat kätköt lähimmän kunnan kaaren perusteella ja ilmoittaa tarkemmin, mitkä kätköt jäävät kuntarajojen ulkopuolelle.<br><br>
                     <strong>v2.9.1</strong><br>
                     - 10.7.2026: Karttapohja vaihdettu selkeämpään Voyager-pohjaan, jossa tiet ja paikannimet näkyvät paremmin reissujen suunnittelua varten.<br>
                     - 10.7.2026: Löytökarttaan ja Löydöt maakunnittain -listaan lisätty kaikkien kätkötyyppien puutefiltterit sekä vaihtoehdot “puuttuu vähintään yksi” ja “puuttuvat kaikki valitut”.<br>
@@ -129,8 +132,8 @@ export const renderHelp = (content, app) => {
         <p><strong>Kätkötyyppifiltterit:</strong> Kartan ja tekstimuotoisen kuntalistan suodattimesta voit valita minkä tahansa tuetun kätkötyypin. Näkymiin jäävät tällöin vain kunnat, joista valittu tyyppi puuttuu. Usean tyypin kohdalla voit valita joko <em>Puuttuu vähintään yksi</em> tai <em>Puuttuvat kaikki valitut</em>. Maakunnat, joihin ei jää yhtään sopivaa kuntaa, piilotetaan automaattisesti.</p>
         <p><strong>Mobiilissa:</strong> Suodattimet ovat avattavan <em>Suodattimet</em>-painikkeen takana, jotta kartalle ja listalle jää enemmän näkyvää tilaa. Kannettavalla kaikki suodattimet näkyvät suoraan.</p>
 
-        <h4>Kuntakartat (Ruotsi, Norja, Viro)</h4>
-        <p>Etusivun tai Tilastot-sivun <strong>🗺️ Kuntakartat</strong> -valinnasta avautuu maa-valitsin. Valitse maa ja merkitse löydetyt kunnat.</p>
+        <h4>Ulkomaiden kuntakartat (Ruotsi, Norja, Viro)</h4>
+        <p>Tilastot-sivun <strong>🌍 Ulkomaiden kuntakartat</strong> -valinnasta avautuu maa-valitsin. Valitse maa ja merkitse löydetyt kunnat.</p>
         <ul style="line-height:1.6; padding-left:20px;">
             <li><strong>Kunnan merkitseminen:</strong> Klikkaa kuntaa kartalta. Jos kuntaan ei ole tuotu GPX-löytöjä, voit vaihtaa sen löydetyksi / etsittäväksi nappia painamalla.</li>
             <li><strong>Paikannus:</strong> Paina 📍-nappia. Sovellus seuraa sijaintiasi automaattisesti, kun liikut kartalla. Kartta zoomaa nopeuden mukaan: lähellä paikallaan ollessa ja laajemmin nopeammassa liikkeessä (esim. 100 km/h). Jos zoomaat tai panoroit karttaa käsin, automaattinen seuranta keskeytyy 10 sekunniksi, jotta voit tutkia kuntarajoja vapaasti. Sammutettaessa paikannus viimeisin sijainti jää kartalle punaiseksi palloksi. Paikannus pitää lisäksi näytön päällä mobiililaitteilla, jotta ruutu ei mene pimeäksi kesken ajon. Klikkaamalla kuntaa voit edelleen merkitä sen löydetyksi.</li>

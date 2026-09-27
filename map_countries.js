@@ -81,6 +81,13 @@ const COUNTRY_CONFIGS = {
   }
 };
 
+// Lippu-SVG:t — Windows ei renderöi lippu-emojeja (näkyy vain SE/NO/EE-kirjaimet)
+const FLAG_SVGS = {
+  sweden: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 10" width="34" height="22" style="border-radius:3px; vertical-align:middle;"><rect width="16" height="10" fill="#006AA7"/><rect x="5" width="2" height="10" fill="#FECC02"/><rect y="4" width="16" height="2" fill="#FECC02"/></svg>',
+  norway: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 16" width="34" height="25" style="border-radius:3px; vertical-align:middle;"><rect width="22" height="16" fill="#BA0C2F"/><rect x="6" width="4" height="16" fill="#fff"/><rect y="6" width="22" height="4" fill="#fff"/><rect x="7" width="2" height="16" fill="#00205B"/><rect y="7" width="22" height="2" fill="#00205B"/></svg>',
+  estonia: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 21" width="34" height="22" style="border-radius:3px; vertical-align:middle;"><rect width="33" height="7" fill="#0072CE"/><rect y="7" width="33" height="7" fill="#000"/><rect y="14" width="33" height="7" fill="#fff"/></svg>'
+};
+
 function createEmptyStats() {
   return new Array(CACHE_TYPES.length).fill(0);
 }
@@ -299,19 +306,19 @@ export function renderCountrySelector(content, app) {
   content.innerHTML = `
     <div class="card">
       <div class="view-header">
-        <h1>Kuntakartat</h1>
-        <button class="btn btn-sm" onclick="app.router('home')">⬅ Etusivulle</button>
+        <h1>Ulkomaiden kuntakartat</h1>
+        <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button>
       </div>
       <p>Valitse maa, jonka kuntakartan haluat avata:</p>
       <div class="launcher-grid">
         <button class="launcher-btn btn-yellow" onclick="app.router('sweden_map')">
-          <span class="launcher-icon">🇸🇪</span>Ruotsi
+          <span class="launcher-icon">${FLAG_SVGS.sweden}</span>Ruotsi
         </button>
         <button class="launcher-btn btn-blue" onclick="app.router('norway_map')">
-          <span class="launcher-icon">🇳🇴</span>Norja
+          <span class="launcher-icon">${FLAG_SVGS.norway}</span>Norja
         </button>
         <button class="launcher-btn btn-green" onclick="app.router('estonia_map')">
-          <span class="launcher-icon">🇪🇪</span>Viro
+          <span class="launcher-icon">${FLAG_SVGS.estonia}</span>Viro
         </button>
       </div>
     </div>
@@ -341,7 +348,7 @@ async function renderCountryMap(content, db, user, app, config) {
   content.innerHTML = `
     <div class="card map-shell">
       <div class="map-toolbar">
-        <h2>${config.flag} ${config.name}-kuntakartta</h2>
+        <h2>${FLAG_SVGS[config.id] || config.flag} ${config.name}-kuntakartta</h2>
         <span id="${config.id}LocationStatus" style="font-size: 0.85em; margin-left: auto; padding-right: 6px; color: var(--success-color);"></span>
         <div class="toolbar-actions">
           <button id="${config.id}ImportBtn" class="btn btn-sm" title="Tuo löydöt GPX-tiedostosta">📁 Tuo GPX</button>

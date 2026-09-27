@@ -24,14 +24,14 @@ export const renderSettingsView = (content, db, user, app) => {
     const email = user.email;
     
     // Tarkistetaan onko käyttäjällä oikeus tuoda dataa
-    const isPremium = app.userPlan === 'premium' || app.userRole === 'admin';
+    const isPremium = app.effPlan() === 'premium' || app.effRole() === 'admin';
 
     // Tyylit input-kentille (16px estää zoomauksen mobiilissa)
     const inputStyle = "font-size: 16px;";
 
     // 3. Tilauksen tilan näyttäminen
     let planDisplay = 'Ilmainen';
-    if (app.userPlan === 'premium') {
+    if (app.effPlan() === 'premium') {
         planDisplay = '💎 Premium';
         if (app.premiumExpires) {
             const expDate = app.premiumExpires;
@@ -88,7 +88,7 @@ export const renderSettingsView = (content, db, user, app) => {
 
     // Vaaravyöhyke-HTML (piilotettu adminilta)
     let dangerZoneHtml = '';
-    if (app.userRole !== 'admin') {
+    if (app.effRole() !== 'admin') {
         dangerZoneHtml = `
             <div class="panel panel-danger">
                 <h3 style="color:var(--c-red); margin-bottom:5px;">⚠️ Vaaravyöhyke</h3>

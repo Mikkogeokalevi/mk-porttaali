@@ -31,9 +31,9 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v63';
-const APP_DISPLAY_VERSION = '2.13.0';
-const APP_SW_CACHE = 'mk-porttaali-v63';
+const APP_VERSION = 'v64';
+const APP_DISPLAY_VERSION = '2.13.1';
+const APP_SW_CACHE = 'mk-porttaali-v64';
 const APP_UPDATED_AT = '27.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
@@ -49,6 +49,22 @@ window.app = {
   shortId: '',       
   currentView: null,
   reissuapuriEnabled: false,
+  previewAs: null, // Admin-esikatselu: { nickname, role, plan, reissuapuriEnabled }
+
+  // Esikatselun huomioivat oikeustarkistukset
+  effRole: () => window.app.previewAs ? window.app.previewAs.role : window.app.userRole,
+  effPlan: () => window.app.previewAs ? window.app.previewAs.plan : window.app.userPlan,
+  effReissuapuri: () => window.app.previewAs ? !!window.app.previewAs.reissuapuriEnabled : window.app.reissuapuriEnabled,
+
+  previewAsUser: (nickname, role, plan, reissuapuriEnabled) => {
+      window.app.previewAs = { nickname, role: role || 'user', plan: plan || 'free', reissuapuriEnabled: !!reissuapuriEnabled };
+      window.app.router('home');
+  },
+
+  exitPreview: () => {
+      window.app.previewAs = null;
+      window.app.router('home');
+  },
 
   router: (view, options = {}) => {
     const { fromHash = false, replaceHash = false } = options;
@@ -85,7 +101,8 @@ window.app = {
     // Suoritetaan näkymän renderöinti virheenkäsittelyllä
     try {
       window.app.currentView = targetView;
-      
+      updatePreviewBanner();
+
       const nav = document.getElementById('mainNav');
       if (nav) nav.classList.remove('open');
 
@@ -97,7 +114,7 @@ window.app = {
           return;
       }
 
-      const isLocked = window.app.userPlan === 'free' && window.app.userRole !== 'admin';
+      const isLocked = window.app.effPlan() === 'free' && window.app.effRole() !== 'admin';
       const lockIcon = isLocked ? ' 🔒' : '';
 
       switch(targetView) {
@@ -119,18 +136,18 @@ window.app = {
 
         // LOGGED IN VIEW (KIRJAUTUNUT)
         let adminButton = '';
-        if (window.app.userRole === 'admin') {
+        if (window.app.effRole() === 'admin') {
             adminButton = `<button class="launcher-btn btn-red" onclick="app.router('admin')"><span class="launcher-icon">🔧</span>Ylläpito</button>`;
         }
 
         let reissuapuriButton = '';
-        if (window.app.userRole === 'admin' || window.app.reissuapuriEnabled) {
+        if (window.app.effRole() === 'admin' || window.app.effReissuapuri()) {
             reissuapuriButton = `<button class="launcher-btn btn-teal" onclick="app.router('reissuapuri')"><span class="launcher-icon">🧭</span>Reissuapuri</button>`;
         }
 
         let statusBadge = '';
-        if (window.app.userRole === 'admin') statusBadge = '<span class="badge badge-admin" style="font-size:0.85em;">ADMIN</span>';
-        else if (window.app.userPlan === 'premium') statusBadge = '<span class="badge badge-premium" style="font-size:0.85em;">PREMIUM</span>';
+        if (window.app.effRole() === 'admin') statusBadge = '<span class="badge badge-admin" style="font-size:0.85em;">ADMIN</span>';
+        else if (window.app.effPlan() === 'premium') statusBadge = '<span class="badge badge-premium" style="font-size:0.85em;">PREMIUM</span>';
 
         content.innerHTML = `
           <div class="card">
@@ -143,7 +160,6 @@ window.app = {
             <div class="launcher-grid">
                 <button class="launcher-btn btn-primary" onclick="app.router('generator')"><span class="launcher-icon">🖼️</span>Kuvageneraattori</button>
                 <button class="launcher-btn btn-green" onclick="app.router('stats')"><span class="launcher-icon">📊</span>Tilastot${lockIcon}</button>
-                <button class="launcher-btn btn-yellow" onclick="app.router('country_maps')"><span class="launcher-icon">🗺️</span>Kuntakartat${lockIcon}</button>
                 <button class="launcher-btn btn-peach" onclick="app.router('converters')"><span class="launcher-icon">🧮</span>Muuntimet${isLocked ? ' 🔒' : ''}</button>
                 <button class="launcher-btn btn-sky" onclick="app.router('links')"><span class="launcher-icon">🌐</span>Linkkikirjasto</button>
                 <button class="launcher-btn btn-blue" onclick="app.router('settings')"><span class="launcher-icon">⚙️</span>Asetukset</button>
@@ -156,9 +172,12 @@ window.app = {
         break;
 
       case 'settings': renderSettingsView(content, db, window.app.currentUser, window.app); break;
-      case 'admin': renderAdminView(content, db, window.app.currentUser); break;
+      case 'admin':
+        if (window.app.previewAs) { app.router('home'); break; }
+        renderAdminView(content, db, window.app.currentUser);
+        break;
       case 'reissuapuri':
-        if (!(window.app.userRole === 'admin' || window.app.reissuapuriEnabled)) { app.router('home'); break; }
+        if (!(window.app.effRole() === 'admin' || window.app.effReissuapuri())) { app.router('home'); break; }
         content.innerHTML = `
           <div class="card" style="padding:0; overflow:hidden;">
             <iframe src="reissuapuri.html" title="MK Reissuapuri" style="width:100%; height:90vh; border:0;"></iframe>
@@ -324,9 +343,30 @@ window.app = {
   deleteSelectedGeneratorPreset: Gen.deleteSelectedGeneratorPreset
 };
 
+// --- ADMIN-ESIKATSELUN BANNERI ---
+function updatePreviewBanner() {
+    let el = document.getElementById('previewBanner');
+    const p = window.app.previewAs;
+    if (!p || !window.app.currentUser) {
+        if (el) el.remove();
+        document.body.style.paddingBottom = '';
+        return;
+    }
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'previewBanner';
+        el.className = 'preview-banner';
+        document.body.appendChild(el);
+    }
+    document.body.style.paddingBottom = '70px';
+    const safeNick = String(p.nickname).replace(/</g, '&lt;');
+    const extras = `${p.plan}${p.role === 'admin' ? ' + admin' : ''}${p.reissuapuriEnabled ? ' + Reissuapuri' : ''}`;
+    el.innerHTML = `👁 Esikatselu: <strong>${safeNick}</strong> (${extras}) — näet käyttäjän oikeudet, data on sinun <button class="btn btn-sm btn-red" style="margin:0 0 0 8px;" onclick="app.exitPreview()">Lopeta</button>`;
+}
+
 // --- UUSITTU PREMIUM-MARKKINOINTISIVU ---
 function checkPremium(content) {
-    if (window.app.userPlan === 'premium' || window.app.userRole === 'admin') return true;
+    if (window.app.effPlan() === 'premium' || window.app.effRole() === 'admin') return true;
     const idCode = window.app.shortId || "VIRHE";
     const nick = window.app.savedNickname || "Nimetön";
 

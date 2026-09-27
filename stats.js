@@ -56,7 +56,7 @@ export const renderStatsDashboard = (content, app) => {
                 <span class="launcher-icon">🗺️</span>Maakunnat &amp; Löydöt
             </button>
             <button class="launcher-btn btn-yellow" onclick="app.router('country_maps')">
-                <span class="launcher-icon">�</span>Kuntakartat
+                <span class="launcher-icon">🌍</span>Ulkomaiden kuntakartat
             </button>
             <button class="launcher-btn btn-mauve" onclick="app.router('stats_top')">
                 <span class="launcher-icon">📊</span>Top-listat

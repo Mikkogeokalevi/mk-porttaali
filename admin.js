@@ -167,6 +167,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                                 <input type="checkbox" ${u.reissuapuriEnabled ? 'checked' : ''} onchange="app.adminToggleReissuapuri('${uid}', this.checked)">
                                 Reissuapuri
                             </label>
+                            <button class="btn btn-sm btn-sky" onclick="app.previewAsUser('${String(u.nickname||'').replace(/'/g,"\\'")}', '${u.role||'user'}', '${u.plan||'free'}', ${!!u.reissuapuriEnabled})">👁 Näytä</button>
                             <button class="btn btn-sm btn-peach" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
                             <button class="btn btn-sm btn-danger" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
                         </div>
