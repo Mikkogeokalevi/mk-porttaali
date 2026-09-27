@@ -145,15 +145,41 @@ function typeCoverage(finds) {
   };
 }
 
-// Löytölista (uusimmat ensin), katkaistaan limit-kohdalla
+// Löytölista (uusimmat ensin), katkaistaan limit-kohdalla.
+// Sarakkeet ovat sortattavia: th[data-k] -> rivin data-attribuutti; sorttaus hoidetaan DOM:ssa
+// yhdellä delegoidulla kuuntelijalla (alla), joten lista toimii kaikissa näkymissä.
 export function findsList(finds, limit = 300) {
   const sorted = [...finds].sort((a, b) => (a.day < b.day ? 1 : -1));
   const rows = sorted.slice(0, limit).map(f =>
-    `<tr><td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td><td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td><td>${f.day || '—'}</td><td>${f.D || '—'} / ${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
+    `<tr data-code="${f.code}" data-type="${f.type}" data-day="${f.day}" data-d="${f.D || 0}" data-t="${f.T || 0}" data-loc="${f.loc || ''}">` +
+    `<td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td>` +
+    `<td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td>` +
+    `<td>${f.day || '—'}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
-  return `<div class="fq-scroll"><table class="finds-table"><tr><th>Koodi</th><th>Tyyppi</th><th>Pvm</th><th>D/T</th><th>Sijainti</th></tr>${rows}</table></div>` +
+  const th = (k, label) => `<th data-k="${k}" data-label="${label}" title="Järjestä">${label}</th>`;
+  return `<div class="fq-scroll"><table class="finds-table"><thead><tr>${th('code', 'Koodi')}${th('type', 'Tyyppi')}${th('day', 'Pvm')}${th('d', 'D')}${th('t', 'T')}${th('loc', 'Sijainti')}</tr></thead><tbody>${rows}</tbody></table></div>` +
     (sorted.length > limit ? `<p style="font-size:0.8em;opacity:0.7;">Näytetään ${limit} / ${sorted.length} löytöä (uusimmat ensin).</p>` : '');
 }
+
+// Yksi delegoitu kuuntelija riittää kaikille finds-table-sorttauksille (myös dynaamisesti lisätyille)
+document.addEventListener('click', e => {
+  const thEl = e.target.closest('.finds-table th[data-k]');
+  if (!thEl) return;
+  const table = thEl.closest('table');
+  const tbody = table.querySelector('tbody');
+  const k = thEl.dataset.k;
+  const dir = thEl.dataset.dir === 'asc' ? -1 : 1;
+  const rows = [...tbody.rows];
+  rows.sort((a, b) => {
+    const x = a.dataset[k] || '', y = b.dataset[k] || '';
+    const nx = parseFloat(x), ny = parseFloat(y);
+    return (!isNaN(nx) && !isNaN(ny)) ? (nx - ny) * dir : x.localeCompare(y, 'fi') * dir;
+  });
+  table.querySelectorAll('th[data-k]').forEach(h => { h.dataset.dir = ''; h.textContent = h.dataset.label; });
+  thEl.dataset.dir = dir === 1 ? 'asc' : 'desc';
+  thEl.textContent = `${thEl.dataset.label} ${dir === 1 ? '▲' : '▼'}`;
+  rows.forEach(r => tbody.appendChild(r));
+});
 
 // ---------- Kyselyrekisteri ----------
 // input: 'day' | 'month' | 'weekday' | 'attr' | null

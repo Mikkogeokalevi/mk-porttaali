@@ -11,14 +11,17 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.16.0</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.16.1</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> <b>Maakohtaiset löytölistat:</b> 🌐 Muut maat -näkymän maakortit avautuvat klikkaamalla ja näyttävät kaikki maan löydöt (koodi linkkeinä, tyyppi, pvm, D/T). Sama "📋 Näytä löydöt maassa" -lista löytyy nyt myös Ruotsin, Norjan ja Viron kuntakarttojen alta. Listat latautuvat vasta kun ne avataan.</li>
+                <li><strong>27.9.2026:</strong> <b>Löytölistat ovat nyt sortattavia</b> — klikkaa sarakeotsikkoa (Koodi, Tyyppi, Pvm, D, T, Sijainti) järjestääksesi nousevasti/laskevasti. Toimii kaikissa listoissa (Löytöhaut, Muut maat, ulkomaiden kartat). Korjaus: Ruotsi/Norja/Viro-karttojen löytölista siirretty kartan ulkopuolelle omaan korttiin — ei enää riko karttanäkymää.</li>
             </ul>
+
 
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.16.0</strong><br>
+                    - 27.9.2026: Maakohtaiset löytölistat: Muut maat -kortit avautuvat löytölistaksiin; "Näytä löydöt maassa" myös Ruotsi/Norja/Viro-kartoissa.<br><br>
                     <strong>v2.15.8</strong><br>
                     - 27.9.2026: Etusivun Kuvageneraattori-nappiin "geocache.fi"-alateksti.<br><br>
                     <strong>v2.15.7</strong><br>

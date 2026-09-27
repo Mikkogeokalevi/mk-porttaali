@@ -1249,6 +1249,8 @@ summary:hover { color: var(--accent-color); }
   white-space: nowrap;
 }
 .finds-table th { color: var(--subtext-color); font-weight: 600; }
+.finds-table th[data-k] { cursor: pointer; user-select: none; }
+.finds-table th[data-k]:hover { color: var(--c-blue); }
 
 /* Tyyppikattavuus-sirut */
 .type-coverage { display: flex; flex-wrap: wrap; gap: 6px; }

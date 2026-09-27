@@ -377,9 +377,11 @@ async function renderCountryMap(content, db, user, app, config) {
         <span style="color: #f38ba8;">■ Etsittävä</span> &nbsp;
         <span style="color: #f9e2af;">■ Nykyinen kunta</span>
       </div>
+    </div>
 
-      <details id="${config.id}FindsDetails" style="margin:4px 12px 14px;">
-        <summary style="cursor:pointer; font-size:0.88em; color:var(--subtext-color);">📋 Näytä löydöt maassa</summary>
+    <div class="card" style="margin-top:12px;">
+      <details id="${config.id}FindsDetails">
+        <summary style="cursor:pointer; font-size:0.9em; color:var(--subtext-color);">📋 Näytä löydöt maassa</summary>
         <div id="${config.id}FindsList" style="margin-top:8px;"></div>
       </details>
     </div>
