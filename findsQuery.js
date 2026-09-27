@@ -149,7 +149,7 @@ function typeCoverage(finds) {
 function findsList(finds, limit = 300) {
   const sorted = [...finds].sort((a, b) => (a.day < b.day ? 1 : -1));
   const rows = sorted.slice(0, limit).map(f =>
-    `<tr><td><strong>${f.code}</strong></td><td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td><td>${f.day || '—'}</td><td>${f.D || '—'} / ${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
+    `<tr><td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td><td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td><td>${f.day || '—'}</td><td>${f.D || '—'} / ${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
   return `<div class="fq-scroll"><table class="finds-table"><tr><th>Koodi</th><th>Tyyppi</th><th>Pvm</th><th>D/T</th><th>Sijainti</th></tr>${rows}</table></div>` +
     (sorted.length > limit ? `<p style="font-size:0.8em;opacity:0.7;">Näytetään ${limit} / ${sorted.length} löytöä (uusimmat ensin).</p>` : '');
@@ -281,10 +281,10 @@ function renderInputs(query, inputDiv, finds) {
     const years = [...new Set(finds.filter(f => f.day.length >= 10).map(f => +f.day.slice(0, 4)))].sort((a, b) => a - b);
     const yrOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
     html += `<div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <div><label style="font-size:0.75em;">Päivä alkaen</label><select id="fqDay">${dayOpts}</select></div>
-      <div><label style="font-size:0.75em;">Kk alkaen</label><select id="fqMonth">${monOpts}</select></div>
-      <div><label style="font-size:0.75em;">Päivä asti</label><select id="fqDay2">${dayOpts}</select></div>
-      <div><label style="font-size:0.75em;">Kk asti</label><select id="fqMonth2">${monOpts}</select></div></div>
+      <div style="flex:1; min-width:70px;"><label style="font-size:0.75em;">Päivä alkaen</label><select id="fqDay">${dayOpts}</select></div>
+      <div style="flex:1; min-width:90px;"><label style="font-size:0.75em;">Kk alkaen</label><select id="fqMonth">${monOpts}</select></div>
+      <div style="flex:1; min-width:70px;"><label style="font-size:0.75em;">Päivä asti</label><select id="fqDay2">${dayOpts}</select></div>
+      <div style="flex:1; min-width:90px;"><label style="font-size:0.75em;">Kk asti</label><select id="fqMonth2">${monOpts}</select></div></div>
     <div style="display:flex; gap:8px;">
       <div style="flex:1;"><label style="font-size:0.75em;">Vuosi alkaen</label><select id="fqYearFrom" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div>
       <div style="flex:1;"><label style="font-size:0.75em;">Vuosi asti</label><select id="fqYearTo" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div></div>`;

@@ -1204,6 +1204,9 @@ summary:hover { color: var(--accent-color); }
 
   /* Admin-välilehdet saavat murtua */
   .tabs { flex-wrap: wrap; }
+
+  /* Löytöhaut: isommat kosketuskohteet chipeissä */
+  .type-chip { padding: 6px 12px; font-size: 0.85em; }
 }
 
 /* ---------- LÖYTÖHAUT (findsQuery.js) ---------- */

@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div class="panel panel-success" style="margin-bottom:30px;">
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.7</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> D/T-ruudukkoon <b>rivi- ja sarakekohtaiset yhteensä-summat</b> + kokonaismäärä oikeaan alakulmaan (kuten geocache.fi-taulukoissa).</li>
+                <li><strong>27.9.2026:</strong> D/T-ruudukkoon <b>rivi- ja sarakekohtaiset yhteensä-summat</b> + kokonaismäärä oikeaan alakulmaan (kuten geocache.fi-taulukoissa). Löytölistan GC-koodit ovat nyt linkkejä geocaching.com-kätkösivuille. Korjaus: Asetukset-sivulla jäänyt "Ladataan..."-spinneri poistuu nyt oikein. Löytöhaut-mobiilikorjauksia (tasaisesti jakautuvat päivävalitsimet, isommat suodatinchipit).</li>
             </ul>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> <b>🔍 Löytöhaut</b> — uusi näkymä Tilastot-osiossa. Kyselyjä GPX-tuotuun löytödataan: <b>Kalenteripäivähaku</b> (mitä löysit tiettynä päivänä kaikkina vuosina + puuttuvat tyypit + D/T-kattavuus), <b>Kuukauden D/T-taulukko</b>, <b>Viikonpäivän D/T-taulukko</b> ja <b>Attribuuttihaku</b>. Kaikissa näytetään klassinen 9×9 D/T-ruudukko ja/tai löytölista. Rakenne on tehty laajennettavaksi — uusia hakuja on helppo lisätä toiveiden mukaan.</li>

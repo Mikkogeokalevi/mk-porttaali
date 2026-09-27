@@ -120,7 +120,7 @@ export const renderSettingsView = (content, db, user, app) => {
     }
 
     // 6. Kootaan koko sivun HTML
-    content.innerHTML += `
+    content.innerHTML = `
     <div class="card">
         <div class="view-header">
             <h1>Omat Asetukset</h1>
