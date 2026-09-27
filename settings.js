@@ -320,6 +320,7 @@ export const renderSettingsView = (content, db, user, app) => {
                 try {
                     const report = await GpxImport.importFindsFile(file, {
                         db, uid: user.uid,
+                        nickname: nickname,
                         onStatus: (msg) => { gpxStatus.textContent = msg; }
                     });
                     gpxStatus.textContent = '';

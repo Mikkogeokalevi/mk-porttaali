@@ -131,8 +131,9 @@ function extractFirst(block, re) {
   return m ? m[1].trim() : '';
 }
 
-export function parseGpxPoints(text) {
+export function parseGpxPoints(text, nickname = '') {
   const points = [];
+  const nickLower = (nickname || '').toLowerCase();
   let pos = 0;
   while (true) {
     const start = text.indexOf('<wpt ', pos);
@@ -152,7 +153,6 @@ export function parseGpxPoints(text) {
     if (!sym.includes('Found')) continue; // vain löydetyt
 
     const code = extractFirst(block, /<name>([^<]*)<\/name>/) || `${lat}|${lon}`;
-    const time = extractFirst(block, /<time>([^<]*)<\/time>/);
     const country = extractFirst(block, /<groundspeak:country>([^<]*)<\/groundspeak:country>/);
     let type = extractFirst(block, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
     if (!type) {
@@ -162,7 +162,21 @@ export function parseGpxPoints(text) {
     const difficulty = parseFloat(extractFirst(block, /<groundspeak:difficulty>([^<]*)<\/groundspeak:difficulty>/)) || 0;
     const terrain = parseFloat(extractFirst(block, /<groundspeak:terrain>([^<]*)<\/groundspeak:terrain>/)) || 0;
 
-    points.push({ lat, lon, code, time, country, type, difficulty, terrain });
+    // Löytöpäivä = käyttäjän OMA "Found it"/"Attended"-login päivä (wpt <time> on piilotuspäivä!)
+    let findDate = '';
+    const logRe = /<groundspeak:log[^>]*>([\s\S]*?)<\/groundspeak:log>/g;
+    let lm;
+    while ((lm = logRe.exec(block))) {
+      const log = lm[1];
+      const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
+      if (!/Found it|Attended|Webcam Photo Taken/i.test(logType)) continue;
+      const finder = extractFirst(log, /<groundspeak:finder[^>]*>([^<]*)<\/groundspeak:finder>/);
+      const logDate = extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/).slice(0, 10);
+      if (nickLower && finder.toLowerCase() === nickLower) { findDate = logDate; break; }
+      if (!findDate) findDate = logDate; // varalla: ensimmäinen found-logi
+    }
+
+    points.push({ lat, lon, code, time: findDate, country, type, difficulty, terrain });
   }
   return points;
 }
@@ -314,12 +328,12 @@ function addFindTo(entry, code, typeIdx) {
 
 // importFindsFile(file, { db, uid, onStatus })
 // Palauttaa raportti-objektin { finland:{newMuni,totalMuni}, countries:{...}, other:{...}, duplicates, unmatched, totalFound }
-export async function importFindsFile(file, { db, uid, onStatus = () => {} } = {}) {
+export async function importFindsFile(file, { db, uid, nickname = '', onStatus = () => {} } = {}) {
   onStatus('Luetaan tiedostoa...');
   const text = await readGpxText(file);
 
   onStatus('Parsitaan löytöpisteitä...');
-  const points = parseGpxPoints(text);
+  const points = parseGpxPoints(text, nickname);
   if (!points.length) throw new Error('Tiedostosta ei löytynyt löydettyjä kätköjä (<sym>Found</sym>).');
   onStatus(`Löydettiin ${points.length} löytöpistettä. Ladataan kuntarajat...`);
 
