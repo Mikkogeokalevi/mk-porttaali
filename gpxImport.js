@@ -72,6 +72,30 @@ export function countryNameFi(name) {
   return COUNTRY_FI[name] || name;
 }
 
+// Groundspeak-attribuutti-ID:t -> suomi (inc=1 = on, inc=0 = ei/negatiivinen)
+export const ATTR_FI = {
+  1: 'Koirat sallittu', 2: 'Polkupyörällä', 3: 'Moottoripyörällä', 4: 'Vironomainen',
+  5: 'Esteetön pyörätuolilla', 6: 'Lapsille sopiva', 7: 'Tasan tunnin reissu',
+  8: 'Maisemanvartija', 9: 'Isoja muutoksia', 10: 'Lyhyt kätköily',
+  11: 'Iso rihma', 12: 'Tulva-alue', 13: 'Kesän aikana', 14: 'Talveksi',
+  15: 'Talvikelpoinen', 16: 'Sammakko', 17: 'Akvaario', 18: 'Puskissa',
+  19: 'Luonnossa', 20: 'Leirintä', 21: 'Sähkö', 22: 'Golfkenttä',
+  23: 'Kalastus', 24: 'Pyörätuoli', 25: 'Pysäköinti lähellä', 26: 'Julkinen liikenne',
+  27: 'Ruokailu lähellä', 28: 'Piknik', 29: 'Wifihotspot', 30: 'Pankkiautomaatti',
+  31: 'Kiipeily', 32: 'Polkupyörät', 33: 'Ajoneuvolla', 34: 'Yö',
+  35: 'Valoisa', 36: 'Suositeltu', 37: 'Kauhea', 38: 'Vaikea',
+  39: 'Ei suositeltava yöllä', 40: 'Ei suositeltava lapsille', 41: 'Vauvoille sopiva',
+  42: 'Huoltotarve', 43: 'Vältä lampia', 44: 'Torakat', 45: 'Kärpäset',
+  46: 'Suot', 47: 'Äkillinen pudotus', 48: 'Lehmät', 49: 'Lumikengät',
+  50: 'Polttopiste', 51: 'GPS vaaditaan', 52: 'Sopii virkailijoille',
+  53: 'Ei saalisalueella', 54: 'Ei suositeltavaa yöllä', 55: 'Tulivuori',
+  56: 'Tulva alue', 57: 'Maatila', 58: 'Syötävät kasvit', 59: 'Hylätty rakennus',
+  60: 'Puutarha', 61: 'Haude', 62: 'Syksy', 63: 'Suositeltu turisteille',
+  64: 'Kanootti', 65: 'Aurinko', 66: 'Sää', 67: 'Teltta',
+  68: 'Intiaanileiri', 69: 'Kuntosali', 70: 'Ei tyyppikohtainen'
+};
+
+
 // ---------- ZIP-luku (ilman ulkoista kirjastoa) ----------
 
 async function readGpxText(file) {
@@ -162,6 +186,15 @@ export function parseGpxPoints(text, nickname = '') {
     const difficulty = parseFloat(extractFirst(block, /<groundspeak:difficulty>([^<]*)<\/groundspeak:difficulty>/)) || 0;
     const terrain = parseFloat(extractFirst(block, /<groundspeak:terrain>([^<]*)<\/groundspeak:terrain>/)) || 0;
 
+    // Attribuutit: id positiivisena jos inc="1", negatiivisena jos inc="0"
+    const attrs = [];
+    const attrRe = /<groundspeak:attribute[^>]*id="(\d+)"[^>]*inc="(\d)"[^>]*>/g;
+    let am;
+    while ((am = attrRe.exec(block))) {
+      const id = parseInt(am[1]);
+      attrs.push(am[2] === '1' ? id : -id);
+    }
+
     // Löytöpäivä = käyttäjän OMA "Found it"/"Attended"-login päivä (wpt <time> on piilotuspäivä!)
     let findDate = '';
     const logRe = /<groundspeak:log[^>]*>([\s\S]*?)<\/groundspeak:log>/g;
@@ -176,7 +209,7 @@ export function parseGpxPoints(text, nickname = '') {
       if (!findDate) findDate = logDate; // varalla: ensimmäinen found-logi
     }
 
-    points.push({ lat, lon, code, time: findDate, country, type, difficulty, terrain });
+    points.push({ lat, lon, code, time: findDate, country, type, difficulty, terrain, attrs });
   }
   return points;
 }
@@ -379,8 +412,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   const otherSnap = await getDoc(doc(db, 'users', uid, 'other_countries', 'finds'));
   const otherData = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
 
-  const findsSnap = await getDoc(doc(db, 'users', uid, 'findsdata', 'all'));
-  const findsDetail = findsSnap.exists() ? (findsSnap.data().finds || {}) : {};
+  const findsByYear = {}; // '2023' -> {code: [t,d,D,T,loc,attrs]} ja 'unknown'
 
   // Osumatteily
   const fi = fiReplace ? {} : Object.fromEntries(Object.entries(existingFi).map(([k, v]) => [k, ensureEntryShape(v)]));
@@ -427,7 +459,8 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
           if (typeIdx >= 0) entry.s[typeIdx]++;
           entry.r = kuntaToRegion[loc] || 'Muu';
           report.finland.seen.add(loc);
-          findsDetail[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc];
+          const y = day.slice(0, 4) || 'unknown';
+          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs];
         } else report.duplicates++;
       } else report.unmatched++;
     } else if (bucket === 'foreign') {
@@ -435,7 +468,8 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         const docData = countryDocs[country];
         const entry = docData[loc] = ensureEntryShape(docData[loc]);
         if (addFindTo(entry, p.code, typeIdx)) {
-          findsDetail[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc];
+          const y = day.slice(0, 4) || 'unknown';
+          (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs];
         } else report.duplicates++;
         report.countries[country] = (report.countries[country] || 0) + 1;
       } else report.unmatched++;
@@ -444,7 +478,8 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       const cname = country || 'Tuntematon';
       const entry = otherData[cname] = ensureEntryShape(otherData[cname]);
       if (addFindTo(entry, p.code, typeIdx)) {
-        findsDetail[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname];
+        const y = day.slice(0, 4) || 'unknown';
+        (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs];
         report.other[cname] = (report.other[cname] || 0) + 1;
       } else report.duplicates++;
     }
@@ -480,9 +515,13 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     countries: otherData, lastGpxImport: now, updatedAt: now
   });
 
-  await setDoc(doc(db, 'users', uid, 'findsdata', 'all'), {
-    finds: findsDetail, updatedAt: now
-  });
+  // Yksityiskohtaiset löydöt tallennetaan vuosittain -> skaalautuu 50 000+ löytöön
+  // (yksi dokumentti = max 1 Mt; 20k löytöä olisi jo ~1.5 Mt yhtenä dokkuna)
+  for (const [year, yearFinds] of Object.entries(findsByYear)) {
+    const snap = await getDoc(doc(db, 'users', uid, 'findsdata', year));
+    const merged = snap.exists() ? { ...(snap.data().finds || {}), ...yearFinds } : yearFinds;
+    await setDoc(doc(db, 'users', uid, 'findsdata', year), { finds: merged, updatedAt: now });
+  }
 
   return report;
 }

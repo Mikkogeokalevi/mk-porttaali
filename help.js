@@ -14,6 +14,7 @@ export const renderHelp = (content, app) => {
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.14.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> <b>GPX-tuonti Suomen tilastoihin ja kaikkiin maihin kerralla.</b> Asetuksissa voi nyt tuoda "My Finds" -kyselyn tai Pocket Queryn (.zip tai .gpx) — toimii myös puhelimella ilman copy/pastea. Tuonti päivittää Suomen kuntatilastot sekä Ruotsin, Norjan ja Viron kuntakartat samalla kertaa.</li>
+                <li><strong>27.9.2026:</strong> Tuonti tallentaa jokaisen löydön tarkan tiedon: kätkötyyppi, <b>oma löytöpäivämäärä</b> (poimitaan omasta "Found it"-lokista, ei piilotuspäivä), D/T-arvosanat ja kätköattribuutit — mahdollistaa tulevat haut päivän, tyypin, D/T:n tai attribuutin mukaan. Data tallentuu vuosittain, joten se skaalautuu yli 20 000 löydön.</li>
                 <li><strong>27.9.2026:</strong> Uusi <b>🌐 Muut maat</b> -näkymä Tilastot-osiossa: löydöt maista, joille ei ole vielä kuntakarttaa (esim. Kreikka, Latvia, Islanti), tallentuvat automaattisesti ja näkyvät maittain.</li>
             </ul>
 
