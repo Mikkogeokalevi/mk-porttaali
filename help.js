@@ -11,9 +11,9 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.4</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.15.5</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> Kalenteripäivähakuun <b>päiväväli</b> (Alkaen–Asti, esim. 2.3.–4.5., voi ylittää vuodenvaihteen) yksittäisen päivän lisäksi + <b>vuosirajaus</b> (vuosi alkaen/asti tai kaikki vuodet). "Asti"-kentät seuraavat automaattisesti "alkaa"-valintoja jos niitä ei muuteta.</li>
+                <li><strong>27.9.2026:</strong> Löytöhaut: <b>maasuuodatin</b> kaikkiin hakuihin — rajaa D/T-taulukot ja löytölistat esim. vain Ruotsiin tai Ruotsi+Viroon. Maat listautuvat automaattisesti löytöjen mukaan (Suomi, Ruotsi, Norja, Viro + muut maat).</li>
             </ul>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>27.9.2026:</strong> <b>🔍 Löytöhaut</b> — uusi näkymä Tilastot-osiossa. Kyselyjä GPX-tuotuun löytödataan: <b>Kalenteripäivähaku</b> (mitä löysit tiettynä päivänä kaikkina vuosina + puuttuvat tyypit + D/T-kattavuus), <b>Kuukauden D/T-taulukko</b>, <b>Viikonpäivän D/T-taulukko</b> ja <b>Attribuuttihaku</b>. Kaikissa näytetään klassinen 9×9 D/T-ruudukko ja/tai löytölista. Rakenne on tehty laajennettavaksi — uusia hakuja on helppo lisätä toiveiden mukaan.</li>
@@ -23,6 +23,8 @@ export const renderHelp = (content, app) => {
             <details style="margin-top:15px; margin-bottom:0;">
                 <summary style="font-size:0.9em;">Näytä aiempi historia</summary>
                 <div style="padding:0 14px 14px; font-size:0.9em; color:var(--subtext-color);">
+                    <strong>v2.15.4</strong><br>
+                    - 27.9.2026: Kalenteripäivähakuun päiväväli (alkaa–asti) + vuosirajaus.<br><br>
                     <strong>v2.15.3</strong><br>
                     - 27.9.2026: Löytöhaut: kätkötyyppi- ja attribuuttisuodattimet, D/T-ruudukon tyyppivärit + legenda, Koko D/T-matriisi -haku.<br><br>
                     <strong>v2.15.2</strong><br>

@@ -2,8 +2,8 @@
 // Uusi haku = yksi merkintä FINDS_QUERIES-listaan (input + filters + run); UI ei tarvitse muutoksia.
 // Datan rakenne (gpxImport.js): findsdata/{vuosi} = { finds: { GCxxxx: [tyyppiIdx, 'YYYY-MM-DD', D, T, sijainti, 'attr,attr'] } }
 
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-import { ATTR_FI } from "./gpxImport.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { ATTR_FI, countryNameFi } from "./gpxImport.js";
 
 const TYPE_NAMES = ['Tradi', 'Multi', 'Webcam', 'Mysse', 'Letteri', 'Öörtti', 'Miitti', 'Virtu', 'Cito', 'Wherigo', 'Com.Cel', 'Mega', 'No Loc', 'Juhla'];
 // Tyyppikohtaiset värit (D/T-ruudukko + type-chips)
@@ -32,7 +32,26 @@ const WEEKDAYS_FI = [['Maanantai', 1], ['Tiistai', 2], ['Keskiviikko', 3], ['Tor
 let findsCache = null;
 export async function loadFinds(db, uid) {
   if (findsCache) return findsCache;
-  const snap = await getDocs(collection(db, 'users', uid, 'findsdata'));
+  // loc-kentässä on kunta (FI/SE/NO/EE) tai maanimi (muut maat) — rakennetaan kunta->maa-kartta
+  const [snap, statsSnap, seSnap, noSnap, eeSnap, otherSnap] = await Promise.all([
+    getDocs(collection(db, 'users', uid, 'findsdata')),
+    getDoc(doc(db, 'stats', uid)),
+    getDoc(doc(db, 'users', uid, 'sweden', 'finds')),
+    getDoc(doc(db, 'users', uid, 'norway', 'finds')),
+    getDoc(doc(db, 'users', uid, 'estonia', 'finds')),
+    getDoc(doc(db, 'users', uid, 'other_countries', 'finds'))
+  ]);
+  const locToCountry = {};
+  const addLocs = (data, key, name) => { for (const k of Object.keys(data?.[key] || {})) locToCountry[k] = name; };
+  addLocs(seSnap.data(), 'municipalities', 'Ruotsi');
+  addLocs(noSnap.data(), 'municipalities', 'Norja');
+  addLocs(eeSnap.data(), 'municipalities', 'Viro');
+  addLocs(statsSnap.data(), 'municipalities', 'Suomi');
+  for (const c of Object.keys(otherSnap.data()?.countries || {})) locToCountry[c] = countryNameFi(c);
+  const FI_LOC_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa', 'Suomi']);
+  const resolveCountry = loc =>
+    locToCountry[loc] || (FI_LOC_ALIASES.has(loc) ? 'Suomi' : countryNameFi(loc || 'Tuntematon'));
+
   const finds = [];
   snap.forEach(d => {
     const data = d.data().finds || {};
@@ -40,6 +59,7 @@ export async function loadFinds(db, uid) {
       const [type, day, D, T, loc, attrStr] = r;
       finds.push({
         code, type: +type, day: day || '', D: +D || 0, T: +T || 0, loc: loc || '',
+        country: resolveCountry(loc),
         attrs: attrStr ? String(attrStr).split(',').map(Number).filter(n => n) : []
       });
     }
@@ -50,13 +70,15 @@ export async function loadFinds(db, uid) {
 
 // ---------- Suodatus-apuri (tyyppi + attribuutti -filterit) ----------
 
-function applyFilters(finds, { types = null, attr = null } = {}) {
+function applyFilters(finds, { types = null, attr = null, countries = null } = {}) {
   const typeSet = types && types.length ? new Set(types.map(Number)) : null;
   const attrId = attr ? +attr : null;
-  if (!typeSet && !attrId) return finds;
+  const countrySet = countries && countries.length ? new Set(countries) : null;
+  if (!typeSet && !attrId && !countrySet) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
-    (!attrId || f.attrs.includes(attrId))
+    (!attrId || f.attrs.includes(attrId)) &&
+    (!countrySet || countrySet.has(f.country))
   );
 }
 
@@ -135,7 +157,7 @@ const FINDS_QUERIES = [
     title: 'Kalenteripäivähaku',
     desc: 'Yksittäinen päivä tai päiväväli (pp.kk.–pp.kk., voi ylittää vuodenvaihteen) kaikkina vuosina tai valittuna vuosina — puuttuvat tyypit ja D/T-kattavuus.',
     input: 'day',
-    filters: ['types', 'attr'],
+    filters: ['types', 'attr', 'countries'],
     run(finds, input) {
       const { month, day } = input;
       const m2 = input.month2 || month, d2 = input.day2 || day;
@@ -165,7 +187,7 @@ const FINDS_QUERIES = [
     title: 'Kuukauden D/T-taulukko',
     desc: 'D/T-ruudukko valitulta kuukaudelta kaikkina vuosina.',
     input: 'month',
-    filters: ['types', 'attr'],
+    filters: ['types', 'attr', 'countries'],
     run(finds, input) {
       const { month } = input;
       const mm = String(month).padStart(2, '0');
@@ -182,7 +204,7 @@ const FINDS_QUERIES = [
     title: 'Viikonpäivän D/T-taulukko',
     desc: 'D/T-ruudukko valitulta viikonpäivältä (esim. kaikki lauantai-löydöt).',
     input: 'weekday',
-    filters: ['types', 'attr'],
+    filters: ['types', 'attr', 'countries'],
     run(finds, input) {
       const wd = +input.weekday;
       const hits = applyFilters(finds.filter(f => {
@@ -203,7 +225,7 @@ const FINDS_QUERIES = [
     title: 'Koko D/T-matriisi',
     desc: 'Kaikkien löytöjen D/T-ruudukko — suodata vapaasti tyypeillä ja attribuuteilla.',
     input: null,
-    filters: ['types', 'attr'],
+    filters: ['types', 'attr', 'countries'],
     run(finds, input) {
       const hits = applyFilters(finds, input);
       const mx = dtMatrix(hits);
@@ -218,7 +240,7 @@ const FINDS_QUERIES = [
     title: 'Attribuuttihaku',
     desc: 'Löydöt joilla valittu attribuutti (esim. kiipeily, lumikengät, yökätköily).',
     input: 'attr',
-    filters: ['types'],
+    filters: ['types', 'countries'],
     run(finds, input) {
       const id = +input.attr;
       const hits = applyFilters(finds.filter(f => f.attrs.includes(id)), input);
@@ -266,6 +288,14 @@ function renderInputs(query, inputDiv, finds) {
         `<span class="type-chip fq-type fq-on" data-i="${i}" data-color="${TYPE_COLORS[i]}" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]}; background:${TYPE_COLORS[i]}22; cursor:pointer;">${n}</span>`).join('')}</div>
     </details>`;
   }
+  if (query.filters?.includes('countries')) {
+    const countries = [...new Set(finds.map(f => f.country).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fi'));
+    html += `<details style="margin-top:6px;">
+      <summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Maat (oletuksena kaikki, ${countries.length} maata)</summary>
+      <div class="type-coverage" id="fqCountries" style="margin-top:6px;">${countries.map(c =>
+        `<span class="type-chip fq-country fq-on" data-c="${c}" data-color="#b4befe" style="border-color:#b4befe; color:#b4befe; background:#b4befe22; cursor:pointer;">${c}</span>`).join('')}</div>
+    </details>`;
+  }
   if (query.filters?.includes('attr')) {
     const opts = '<option value="">Kaikki attribuutit</option>' + Object.entries(ATTR_FI).sort((a, b) => a[1].localeCompare(b[1], 'fi'))
       .map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
@@ -283,8 +313,8 @@ function renderInputs(query, inputDiv, finds) {
     m1.onchange = () => { if (!touched) m2.value = m1.value; };
   }
 
-  // Tyyppichipit togglettaviksi
-  inputDiv.querySelectorAll('.fq-type').forEach(ch => {
+  // Tyyppi- ja maachipit togglettaviksi
+  inputDiv.querySelectorAll('.fq-type, .fq-country').forEach(ch => {
     ch.onclick = () => {
       const on = ch.classList.toggle('fq-on');
       ch.style.background = on ? ch.dataset.color + '22' : 'transparent';
@@ -340,6 +370,10 @@ export const renderFindsQueries = async (db, user, content) => {
     const types = typeChips.length
       ? [...typeChips].filter(ch => ch.classList.contains('fq-on')).map(ch => +ch.dataset.i)
       : null;
+    const countryChips = inputDiv.querySelectorAll('.fq-country');
+    const countries = countryChips.length
+      ? [...countryChips].filter(ch => ch.classList.contains('fq-on')).map(ch => ch.dataset.c)
+      : null;
     const input = {
       month: +document.getElementById('fqMonth')?.value || null,
       day: +document.getElementById('fqDay')?.value || null,
@@ -350,7 +384,7 @@ export const renderFindsQueries = async (db, user, content) => {
       weekday: document.getElementById('fqWeekday')?.value ?? null,
       attr: document.getElementById('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: document.getElementById('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
-      types
+      types, countries
     };
     // Yhdistä: attrFilter toimii samana suodattimena kuin attr muissa haussa
     if (input.attrFilter && !input.attr) input.attr = input.attrFilter;
