@@ -1316,14 +1316,22 @@ tr.fq-hidden { display: none; }
 }
 
 /* Vuosikalenteri */
-.fq-cal td.na { background: rgba(255, 255, 255, 0.04); }
-.fq-cal td { min-width: 22px; }
+/* Vuosikalenteri: tiivis staattinen ruudukko — kaikki päiväsolut samankokoisia,
+   numerot eivät rivity eivätkä levennä sarakkeita (kuten geocache.fi:n kuva) */
+.fq-cal { table-layout: fixed; width: 100%; font-size: 8px; }
+.fq-cal td, .fq-cal th {
+  min-width: 0;
+  padding: 1px 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.7;
+}
+.fq-cal td.na { background: rgba(255, 255, 255, 0.04); cursor: default !important; }
 .fq-cal td.today { outline: 2px solid #f38ba8; outline-offset: -2px; }
-/* Vuosikalenteri mahdumaan mobiilinäytölle: tiiviit solut */
-.fq-cal { table-layout: fixed; width: 100%; }
-.fq-cal td, .fq-cal th { min-width: 0; padding: 1px 0; font-size: 0.62em; text-align: center; }
-.fq-cal th:first-child { width: 26px; font-size: 0.7em; }
-.fq-cal td.na { cursor: default !important; }
+.fq-cal td:first-child, .fq-cal th:first-child { width: 24px; font-size: 9px; font-weight: 600; }
+.fq-cal td:last-child, .fq-cal th:last-child { width: 30px; font-weight: 700; }
+@media (min-width: 700px) { .fq-cal { font-size: 10px; } }
 
 /* D/T-ruudun listasuodatuksen ilmoituspalkki */
 .fq-dtfilter {

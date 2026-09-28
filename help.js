@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.4</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.5</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>28.9.2026:</strong> Vuosikalenteri <b>tiivistetty staattiseksi ruudukoksi</b> (kuten geocache.fi) — kaikki solut samankokoisia, mahtuu mobiilinäytölle ilman scrollausta. Eventtien päivät korjattu: tapahtumapäivä otetaan kätkön aikaleimasta, ei login UTC-ajankohdasta (miitit olijat vääriä).</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.4</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>28.9.2026:</strong> <b>Tärkeä löytöpäiväkorjaus</b>: pocket query -tiedostoissa käyttäjän omaa logia ei ole — päiväksi tuli virheellisesti kätkön piilotuspäivä. Nyt päivä jätetään tyhjäksi eikä tallennettuja päiviä ylikirjoiteta; eventeille käytetään tapahtumapäivää. Raportti varoittaa jos tiedosto ei ole My Finds -muotoa. Vuosikalenterin solut klikattavissa — popup listaa päivän kätköt ja suodattaa löytölistan. Tyypittömien löytöjen varoitus + 'Lost and Found Event Cache' -mäppäys.</li>
             </ul>
