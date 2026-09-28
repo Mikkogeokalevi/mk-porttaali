@@ -1102,7 +1102,7 @@ summary:hover { color: var(--accent-color); }
 
 .gen-accordion-caret { font-size: 1.1rem; opacity: 0.7; }
 
-.gen-accordion-panel { display: none; margin-top: 8px; }
+.gen-accordion-panel { display: none; margin-top: 8px; max-height: 300px; overflow-y: auto; }
 .gen-accordion.open .gen-accordion-panel { display: block; }
 
 .gen-accordion-options {
@@ -1270,9 +1270,20 @@ summary:hover { color: var(--accent-color); }
   font-weight: 700;
 }
 .fq-csel-mini .fq-copt { padding: 4px 7px; font-size: 0.78em; min-width: 30px; }
+/* Vaakariville scrollautuva chip-valitsin — säästää pystytilaa mobiilissa */
+.fq-csel.fq-x {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 3px;
+}
+.fq-csel.fq-x .fq-copt { flex: 0 0 auto; }
+.fq-details summary { font-size: 0.8em; color: var(--subtext-color); cursor: pointer; }
+.fq-details { margin-top: 6px; }
 .fq-csel-block { flex-direction: column; }
 .fq-csel-block .fq-copt { text-align: left; padding: 10px 12px; font-size: 0.95em; }
 .fq-grp { margin-top: 8px; }
+.fq-half { flex: 1; min-width: 0; }
 .fq-grp label { font-size: 0.75em; color: var(--subtext-color); display: block; margin-bottom: 3px; }
 
 /* Kaikki/Ei mitään -pikanapit suodatinchippeihin */

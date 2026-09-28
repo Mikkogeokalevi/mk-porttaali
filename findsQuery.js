@@ -174,10 +174,6 @@ function chipSel(id, opts, sel, cls = '') {
 }
 const chipVal = (root, id) => root.querySelector('#' + id)?.dataset.v ?? null;
 const chipVals = (root, id) => { const v = chipVal(root, id); return v ? v.split(',').map(Number).filter(n => !isNaN(n)) : null; };
-function chipSet(box, v) {
-  box.querySelectorAll('.fq-copt').forEach(b => b.classList.toggle('on', b.dataset.v === String(v)));
-  box.dataset.v = v;
-}
 document.addEventListener('click', e => {
   const b = e.target.closest('.fq-copt');
   if (!b) return;
@@ -199,6 +195,76 @@ document.addEventListener('click', e => {
   if (!btn) return;
   btn.parentElement.querySelectorAll('tr.fq-hidden').forEach(r => r.classList.remove('fq-hidden'));
   btn.remove();
+});
+
+// ---------- Accordion-valitsimet (sama malli kuin kuvageneraattorissa) ----------
+// Piilotettu <select> + tyylitelty nappi joka avaa oman option-paneelin.
+const optHtml = (pairs, sel) => pairs.map(([v, l]) =>
+  `<option value="${v}"${String(v) === String(sel) ? ' selected' : ''}>${l}</option>`).join('');
+
+function accField(id, pairs, sel, ph = 'Valitse') {
+  return `<div class="gen-accordion-field">
+    <select id="${id}">${optHtml(pairs, sel)}</select>
+    <div class="gen-accordion" data-select="${id}">
+      <button type="button" class="gen-accordion-toggle"><span class="gen-accordion-label">${ph}</span><span class="gen-accordion-caret">▾</span></button>
+      <div class="gen-accordion-panel"><ul class="gen-accordion-options"></ul></div>
+    </div>
+  </div>`;
+}
+
+// Aseta selectin arvo ohjelmallisesti (päivittää myös accordion-labelin)
+function setSelectVal(sel, v) {
+  sel.value = v;
+  const lbl = sel.closest('.gen-accordion-field')?.querySelector('.gen-accordion-label');
+  const opt = sel.options[sel.selectedIndex];
+  if (lbl && opt) lbl.textContent = opt.textContent;
+}
+
+function wireAccordions(root) {
+  const accs = [...root.querySelectorAll('.gen-accordion')];
+  const closeAll = except => accs.forEach(a => { if (a !== except) a.classList.remove('open'); });
+  accs.forEach(acc => {
+    const select = document.getElementById(acc.dataset.select);
+    if (!select) return;
+    const toggle = acc.querySelector('.gen-accordion-toggle');
+    const label = acc.querySelector('.gen-accordion-label');
+    const list = acc.querySelector('.gen-accordion-options');
+    const syncLabel = () => {
+      const o = select.options[select.selectedIndex];
+      label.textContent = o ? o.textContent : 'Valitse';
+    };
+    toggle.addEventListener('click', () => {
+      if (acc.classList.contains('open')) { acc.classList.remove('open'); return; }
+      closeAll(acc);
+      list.innerHTML = '';
+      [...select.options].forEach(option => {
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'gen-accordion-option';
+        b.dataset.value = option.value;
+        b.textContent = option.textContent;
+        if (option.value === select.value) b.classList.add('active');
+        b.addEventListener('click', () => {
+          select.value = option.value;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          syncLabel();
+          acc.classList.remove('open');
+        });
+        li.appendChild(b);
+        list.appendChild(li);
+      });
+      acc.classList.add('open');
+    });
+    select.addEventListener('change', syncLabel);
+    syncLabel();
+  });
+}
+// Klikkaus accordionin ulkopuolelle sulkee sen
+document.addEventListener('click', e => {
+  document.querySelectorAll('.gen-accordion.open').forEach(a => {
+    if (!a.contains(e.target)) a.classList.remove('open');
+  });
 });
 
 const MONTHS_SHORT = ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes', 'Hei', 'Elo', 'Syy', 'Lok', 'Mar', 'Jou'];
@@ -493,33 +559,41 @@ const FINDS_QUERIES = [
 // ---------- Näkymä ----------
 
 // Attribuuttivalinnat: viralliset englanninkieliset nimet + negatiiviset ("Ei: ...") -vaihtoehdot
-function attrOptions() {
-  const pos = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1]))
-    .map(([id, n]) => `<option value="${id}">${n}</option>`).join('');
-  const neg = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1]))
-    .map(([id, n]) => `<option value="-${id}">Ei: ${n}</option>`).join('');
-  return pos + neg;
+function attrPairs() {
+  const pos = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1])).map(([id, n]) => [id, n]);
+  const neg = Object.entries(ATTR_EN).sort((a, b) => a[1].localeCompare(b[1])).map(([id, n]) => [`-${id}`, `Ei: ${n}`]);
+  return [...pos, ...neg];
 }
 
 function renderInputs(query, inputDiv, finds) {
   let html = `<p style="font-size:0.8em;opacity:0.7;margin:5px 0 0;">${query.desc}</p>`;
   const years = [...new Set(finds.filter(f => f.day.length >= 10).map(f => +f.day.slice(0, 4)))].sort((a, b) => a - b);
   const yrOptsAll = [['', 'Kaikki'], ...years.map(y => [y, y])];
-  const monOpts = MONTHS_SHORT.map((m, i) => [i + 1, m]);
+  const monOpts = MONTHS_FI.map((m, i) => [i + 1, m]);
+  const monShort = MONTHS_SHORT.map((m, i) => [i + 1, m]);
   const dayOpts = Array.from({ length: 31 }, (_, i) => [i + 1, i + 1]);
   if (query.input === 'day') {
-    html += `<div class="fq-grp"><label>Päivä alkaen</label>${chipSel('fqDay', dayOpts, 1, 'fq-mini')}</div>
-      <div class="fq-grp"><label>Kuukausi alkaen</label>${chipSel('fqMonth', monOpts, 1)}</div>
-      <div class="fq-grp"><label>Päivä asti</label>${chipSel('fqDay2', dayOpts, 1, 'fq-mini')}</div>
-      <div class="fq-grp"><label>Kuukausi asti</label>${chipSel('fqMonth2', monOpts, 1)}</div>
-      <div class="fq-grp"><label>Vuosi alkaen</label>${chipSel('fqYearFrom', yrOptsAll, '')}</div>
-      <div class="fq-grp"><label>Vuosi asti</label>${chipSel('fqYearTo', yrOptsAll, '')}</div>`;
+    html += `<div class="gen-accordion-row">
+        <div class="fq-half"><label>Päivä</label>${accField('fqDay', dayOpts, 1)}</div>
+        <div class="fq-half"><label>Kuukausi</label>${accField('fqMonth', monOpts, 1)}</div>
+      </div>
+      <div class="fq-grp"><label>Aikarajaus</label>${accField('fqRangeMode', [['one', 'Vain yksi päivä'], ['range', 'Päiväväli / vuosirajaus']], 'one')}</div>
+      <div id="fqExtra" class="hidden">
+        <div class="gen-accordion-row">
+          <div class="fq-half"><label>Asti: päivä</label>${accField('fqDay2', dayOpts, 1)}</div>
+          <div class="fq-half"><label>Asti: kuukausi</label>${accField('fqMonth2', monOpts, 1)}</div>
+        </div>
+        <div class="gen-accordion-row">
+          <div class="fq-half"><label>Vuosi alkaen</label>${accField('fqYearFrom', yrOptsAll, '')}</div>
+          <div class="fq-half"><label>Vuosi asti</label>${accField('fqYearTo', yrOptsAll, '')}</div>
+        </div>
+      </div>`;
   } else if (query.input === 'month') {
-    html += `<div class="fq-grp"><label>Kuukausi</label>${chipSel('fqMonth', monOpts, 1)}</div>`;
+    html += `<div class="fq-grp"><label>Kuukausi</label>${accField('fqMonth', monOpts, 1)}</div>`;
   } else if (query.input === 'weekday') {
-    html += `<div class="fq-grp"><label>Viikonpäivä</label>${chipSel('fqWeekday', WD_OPTS, 1)}</div>`;
+    html += `<div class="fq-grp"><label>Viikonpäivä</label>${accField('fqWeekday', WEEKDAYS_FI.map(([n, v]) => [v, n]), 1)}</div>`;
   } else if (query.input === 'attr') {
-    html += `<label>Attribuutti:</label><select id="fqAttr">${attrOptions()}</select>`;
+    html += `<div class="fq-grp"><label>Attribuutti</label>${accField('fqAttr', attrPairs(), '', '— Valitse attribuutti —')}</div>`;
   } else if (query.input === 'loc') {
     const counts = {};
     for (const f of finds) if (f.loc) counts[f.loc] = (counts[f.loc] || 0) + 1;
@@ -529,12 +603,14 @@ function renderInputs(query, inputDiv, finds) {
       <datalist id="fqLocList">${locs.map(([l]) => `<option value="${l}">`).join('')}</datalist>
       <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
   } else if (query.input === 'year') {
-    html += `<div class="fq-grp"><label>Vuosi</label>${chipSel('fqYear', years.map(y => [y, y]), years.at(-1) || '')}</div>`;
+    html += `<div class="fq-grp"><label>Vuosi</label>${accField('fqYear', years.map(y => [y, y]), years.at(-1) || '')}</div>`;
   } else if (query.input === 'custom') {
-    html += `<div class="fq-grp"><label>Kuukaudet (poista rajaamatta)</label>${chipSel('fqMonths', monOpts, '*', 'fq-multi')}</div>
-      <div class="fq-grp"><label>Viikonpäivät</label>${chipSel('fqWeekdays', WD_OPTS, '*', 'fq-multi')}</div>
-      <div class="fq-grp"><label>Vuosi alkaen</label>${chipSel('fqYearFrom', yrOptsAll, '')}</div>
-      <div class="fq-grp"><label>Vuosi asti</label>${chipSel('fqYearTo', yrOptsAll, '')}</div>`;
+    html += `<div class="fq-grp"><label>Kuukaudet (poista rajaamatta)</label>${chipSel('fqMonths', monShort, '*', 'fq-multi fq-x')}</div>
+      <div class="fq-grp"><label>Viikonpäivät</label>${chipSel('fqWeekdays', WD_OPTS, '*', 'fq-multi fq-x')}</div>
+      <div class="gen-accordion-row">
+        <div class="fq-half"><label>Vuosi alkaen</label>${accField('fqYearFrom', yrOptsAll, '')}</div>
+        <div class="fq-half"><label>Vuosi asti</label>${accField('fqYearTo', yrOptsAll, '')}</div>
+      </div>`;
   }
 
   // Yhteiset lisäsuodattimet (filters-taulukossa luetellut)
@@ -557,18 +633,26 @@ function renderInputs(query, inputDiv, finds) {
     </details>`;
   }
   if (query.filters?.includes('attr')) {
-    html += `<label style="font-size:0.85em;">Attribuuttisuodatin:</label><select id="fqAttrFilter" style="margin-bottom:0;"><option value="">Kaikki attribuutit</option>${attrOptions()}</select>`;
+    html += `<div class="fq-grp"><label>Attribuuttisuodatin</label>${accField('fqAttrFilter', [['', 'Kaikki attribuutit'], ...attrPairs()], '')}</div>`;
   }
   inputDiv.innerHTML = html;
+  wireAccordions(inputDiv);
 
-  // Kalenteripäivähaku: "asti"-chipt seuraavat "alkaa"-chippejä kunnes käyttäjä muuttaa niitä
+  // Päiväväli/vuosirajaus -lohko aukeaa Aikarajaus-valinnasta (kuten genTimeSelect generaattorissa)
+  const rangeSel = inputDiv.querySelector('#fqRangeMode');
+  const extra = inputDiv.querySelector('#fqExtra');
+  if (rangeSel && extra) {
+    rangeSel.addEventListener('change', () => extra.classList.toggle('hidden', rangeSel.value !== 'range'));
+  }
+
+  // Kalenteripäivähaku: "asti"-kentät seuraavat "alkaa"-kenttiä kunnes käyttäjä muuttaa niitä
   const d1 = inputDiv.querySelector('#fqDay'), m1 = inputDiv.querySelector('#fqMonth');
   const d2 = inputDiv.querySelector('#fqDay2'), m2 = inputDiv.querySelector('#fqMonth2');
   if (d1 && d2) {
     let touched = false;
-    [d2, m2].forEach(s => s.addEventListener('fq-change', () => touched = true));
-    d1.addEventListener('fq-change', () => { if (!touched) chipSet(d2, d1.dataset.v); });
-    m1.addEventListener('fq-change', () => { if (!touched) chipSet(m2, m1.dataset.v); });
+    [d2, m2].forEach(s => s.addEventListener('change', () => touched = true));
+    d1.addEventListener('change', () => { if (!touched) setSelectVal(d2, d1.value); });
+    m1.addEventListener('change', () => { if (!touched) setSelectVal(m2, m1.value); });
   }
 
   // Tyyppi- ja maachipit togglettaviksi + Kaikki/Ei mitään -napit
@@ -615,7 +699,7 @@ export const renderFindsQueries = async (db, user, content) => {
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       <label>Haku:</label>
-      ${chipSel('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0, 'fq-csel-block')}
+      ${accField('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0)}
       <div id="fqInput" style="margin-top:8px;"></div>
       <button class="btn btn-primary" id="fqRun" style="margin-top:6px;">Hae</button>
       <div id="fqResult" style="margin-top:15px;"></div>
@@ -625,12 +709,13 @@ export const renderFindsQueries = async (db, user, content) => {
   const inputDiv = document.getElementById('fqInput');
   const resultDiv = document.getElementById('fqResult');
 
-  querySel.addEventListener('fq-change', () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.dataset.v], inputDiv, finds); resultDiv.innerHTML = ''; });
+  wireAccordions(content);
+  querySel.addEventListener('change', () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; });
   renderInputs(FINDS_QUERIES[0], inputDiv, finds);
 
   document.getElementById('fqRun').onclick = () => {
     closeDtPopup();
-    const q = FINDS_QUERIES[+querySel.dataset.v];
+    const q = FINDS_QUERIES[+querySel.value];
     // Valitut tyyppisuodattimet (jos näkyvissä)
     const typeChips = inputDiv.querySelectorAll('.fq-type');
     const types = typeChips.length
@@ -640,20 +725,24 @@ export const renderFindsQueries = async (db, user, content) => {
     const countries = countryChips.length
       ? [...countryChips].filter(ch => ch.classList.contains('fq-on')).map(ch => ch.dataset.c)
       : null;
+    const sel = id => document.getElementById(id);
+    const gv = id => +sel(id)?.value || null;
+    // 'day'-haun asti/vuosikentät luetaan vain kun "Päiväväli / vuosirajaus" on valittuna
+    const rangeOn = sel('fqRangeMode') ? sel('fqRangeMode').value === 'range' : true;
     const input = {
-      month: +chipVal(inputDiv, 'fqMonth') || null,
-      day: +chipVal(inputDiv, 'fqDay') || null,
-      month2: +chipVal(inputDiv, 'fqMonth2') || null,
-      day2: +chipVal(inputDiv, 'fqDay2') || null,
-      yearFrom: +chipVal(inputDiv, 'fqYearFrom') || null,
-      yearTo: +chipVal(inputDiv, 'fqYearTo') || null,
-      year: +chipVal(inputDiv, 'fqYear') || null,
-      weekday: chipVal(inputDiv, 'fqWeekday'),
+      month: gv('fqMonth'),
+      day: gv('fqDay'),
+      month2: rangeOn ? gv('fqMonth2') : null,
+      day2: rangeOn ? gv('fqDay2') : null,
+      yearFrom: rangeOn ? gv('fqYearFrom') : null,
+      yearTo: rangeOn ? gv('fqYearTo') : null,
+      year: gv('fqYear'),
+      weekday: sel('fqWeekday')?.value ?? null,
       months: chipVals(inputDiv, 'fqMonths'),
       weekdays: chipVals(inputDiv, 'fqWeekdays'),
-      loc: document.getElementById('fqLoc')?.value || null,
-      attr: document.getElementById('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
-      attrFilter: document.getElementById('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
+      loc: sel('fqLoc')?.value || null,
+      attr: sel('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
+      attrFilter: sel('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
       types, countries
     };
     // Yhdistä: attrFilter toimii samana suodattimena kuin attr muissa haussa

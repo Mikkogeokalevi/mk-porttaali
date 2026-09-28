@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.0</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.1</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>28.9.2026:</strong> Löytöhaut-valitsimet uusittu <b>samaan tyyliin kuin kuvageneraattori</b>: tyylitellyt accordion-valikot natiivien tilalle, päiväväli + vuosirajaus aukeaa "Aikarajaus"-valinnasta (kuten generaattorissa).</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.0</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>28.9.2026:</strong> Löytöhaut-uudistus: <b>hakuvalitsimet nyt mobiiliystävällisinä nappuloita</b> (ei enää puhelimen omaa valikkoa). Uudet haut: <b>Paikkakuntahaku</b> (kunnan löydöt + D/T), <b>Vuosikalenteri</b> (kk x päivä -ruudukko geocache.fi-tyyliin) ja <b>Monihaku</b> (kaikki ehdot vapaasti + löytöpäiväjakauma). Tyyppi/maa-suodattimiin "Kaikki / Ei mitään" -napit. Löytölistaan "Näytä kaikki" -nappi — ei enää 300 löydön kattoa.</li>
             </ul>
