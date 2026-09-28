@@ -390,13 +390,13 @@ function matchInFeatureSet(featureSet, lat, lon) {
   return null;
 }
 
-function nearestInFeatureSet(featureSet, lat, lon, thresholdM = 10000) {
+function nearestInFeatureSet(featureSet, lat, lon, thresholdM = 2000) {
   let best = null, bestD = thresholdM;
   for (const item of featureSet) {
     const d = minDistanceToFeature(lat, lon, item.feature);
     if (d < bestD) { bestD = d; best = item.name; }
   }
-  return best;
+  return best ? { name: best, d: Math.round(bestD) } : null;
 }
 
 async function fetchFirstJson(urls) {
@@ -510,15 +510,21 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   const report = {
     totalFound: points.length,
     finland: { municipalities: 0, newMunicipalities: 0, replaced: fiReplace },
-    countries: {}, other: {}, duplicates: 0, nearest: 0, unmatched: 0, unmatchedList: [], unknownTypes: [],
+    countries: {}, other: {}, duplicates: 0, nearest: 0, nearestList: [], unmatched: 0, unmatchedList: [], unknownTypes: [],
     noOwnLog: 0, dateKept: 0
   };
-  // Kirjoita findsdata-merkintä. Päivättömät eivät ylikirjoita jo tallennettua päivää.
+  // Kirjoita findsdata-merkintä. Jos tiedostosta puuttuu päivä (ei omaa logia),
+  // säilytetään aiemmin tallennettu päivä mutta muut kentät (tyyppi/loc/attr)
+  // päivitetään — väärä kunta ei jää voimaan.
   const queueFind = (code, rec) => {
-    if (!rec[1] && existingDays[code]) { report.dateKept++; return; }
+    if (!rec[1] && existingDays[code]) { rec[1] = existingDays[code]; report.dateKept++; }
     const y = (rec[1] || '').slice(0, 4) || 'unknown';
     (findsByYear[y] = findsByYear[y] || {})[code] = rec;
   };
+  // Tämän ajon kunta/maa-määritys per koodi — jälkikäteen poistetaan koodit
+  // vanhoista sijainneista jos ne ovat siirtyneet (esim. kuntarajatarkennus).
+  const codeLoc = {};  // code -> 'fi:Lahti' | 'co:Sweden:Luleå' | 'ot:Latvia'
+  const codeType = {}; // code -> typeIdx (tyyppilaskurien korjailua varten)
 
   onStatus(`Osumatellaan ${points.length} pistettä kuntiin...`);
   for (let i = 0; i < points.length; i++) {
@@ -544,7 +550,17 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       const targetSet = isFinland ? fiSet : COUNTRY_TO_SET[country];
       if (targetSet && targetSet.length) {
         loc = matchInFeatureSet(targetSet, p.lat, p.lon);
-        if (!loc) { loc = nearestInFeatureSet(targetSet, p.lat, p.lon, 10000); if (loc) report.nearest++; }
+        if (!loc) {
+          // Vain pieni rajavirhe sallitaan (2 km) — 10 km veti naapurikuntien
+          // kätköjä väärälle kunnalle (esim. Hollola->Lahti).
+          const near = nearestInFeatureSet(targetSet, p.lat, p.lon, 2000);
+          if (near) {
+            loc = near.name;
+            report.nearest++;
+            if (report.nearestList.length < 200)
+              report.nearestList.push({ code: p.code, kunta: near.name, d: near.d });
+          }
+        }
         if (!loc) {
           // Maa tunnistettu mutta kunta ei osu -> jää maatason löydöksi ("muut maat")
           report.unmatched++;
@@ -558,7 +574,9 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       }
     }
 
+    codeType[p.code] = typeIdx;
     if (bucket === 'finland') {
+      codeLoc[p.code] = 'fi:' + loc;
       const entry = fi[loc] = ensureEntryShape(fi[loc]);
       if (!report.finland.seen) report.finland.seen = new Set();
       if (!entry.ids.includes(p.code)) {
@@ -570,6 +588,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       // findsdata kirjataan aina (myös duplikaatit) — täydentää mahdolliset aiemmin puuttuneet kirjaukset
       queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
     } else if (bucket === 'foreign') {
+      codeLoc[p.code] = 'co:' + country + ':' + loc;
       const docData = countryDocs[country];
       const entry = docData[loc] = ensureEntryShape(docData[loc]);
       if (addFindTo(entry, p.code, typeIdx)) {
@@ -579,6 +598,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     } else {
       // Muut maat
       const cname = country || 'Tuntematon';
+      codeLoc[p.code] = 'ot:' + cname;
       const entry = otherData[cname] = ensureEntryShape(otherData[cname]);
       if (addFindTo(entry, p.code, typeIdx)) {
         report.other[cname] = (report.other[cname] || 0) + 1;
@@ -586,6 +606,32 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')]);
     }
   }
+
+  // Siivous: kätkö voi olla vain yhdessä sijainnissa. Jos kunta/maa-määritys
+  // muuttui (esim. rajatarkennus tai käsin tehty korjaus), poistetaan koodi
+  // vanhasta paikasta — muuten sama kätkö laskettaisiin kahteen kuntaan.
+  const decType = (entry, code) => {
+    const t = codeType[code];
+    if (t >= 0 && t < entry.s.length && entry.s[t] > 0) entry.s[t]--;
+  };
+  const cleanIds = (map, keyOf) => {
+    for (const [k, e] of Object.entries(map)) {
+      if (!e || !Array.isArray(e.ids)) continue;
+      const target = keyOf(k);
+      const removed = e.ids.filter(c => codeLoc[c] && codeLoc[c] !== target);
+      removed.forEach(c => decType(e, c));
+      e.ids = e.ids.filter(c => !codeLoc[c] || codeLoc[c] === target);
+    }
+  };
+  cleanIds(fi, k => 'fi:' + k);
+  for (const [country, docData] of Object.entries(countryDocs))
+    cleanIds(docData, k => 'co:' + country + ':' + k);
+  cleanIds(otherData, k => 'ot:' + k);
+  // Poista kokonaan tyhjentyneet merkinnät
+  for (const [k, e] of Object.entries(fi)) if (!e.ids.length) delete fi[k];
+  for (const docData of Object.values(countryDocs))
+    for (const [k, e] of Object.entries(docData)) if (!e.ids.length) delete docData[k];
+  for (const [k, e] of Object.entries(otherData)) if (!e.ids.length) delete otherData[k];
 
   report.finland.municipalities = Object.keys(fi).length;
   report.finland.newMunicipalities = report.finland.seen ? report.finland.seen.size : 0;

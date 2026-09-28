@@ -355,7 +355,11 @@ export const renderSettingsView = (content, db, user, app) => {
                         <p style="margin:10px 0 0; font-size:0.9em;">📍 ${fiInfo}</p>
                         ${countryLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌍 ${countryLines.join(' • ')}</p>` : ''}
                         ${otherLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌐 Muut maat: ${otherLines.join(' • ')}</p>` : ''}
-                        ${report.nearest ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">${report.nearest} kätköä oli kuntarajan ulkopuolella (saari/reunavesi) — merkittiin lähimpään.</p>` : ''}
+                        ${report.nearest ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">${report.nearest} kätköä oli kuntarajan ulkopuolella (max 2 km) — merkittiin lähimpään.${report.nearestList && report.nearestList.length ? `
+                            <details style="margin-top:4px;"><summary style="cursor:pointer;">Näytä ohjatut (${report.nearestList.length})</summary>
+                            <ul style="margin:4px 0 0; padding-left:20px; font-size:0.8em; line-height:1.7;">
+                                ${report.nearestList.map(n => `<li><strong>${n.code}</strong> → ${n.kunta} (${n.d} m)</li>`).join('')}
+                            </ul></details>` : ''}</p>` : ''}
                         ${report.noOwnLog ? `<p style="margin:5px 0 0; font-size:0.85em; color:#f9e2af;">⚠️ ${report.noOwnLog} löydöltä puuttui oma lokisi tiedostosta — löytöpäivät jätettiin tyhjäksi eikä vanhoja päiviä korvattu (tiedosto ei ole "My Finds" -muotoa, vaan sisältää vain viimeisimmät logit). ${report.dateKept ? `${report.dateKept} aiemmin tallennettua päivää säilytettiin. ` : ''}Oikeat löytöpäivät saat lataamalla <b>My Finds</b> -kyselyn geocaching.comista (Pocket Queries → My Finds) ja tuomalla sen.</p>` : ''}
                         ${report.unmatchedList && report.unmatchedList.length ? `
                             <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Kuntiin osumattomat (maa tunnettu, kunta ei löytynyt):</p>

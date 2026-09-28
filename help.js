@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div class="panel panel-success" style="margin-bottom:30px;">
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.6</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>28.9.2026:</strong> <b>Löytöpäivät Pacific Timeen</b>: GPX:n lokipäivämäärät ovat UTC-aikaleimoja — geocaching.com/geocache.fi näyttävät ne PT-vyöhykkeellä (Seattle). Kirjaukset aamuyöstä/lauantai-illoista siirtyivät aiemmin väärälle päivälle; nyt kalenterit täsmäävät. D/T-ruudukon legenda näyttää kaikki esiintyvät tyypit. Paikkakunta-hakuun vuosikalenteri.</li>
+                <li><strong>28.9.2026:</strong> <b>Löytöpäivät Pacific Timeen</b>: GPX:n lokipäivämäärät ovat UTC-aikaleimoja — geocaching.com/geocache.fi näyttävät ne PT-vyöhykkeellä (Seattle). <b>Kuntamääritys korjattu</b>: lähimmän kunnan "napautus" oli 10 km (naapurikunnan kätköjä lipsui väärälle) → nyt 2 km + raportti listaa ohjatut; koodi poistetaan vanhasta sijainnista kun se siirtyy toiseen kuntaan/maahan (aiemmin saattoi olla molemmissa). D/T-ruudukon legenda näyttää kaikki esiintyvät tyypit. Paikkakunta-hakuun vuosikalenteri.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.5</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
