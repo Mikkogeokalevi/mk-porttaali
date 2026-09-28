@@ -255,12 +255,13 @@ export function parseGpxPoints(text, nickname = '') {
     }
     let day;
     if (isEvent) {
-      // Eventin päivä = tapahtumapäivä: yleisin attend-login päivä (tarkin jos
-      // muita logeja mukana) > wpt <time> (PQ:ssa = tapahtumapäivä; My Findsissä
-      // joko tapahtumapäivä tai oma löytöpäivä — molemmat pätevät) > oma logi.
-      // Oma Attended voi olla kirjattu väärälle päivälle → ei ensisijainen.
+      // Eventin päivä = TAPAHTUMAPÄIVÄ. <wpt><time> on eventeille tapahtuman
+      // alkamisaika (todistettu: 2020-01-08T18:30 = miitin alkaa 8.1 klo 18:30).
+      // groundspeak:date on UTC-aikaleima — suomalainen iltakirjaus voi olla jo
+      // seuraavaa päivää → ei käytetä ensisijaisena. Attend-login mode ja
+      // oma logi ovat varalla jos <time> puuttuisi.
       const ed = Object.keys(eventDates);
-      day = ed.sort((a, b) => eventDates[b] - eventDates[a] || (a < b ? -1 : 1))[0] || wptTime || ownFind || ownOther;
+      day = wptTime || ed.sort((a, b) => eventDates[b] - eventDates[a] || (a < b ? -1 : 1))[0] || ownFind || ownOther;
     } else {
       day = ownFind || ownOther;
     }
