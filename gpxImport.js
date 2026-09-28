@@ -222,21 +222,25 @@ export function parseGpxPoints(text, nickname = '') {
       attrs.push(am[2] === '1' ? id : -id);
     }
 
-    // Löytöpäivä = käyttäjän OMA "Found it"/"Attended"-login päivä (wpt <time> on piilotuspäivä!)
+    // Löytöpäivä = käyttäjän OMA login päivä. Joissain GPX-tiedostoissa (erityisesti
+    // eventit) logit ovat "Unknown"-tyyppisiä, joten omalla löytäjällä hyväksytään
+    // mikä tahansa logityyppi — wpt on joka tapauksessa merkitty löydetyksi (<sym>Found</sym>).
+    // Järjestys: oma logi > wpt <time> (My Finds -GPX:ssä = oma löytöpäivä) > vieraan löytölogi.
+    const wptTime = extractFirst(block, /<time>([^<]*)<\/time>/).slice(0, 10);
     let findDate = '';
+    let foreignDate = '';
     const logRe = /<groundspeak:log[^>]*>([\s\S]*?)<\/groundspeak:log>/g;
     let lm;
     while ((lm = logRe.exec(block))) {
       const log = lm[1];
-      const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
-      if (!/Found it|Attended|Webcam Photo Taken/i.test(logType)) continue;
       const finder = extractFirst(log, /<groundspeak:finder[^>]*>([^<]*)<\/groundspeak:finder>/);
       const logDate = extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/).slice(0, 10);
       if (nickLower && finder.toLowerCase() === nickLower) { findDate = logDate; break; }
-      if (!findDate) findDate = logDate; // varalla: ensimmäinen found-logi
+      const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
+      if (!foreignDate && /Found it|Attended|Webcam Photo Taken/i.test(logType)) foreignDate = logDate;
     }
 
-    points.push({ lat, lon, code, time: findDate, country, type, difficulty, terrain, attrs });
+    points.push({ lat, lon, code, time: findDate || wptTime || foreignDate, country, type, difficulty, terrain, attrs });
   }
   return points;
 }
@@ -564,6 +568,29 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
 
   // Yksityiskohtaiset löydöt tallennetaan vuosittain -> skaalautuu 50 000+ löytöön
   // (yksi dokumentti = max 1 Mt; 20k löytöä olisi jo ~1.5 Mt yhtenä dokkuna)
+  // Ensin siivous: jos löydön vuosi on korjaantunut (esim. aiemmin päivätön ->
+  // 'unknown', tai vieraan login päivästä väärälle vuodelle), poistetaan vanha
+  // merkintä väärältä vuosidokumentilta ettei löytö esiinny kahtena päivänä.
+  const codeYear = {};
+  for (const [y, fy] of Object.entries(findsByYear))
+    for (const code of Object.keys(fy)) codeYear[code] = y;
+  try {
+    const allFds = await getDocs(collection(db, 'users', uid, 'findsdata'));
+    for (const d of allFds.docs) {
+      const oldFinds = d.data().finds || {};
+      const cleaned = {};
+      let dirty = false;
+      for (const [code, rec] of Object.entries(oldFinds)) {
+        if (codeYear[code] && codeYear[code] !== d.id) dirty = true;
+        else cleaned[code] = rec;
+      }
+      if (dirty) {
+        onStatus(`Siivotaan findsdata/${d.id}...`);
+        await setDoc(doc(db, 'users', uid, 'findsdata', d.id), { finds: cleaned, updatedAt: now });
+      }
+    }
+  } catch (e) { console.warn('findsdata-siivous epäonnistui:', e); }
+
   for (const [year, yearFinds] of Object.entries(findsByYear)) {
     const snap = await getDoc(doc(db, 'users', uid, 'findsdata', year));
     const merged = snap.exists() ? { ...(snap.data().finds || {}), ...yearFinds } : yearFinds;

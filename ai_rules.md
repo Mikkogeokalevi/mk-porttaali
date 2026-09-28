@@ -83,6 +83,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **28.9.2026**: Versio 2.18.2: gpxImport löytöpäiväkorjaus — oma logi hyväksytään kaikilla logityypeillä ('Unknown'-tyyppiset event-logit jäivät aiemmin päivättömiksi); fallback wpt <time> (My Finds = löytöpäivä) > vieras found-logi. Importissa findsdata-siivous: koodi poistetaan vanhalta vuosidokkarilta kun vuosi korjaantuu (ei duplikaatteja kalenteriin).
 - **28.9.2026**: Versio 2.18.1: Löytöhaut siirtyi generaattorin gen-accordion-malliin — accField()/wireAccordions() findsQuery.js:ssä (piilotettu select + option-paneeli); chipit vain fq-multi-monivalinnoissa. HUOM: käyttäjä hylkäsi chip-pohjaisen UI:n (liian sekava) — valitsimet aina accordion-mallia.
 - **28.9.2026**: Versio 2.18.0: Uudet haut: kunta (input 'loc' + datalist), year-cal (input 'year'), custom (input 'custom' + fq-multi-chipit). Renderöijät: yearCalendar (kk x pv, sinisävy), dayDist. findsList: tr.fq-hidden + .fq-showall (delegoitu). Suodatinten .fq-minisel Kaikki/Ei mitään (kytketty renderInputs:issa).
 - **27.9.2026**: Versio 2.17.2: D/T-ruudun klikkaus suodattaa löytölistan (td data-dv/data-tv → rivien data-d/data-t vertailu); .fq-dtfilter-ilmoitus + .fq-dt-reset "Näytä kaikki".
