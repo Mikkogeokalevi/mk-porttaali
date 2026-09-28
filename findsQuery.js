@@ -151,15 +151,102 @@ function typeCoverage(finds) {
 // yhdellä delegoidulla kuuntelijalla (alla), joten lista toimii kaikissa näkymissä.
 export function findsList(finds, limit = 300) {
   const sorted = [...finds].sort((a, b) => (a.day < b.day ? 1 : -1));
-  const rows = sorted.slice(0, limit).map(f =>
-    `<tr data-code="${f.code}" data-type="${f.type}" data-day="${f.day}" data-d="${f.D || 0}" data-t="${f.T || 0}" data-loc="${f.loc || ''}">` +
+  const rows = sorted.map((f, i) =>
+    `<tr${i >= limit ? ' class="fq-hidden"' : ''} data-code="${f.code}" data-type="${f.type}" data-day="${f.day}" data-d="${f.D || 0}" data-t="${f.T || 0}" data-loc="${f.loc || ''}">` +
     `<td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td>` +
     `<td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td>` +
     `<td>${f.day || '—'}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
   const th = (k, label) => `<th data-k="${k}" data-label="${label}" title="Järjestä">${label}</th>`;
   return `<div class="fq-scroll"><table class="finds-table"><thead><tr>${th('code', 'Koodi')}${th('type', 'Tyyppi')}${th('day', 'Pvm')}${th('d', 'D')}${th('t', 'T')}${th('loc', 'Sijainti')}</tr></thead><tbody>${rows}</tbody></table></div>` +
-    (sorted.length > limit ? `<p style="font-size:0.8em;opacity:0.7;">Näytetään ${limit} / ${sorted.length} löytöä (uusimmat ensin).</p>` : '');
+    (sorted.length > limit ? `<button type="button" class="fq-showall">Näytä kaikki ${sorted.length} löytöä</button>` : '');
+}
+
+// ---------- Chip-valitsimet (mobiiliystävällinen korvike natiiville selectille) ----------
+// chipSel() tuottaa napikkaita valintalaatikoita; delegated klikkikuuntelija alla.
+function chipSel(id, opts, sel, cls = '') {
+  const multi = cls.includes('fq-multi');
+  const allOn = multi && sel === '*';
+  const v = allOn ? opts.map(o => o[0]).join(',') : sel;
+  return `<div class="fq-csel ${cls}" id="${id}" data-v="${v}"${multi ? ' data-multi' : ''}>` +
+    opts.map(([ov, l]) => `<button type="button" class="fq-copt${(allOn || String(ov) === String(sel)) ? ' on' : ''}" data-v="${ov}">${l}</button>`).join('') +
+    `</div>`;
+}
+const chipVal = (root, id) => root.querySelector('#' + id)?.dataset.v ?? null;
+const chipVals = (root, id) => { const v = chipVal(root, id); return v ? v.split(',').map(Number).filter(n => !isNaN(n)) : null; };
+function chipSet(box, v) {
+  box.querySelectorAll('.fq-copt').forEach(b => b.classList.toggle('on', b.dataset.v === String(v)));
+  box.dataset.v = v;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.fq-copt');
+  if (!b) return;
+  const box = b.closest('.fq-csel');
+  if (box.dataset.multi != null) {
+    b.classList.toggle('on');
+    box.dataset.v = [...box.querySelectorAll('.fq-copt.on')].map(x => x.dataset.v).join(',');
+  } else {
+    box.querySelectorAll('.fq-copt.on').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    box.dataset.v = b.dataset.v;
+  }
+  box.dispatchEvent(new CustomEvent('fq-change', { bubbles: true }));
+});
+
+// Löytölistan "Näytä kaikki" -nappi (limitin yli menevät rivit ovat piilossa)
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.fq-showall');
+  if (!btn) return;
+  btn.parentElement.querySelectorAll('tr.fq-hidden').forEach(r => r.classList.remove('fq-hidden'));
+  btn.remove();
+});
+
+const MONTHS_SHORT = ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes', 'Hei', 'Elo', 'Syy', 'Lok', 'Mar', 'Jou'];
+const WD_OPTS = [[1, 'Ma'], [2, 'Ti'], [3, 'Ke'], [4, 'To'], [5, 'Pe'], [6, 'La'], [0, 'Su']];
+function wdOf(day) { const [y, m, d] = day.split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
+
+// Vuosikalenteri geocache.fi-tyyliin: kuukaudet x päivät, solun sinisävy = löytömäärä
+function yearCalendar(finds) {
+  const cnt = {};
+  for (const f of finds) if (f.day.length >= 10) { const k = f.day.slice(5); cnt[k] = (cnt[k] || 0) + 1; }
+  const max = Math.max(0, ...Object.values(cnt));
+  const MLEN = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const bg = n => `rgba(137,180,250,${(0.15 + 0.85 * n / (max || 1)).toFixed(2)})`;
+  const head = `<tr><th></th>${Array.from({ length: 31 }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>yht</th></tr>`;
+  const colT = Array(31).fill(0);
+  let total = 0;
+  const rows = MONTHS_SHORT.map((mn, mi) => {
+    let rt = 0;
+    const tds = Array.from({ length: 31 }, (_, di) => {
+      const d = di + 1;
+      if (d > MLEN[mi]) return '<td class="na"></td>';
+      const n = cnt[`${String(mi + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`] || 0;
+      rt += n; colT[di] += n; total += n;
+      return n ? `<td style="background:${bg(n)}; color:#111;">${n}</td>` : '<td></td>';
+    }).join('');
+    return `<tr><th>${mn}</th>${tds}<th>${rt || ''}</th></tr>`;
+  }).join('');
+  const tot = `<tr><th>yht</th>${colT.map(n => `<th>${n || ''}</th>`).join('')}<th style="color:var(--c-green);">${total || ''}</th></tr>`;
+  const wd = [0, 0, 0, 0, 0, 0, 0];
+  for (const f of finds) if (f.day.length >= 10) wd[wdOf(f.day)]++;
+  const wdHtml = `<div class="type-coverage" style="margin-top:8px;">` +
+    WD_OPTS.map(([i, l]) => `<span class="type-chip" style="border-color:#89b4fa; color:#89b4fa;">${l} ${wd[i]}</span>`).join('') + `</div>`;
+  return `<div class="fq-scroll"><table class="dt-matrix fq-cal">${head}${rows}${tot}</table></div>${wdHtml}`;
+}
+
+// Löytöpäiväjakauma: montako päivää on 1,2,3... löytöä + eniten löytöjä sisältäneet päivät
+function dayDist(finds) {
+  const perDay = {};
+  for (const f of finds) if (f.day.length >= 10) perDay[f.day] = (perDay[f.day] || 0) + 1;
+  const dist = {};
+  for (const n of Object.values(perDay)) dist[n] = (dist[n] || 0) + 1;
+  const chips = Object.entries(dist).sort((a, b) => +a[0] - +b[0])
+    .map(([n, days]) => `<span class="type-chip" style="border-color:#a6e3a1; color:#a6e3a1;">${n} löytöä · ${days} pvä</span>`).join('');
+  const fmt = day => `${+day.slice(8)}.${+day.slice(5, 7)}.${day.slice(0, 4)}`;
+  const top = Object.entries(perDay).sort((a, b) => b[1] - a[1]).slice(0, 15)
+    .map(([day, n]) => `<tr><td>${fmt(day)}</td><td>${n} löytöä</td></tr>`).join('');
+  return `<div class="type-coverage">${chips}</div>
+    <div class="fq-scroll" style="margin-top:8px;"><table class="finds-table"><thead><tr><th>Päivä</th><th>Löytömäärä</th></tr></thead><tbody>${top}</tbody></table></div>`;
 }
 
 // ---------- D/T-ruudukon mobiili-infopopup + listasuodatus ----------
@@ -171,6 +258,7 @@ function closeDtPopup() { if (dtPopup) { dtPopup.remove(); dtPopup = null; } }
 function dtFilterList(res, dv, tv) {
   let shown = 0;
   res.querySelectorAll('.finds-table tbody tr').forEach(r => {
+    r.classList.remove('fq-hidden'); // ruutusuodatus ohittaa näyttörajan
     const ok = parseFloat(r.dataset.d) === parseFloat(dv) && parseFloat(r.dataset.t) === parseFloat(tv);
     r.style.display = ok ? '' : 'none';
     if (ok) shown++;
@@ -342,6 +430,63 @@ const FINDS_QUERIES = [
         { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tällä attribuutilla.</p>' }
       ];
     }
+  },
+  {
+    id: 'kunta',
+    title: 'Paikkakuntahaku',
+    desc: 'Mitä kätköjä olen hakenut tietystä kunnasta tai paikkakunnasta — kirjoita nimi ja valitse listasta.',
+    input: 'loc',
+    filters: ['types', 'attr'],
+    run(finds, input) {
+      const loc = (input.loc || '').trim().toLowerCase();
+      const hits = applyFilters(finds.filter(f => (f.loc || '').toLowerCase() === loc), input);
+      const cov = typeCoverage(hits);
+      const mx = dtMatrix(hits);
+      return [
+        { title: `${input.loc || '—'}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
+        { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä — tarkista nimi tai valitse se listasta.</p>' }
+      ];
+    }
+  },
+  {
+    id: 'year-cal',
+    title: 'Vuosikalenteri',
+    desc: 'Kalenteriruudukko valitulta vuodelta: kuukaudet x päivät, värin voimakkuus = löytömäärä.',
+    input: 'year',
+    filters: ['types', 'attr', 'countries'],
+    run(finds, input) {
+      const hits = applyFilters(finds.filter(f => !input.year || +f.day.slice(0, 4) === +input.year), input);
+      return [
+        { title: `Vuosikalenteri ${input.year || ''} — ${hits.length} löytöä`, html: yearCalendar(hits) },
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tänä vuonna.</p>' }
+      ];
+    }
+  },
+  {
+    id: 'custom',
+    title: 'Monihaku',
+    desc: 'Yhdistä vapaasti kuukaudet, viikonpäivät, vuodet + tyypit/maat/attribuutit. Tuloksena tyypit, D/T-ruudukko, vuosikalenteri, löytöpäiväjakauma ja lista.',
+    input: 'custom',
+    filters: ['types', 'attr', 'countries'],
+    run(finds, input) {
+      const hits = applyFilters(finds.filter(f => {
+        if (f.day.length < 10) return false;
+        if (input.months?.length && !input.months.includes(+f.day.slice(5, 7))) return false;
+        if (input.weekdays?.length && !input.weekdays.includes(wdOf(f.day))) return false;
+        if (input.yearFrom && +f.day.slice(0, 4) < input.yearFrom) return false;
+        if (input.yearTo && +f.day.slice(0, 4) > input.yearTo) return false;
+        return true;
+      }), input);
+      const mx = dtMatrix(hits);
+      return [
+        { title: `Tulokset — ${hits.length} löytöä`, html: typeCoverage(hits).html },
+        { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
+        { title: 'Vuosikalenteri', html: yearCalendar(hits) },
+        { title: 'Löytöpäivät', html: dayDist(hits) },
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä.</p>' }
+      ];
+    }
   }
 ];
 
@@ -358,33 +503,48 @@ function attrOptions() {
 
 function renderInputs(query, inputDiv, finds) {
   let html = `<p style="font-size:0.8em;opacity:0.7;margin:5px 0 0;">${query.desc}</p>`;
+  const years = [...new Set(finds.filter(f => f.day.length >= 10).map(f => +f.day.slice(0, 4)))].sort((a, b) => a - b);
+  const yrOptsAll = [['', 'Kaikki'], ...years.map(y => [y, y])];
+  const monOpts = MONTHS_SHORT.map((m, i) => [i + 1, m]);
+  const dayOpts = Array.from({ length: 31 }, (_, i) => [i + 1, i + 1]);
   if (query.input === 'day') {
-    const dayOpts = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
-    const monOpts = MONTHS_FI.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
-    const years = [...new Set(finds.filter(f => f.day.length >= 10).map(f => +f.day.slice(0, 4)))].sort((a, b) => a - b);
-    const yrOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    html += `<div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <div style="flex:1; min-width:70px;"><label style="font-size:0.75em;">Päivä alkaen</label><select id="fqDay">${dayOpts}</select></div>
-      <div style="flex:1; min-width:90px;"><label style="font-size:0.75em;">Kk alkaen</label><select id="fqMonth">${monOpts}</select></div>
-      <div style="flex:1; min-width:70px;"><label style="font-size:0.75em;">Päivä asti</label><select id="fqDay2">${dayOpts}</select></div>
-      <div style="flex:1; min-width:90px;"><label style="font-size:0.75em;">Kk asti</label><select id="fqMonth2">${monOpts}</select></div></div>
-    <div style="display:flex; gap:8px;">
-      <div style="flex:1;"><label style="font-size:0.75em;">Vuosi alkaen</label><select id="fqYearFrom" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div>
-      <div style="flex:1;"><label style="font-size:0.75em;">Vuosi asti</label><select id="fqYearTo" style="margin-bottom:0;"><option value="">Kaikki</option>${yrOpts}</select></div></div>`;
+    html += `<div class="fq-grp"><label>Päivä alkaen</label>${chipSel('fqDay', dayOpts, 1, 'fq-mini')}</div>
+      <div class="fq-grp"><label>Kuukausi alkaen</label>${chipSel('fqMonth', monOpts, 1)}</div>
+      <div class="fq-grp"><label>Päivä asti</label>${chipSel('fqDay2', dayOpts, 1, 'fq-mini')}</div>
+      <div class="fq-grp"><label>Kuukausi asti</label>${chipSel('fqMonth2', monOpts, 1)}</div>
+      <div class="fq-grp"><label>Vuosi alkaen</label>${chipSel('fqYearFrom', yrOptsAll, '')}</div>
+      <div class="fq-grp"><label>Vuosi asti</label>${chipSel('fqYearTo', yrOptsAll, '')}</div>`;
   } else if (query.input === 'month') {
-    html += `<label>Kuukausi:</label><select id="fqMonth">${MONTHS_FI.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select>`;
+    html += `<div class="fq-grp"><label>Kuukausi</label>${chipSel('fqMonth', monOpts, 1)}</div>`;
   } else if (query.input === 'weekday') {
-    html += `<label>Viikonpäivä:</label><select id="fqWeekday">${WEEKDAYS_FI.map(w => `<option value="${w[1]}">${w[0]}</option>`).join('')}</select>`;
+    html += `<div class="fq-grp"><label>Viikonpäivä</label>${chipSel('fqWeekday', WD_OPTS, 1)}</div>`;
   } else if (query.input === 'attr') {
     html += `<label>Attribuutti:</label><select id="fqAttr">${attrOptions()}</select>`;
+  } else if (query.input === 'loc') {
+    const counts = {};
+    for (const f of finds) if (f.loc) counts[f.loc] = (counts[f.loc] || 0) + 1;
+    const locs = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    html += `<label>Kunta / paikkakunta:</label>
+      <input id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0;">
+      <datalist id="fqLocList">${locs.map(([l]) => `<option value="${l}">`).join('')}</datalist>
+      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
+  } else if (query.input === 'year') {
+    html += `<div class="fq-grp"><label>Vuosi</label>${chipSel('fqYear', years.map(y => [y, y]), years.at(-1) || '')}</div>`;
+  } else if (query.input === 'custom') {
+    html += `<div class="fq-grp"><label>Kuukaudet (poista rajaamatta)</label>${chipSel('fqMonths', monOpts, '*', 'fq-multi')}</div>
+      <div class="fq-grp"><label>Viikonpäivät</label>${chipSel('fqWeekdays', WD_OPTS, '*', 'fq-multi')}</div>
+      <div class="fq-grp"><label>Vuosi alkaen</label>${chipSel('fqYearFrom', yrOptsAll, '')}</div>
+      <div class="fq-grp"><label>Vuosi asti</label>${chipSel('fqYearTo', yrOptsAll, '')}</div>`;
   }
 
   // Yhteiset lisäsuodattimet (filters-taulukossa luetellut)
+  const minis = t => `<div class="fq-minis"><button type="button" class="fq-minisel" data-t="${t}" data-on="1">Kaikki</button><button type="button" class="fq-minisel" data-t="${t}">Ei mitään</button></div>`;
   if (query.filters?.includes('types')) {
     html += `<details style="margin-top:6px;">
       <summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Kätkötyypit (oletuksena kaikki valittuna)</summary>
       <div class="type-coverage" id="fqTypes" style="margin-top:6px;">${TYPE_NAMES.map((n, i) =>
         `<span class="type-chip fq-type fq-on" data-i="${i}" data-color="${TYPE_COLORS[i]}" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]}; background:${TYPE_COLORS[i]}22; cursor:pointer;">${n}</span>`).join('')}</div>
+      ${minis('fqTypes')}
     </details>`;
   }
   if (query.filters?.includes('countries')) {
@@ -393,6 +553,7 @@ function renderInputs(query, inputDiv, finds) {
       <summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Maat (oletuksena kaikki, ${countries.length} maata)</summary>
       <div class="type-coverage" id="fqCountries" style="margin-top:6px;">${countries.map(c =>
         `<span class="type-chip fq-country fq-on" data-c="${c}" data-color="#b4befe" style="border-color:#b4befe; color:#b4befe; background:#b4befe22; cursor:pointer;">${c}</span>`).join('')}</div>
+      ${minis('fqCountries')}
     </details>`;
   }
   if (query.filters?.includes('attr')) {
@@ -400,22 +561,29 @@ function renderInputs(query, inputDiv, finds) {
   }
   inputDiv.innerHTML = html;
 
-  // Kalenteripäivähaku: "asti"-kentät seuraavat "alkaa"-kenttiä kunnes käyttäjä muuttaa niitä
+  // Kalenteripäivähaku: "asti"-chipt seuraavat "alkaa"-chippejä kunnes käyttäjä muuttaa niitä
   const d1 = inputDiv.querySelector('#fqDay'), m1 = inputDiv.querySelector('#fqMonth');
   const d2 = inputDiv.querySelector('#fqDay2'), m2 = inputDiv.querySelector('#fqMonth2');
   if (d1 && d2) {
     let touched = false;
-    [d2, m2].forEach(s => s.addEventListener('change', () => touched = true));
-    d1.onchange = () => { if (!touched) d2.value = d1.value; };
-    m1.onchange = () => { if (!touched) m2.value = m1.value; };
+    [d2, m2].forEach(s => s.addEventListener('fq-change', () => touched = true));
+    d1.addEventListener('fq-change', () => { if (!touched) chipSet(d2, d1.dataset.v); });
+    m1.addEventListener('fq-change', () => { if (!touched) chipSet(m2, m1.dataset.v); });
   }
 
-  // Tyyppi- ja maachipit togglettaviksi
+  // Tyyppi- ja maachipit togglettaviksi + Kaikki/Ei mitään -napit
+  const setChip = (ch, on) => {
+    ch.classList.toggle('fq-on', on);
+    ch.style.background = on ? ch.dataset.color + '22' : 'transparent';
+    ch.style.opacity = on ? '1' : '0.4';
+  };
   inputDiv.querySelectorAll('.fq-type, .fq-country').forEach(ch => {
-    ch.onclick = () => {
-      const on = ch.classList.toggle('fq-on');
-      ch.style.background = on ? ch.dataset.color + '22' : 'transparent';
-      ch.style.opacity = on ? '1' : '0.4';
+    ch.onclick = () => setChip(ch, !ch.classList.contains('fq-on'));
+  });
+  inputDiv.querySelectorAll('.fq-minisel').forEach(b => {
+    b.onclick = () => {
+      const on = b.dataset.on === '1';
+      inputDiv.querySelectorAll(`#${b.dataset.t} .fq-type, #${b.dataset.t} .fq-country`).forEach(ch => setChip(ch, on));
     };
   });
 }
@@ -447,7 +615,7 @@ export const renderFindsQueries = async (db, user, content) => {
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       <label>Haku:</label>
-      <select id="fqQuery">${FINDS_QUERIES.map((q, i) => `<option value="${i}">${q.title}</option>`).join('')}</select>
+      ${chipSel('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0, 'fq-csel-block')}
       <div id="fqInput" style="margin-top:8px;"></div>
       <button class="btn btn-primary" id="fqRun" style="margin-top:6px;">Hae</button>
       <div id="fqResult" style="margin-top:15px;"></div>
@@ -457,12 +625,12 @@ export const renderFindsQueries = async (db, user, content) => {
   const inputDiv = document.getElementById('fqInput');
   const resultDiv = document.getElementById('fqResult');
 
-  querySel.onchange = () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; };
+  querySel.addEventListener('fq-change', () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.dataset.v], inputDiv, finds); resultDiv.innerHTML = ''; });
   renderInputs(FINDS_QUERIES[0], inputDiv, finds);
 
   document.getElementById('fqRun').onclick = () => {
     closeDtPopup();
-    const q = FINDS_QUERIES[+querySel.value];
+    const q = FINDS_QUERIES[+querySel.dataset.v];
     // Valitut tyyppisuodattimet (jos näkyvissä)
     const typeChips = inputDiv.querySelectorAll('.fq-type');
     const types = typeChips.length
@@ -473,13 +641,17 @@ export const renderFindsQueries = async (db, user, content) => {
       ? [...countryChips].filter(ch => ch.classList.contains('fq-on')).map(ch => ch.dataset.c)
       : null;
     const input = {
-      month: +document.getElementById('fqMonth')?.value || null,
-      day: +document.getElementById('fqDay')?.value || null,
-      month2: +document.getElementById('fqMonth2')?.value || null,
-      day2: +document.getElementById('fqDay2')?.value || null,
-      yearFrom: +document.getElementById('fqYearFrom')?.value || null,
-      yearTo: +document.getElementById('fqYearTo')?.value || null,
-      weekday: document.getElementById('fqWeekday')?.value ?? null,
+      month: +chipVal(inputDiv, 'fqMonth') || null,
+      day: +chipVal(inputDiv, 'fqDay') || null,
+      month2: +chipVal(inputDiv, 'fqMonth2') || null,
+      day2: +chipVal(inputDiv, 'fqDay2') || null,
+      yearFrom: +chipVal(inputDiv, 'fqYearFrom') || null,
+      yearTo: +chipVal(inputDiv, 'fqYearTo') || null,
+      year: +chipVal(inputDiv, 'fqYear') || null,
+      weekday: chipVal(inputDiv, 'fqWeekday'),
+      months: chipVals(inputDiv, 'fqMonths'),
+      weekdays: chipVals(inputDiv, 'fqWeekdays'),
+      loc: document.getElementById('fqLoc')?.value || null,
       attr: document.getElementById('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: document.getElementById('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
       types, countries

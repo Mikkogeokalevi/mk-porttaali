@@ -83,6 +83,7 @@
 - **10.7.2026**: `help.js` päivitetty vastaamaan kartan ja kuvageneraattorin uusia ominaisuuksia; dokumentointisääntöä täsmennetty.
 - **10.7.2026**: Semanttinen versiointikäytäntö otettu käyttöön; kartta- ja kuvageneraattorikokonaisuus määritelty versioksi 2.9.
 - **10.7.2026**: Versio 2.9.1: kuvageneraattorin kovakoodatut pikapohjat korvattu käyttäjän omilla hallittavilla pikapohjilla.
+- **28.9.2026**: Versio 2.18.0: Chip-valitsimet (chipSel/chipVal/chipSet + .fq-copt delegoitu, 'fq-change'-eventti) korvasivat natiivit selectit Löytöhaussa. Uudet haut: kunta (input 'loc' + datalist), year-cal (input 'year'), custom (input 'custom' + fq-multi-chipit). Renderöijät: yearCalendar (kk x pv, sinisävy), dayDist. findsList: tr.fq-hidden + .fq-showall (delegoitu). Suodatinten .fq-minisel Kaikki/Ei mitään (kytketty renderInputs:issa).
 - **27.9.2026**: Versio 2.17.2: D/T-ruudun klikkaus suodattaa löytölistan (td data-dv/data-tv → rivien data-d/data-t vertailu); .fq-dtfilter-ilmoitus + .fq-dt-reset "Näytä kaikki".
 - **27.9.2026**: Versio 2.17.1: D/T-ruudukon mobiili-infopopup — td[data-break]='ty:n;...', delegoitu click-kuuntelija avaa .dt-popupin ruudun kohdalle; sulkeutuu klikkauksesta muualle / scrollista / Esc:stä.
 - **27.9.2026**: Versio 2.17.0: Maailmankartta Muut maat -näkymään — `maailma.geojson` (johan/world.geo.json, 180 maata, `properties.name`), GEO_ALIASES-nimimuunnokset (United States→United States of America jne.), löydetyt maat vihreällä + tooltip löytömäärällä; laiska init ocMapBtn-togglella; sw.js asset-listaan.

@@ -1251,6 +1251,61 @@ summary:hover { color: var(--accent-color); }
   cursor: pointer;
 }
 
+/* Chip-valitsimet (korvaavat natiivit selectit mobiilissa) */
+.fq-csel { display: flex; flex-wrap: wrap; gap: 5px; margin: 2px 0 4px; }
+.fq-copt {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  border-radius: var(--border-radius-sm);
+  padding: 6px 10px;
+  font-size: 0.85em;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fq-copt.on {
+  background: #89b4fa;
+  border-color: #89b4fa;
+  color: #111;
+  font-weight: 700;
+}
+.fq-csel-mini .fq-copt { padding: 4px 7px; font-size: 0.78em; min-width: 30px; }
+.fq-csel-block { flex-direction: column; }
+.fq-csel-block .fq-copt { text-align: left; padding: 10px 12px; font-size: 0.95em; }
+.fq-grp { margin-top: 8px; }
+.fq-grp label { font-size: 0.75em; color: var(--subtext-color); display: block; margin-bottom: 3px; }
+
+/* Kaikki/Ei mitään -pikanapit suodatinchippeihin */
+.fq-minis { margin-top: 5px; display: flex; gap: 6px; }
+.fq-minisel {
+  font-size: 0.75em;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--subtext-color);
+  border-radius: 10px;
+  padding: 2px 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Löytölistan näyttöraja */
+tr.fq-hidden { display: none; }
+.fq-showall {
+  margin-top: 6px;
+  font-size: 0.8em;
+  color: var(--c-blue);
+  background: none;
+  border: 1px solid var(--c-blue);
+  border-radius: var(--border-radius-sm);
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Vuosikalenteri */
+.fq-cal td.na { background: rgba(255, 255, 255, 0.04); }
+.fq-cal td { min-width: 22px; }
+
 /* D/T-ruudun listasuodatuksen ilmoituspalkki */
 .fq-dtfilter {
   font-size: 0.8em;

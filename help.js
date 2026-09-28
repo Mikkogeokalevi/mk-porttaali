@@ -11,10 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.17.2</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.0</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>27.9.2026:</strong> D/T-ruudukon ruudun klikkaus <b>suodattaa nyt myös löytölistan</b> kyseiseen ruutuun (esim. D3.5/T4). Listan yläpuolelle ilmestyy ilmoitus + "Näytä kaikki" -palautus.</li>
+                <li><strong>28.9.2026:</strong> Löytöhaut-uudistus: <b>hakuvalitsimet nyt mobiiliystävällisinä nappuloita</b> (ei enää puhelimen omaa valikkoa). Uudet haut: <b>Paikkakuntahaku</b> (kunnan löydöt + D/T), <b>Vuosikalenteri</b> (kk x päivä -ruudukko geocache.fi-tyyliin) ja <b>Monihaku</b> (kaikki ehdot vapaasti + löytöpäiväjakauma). Tyyppi/maa-suodattimiin "Kaikki / Ei mitään" -napit. Löytölistaan "Näytä kaikki" -nappi — ei enää 300 löydön kattoa.</li>
             </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;">2.17.2: D/T-ruudukon ruudun klikkaus suodattaa löytölistan.</div>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;">2.17.1: D/T-ruudukon klikattava tyyppijakauma-popup (mobiiliystävällinen).</div>
 
 
