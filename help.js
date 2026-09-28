@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div class="panel panel-success" style="margin-bottom:30px;">
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.1</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>28.9.2026:</strong> Löytöhaut-valitsimet uusittu <b>samaan tyyliin kuin kuvageneraattori</b>: tyylitellyt accordion-valikot natiivien tilalle, päiväväli + vuosirajaus aukeaa "Aikarajaus"-valinnasta (kuten generaattorissa).</li>
+                <li><strong>28.9.2026:</strong> Löytöhaut-valitsimet uusittu <b>samaan tyyliin kuin kuvageneraattori</b>: tyylitellyt accordion-valikot natiivien tilalle, päiväväli + vuosirajaus aukeaa "Aikarajaus"-valinnasta. Vuosikalenteriin: <b>kuluva päivä punaisella</b>, "Kaikki vuodet" -valinta (esim. Miitti-aukot) ja lista päivistä joilta löytö puuttuu.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.0</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">

@@ -271,24 +271,32 @@ const MONTHS_SHORT = ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes', 'Hei', 'Elo', 'S
 const WD_OPTS = [[1, 'Ma'], [2, 'Ti'], [3, 'Ke'], [4, 'To'], [5, 'Pe'], [6, 'La'], [0, 'Su']];
 function wdOf(day) { const [y, m, d] = day.split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
 
-// Vuosikalenteri geocache.fi-tyyliin: kuukaudet x päivät, solun sinisävy = löytömäärä
-function yearCalendar(finds) {
+// Vuosikalenteri geocache.fi-tyyliin: kuukaudet x päivät, solun sinisävy = löytömäärä.
+// Kuluva päivä korostetaan punaisella, ja kalenterin alle listataan puuttuvat päivät.
+function yearCalendar(finds, year = null) {
   const cnt = {};
   for (const f of finds) if (f.day.length >= 10) { const k = f.day.slice(5); cnt[k] = (cnt[k] || 0) + 1; }
   const max = Math.max(0, ...Object.values(cnt));
-  const MLEN = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const leap = year ? (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) : true;
+  const MLEN = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const now = new Date();
+  const todayKey = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const bg = n => `rgba(137,180,250,${(0.15 + 0.85 * n / (max || 1)).toFixed(2)})`;
   const head = `<tr><th></th>${Array.from({ length: 31 }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>yht</th></tr>`;
   const colT = Array(31).fill(0);
+  const missing = [];
   let total = 0;
   const rows = MONTHS_SHORT.map((mn, mi) => {
     let rt = 0;
     const tds = Array.from({ length: 31 }, (_, di) => {
       const d = di + 1;
       if (d > MLEN[mi]) return '<td class="na"></td>';
-      const n = cnt[`${String(mi + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`] || 0;
+      const k = `${String(mi + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const n = cnt[k] || 0;
+      const tdCls = k === todayKey ? ' class="today"' : '';
       rt += n; colT[di] += n; total += n;
-      return n ? `<td style="background:${bg(n)}; color:#111;">${n}</td>` : '<td></td>';
+      if (!n) missing.push(`${d}.${mi + 1}.`);
+      return n ? `<td${tdCls} style="background:${bg(n)}; color:#111;">${n}</td>` : `<td${tdCls}></td>`;
     }).join('');
     return `<tr><th>${mn}</th>${tds}<th>${rt || ''}</th></tr>`;
   }).join('');
@@ -297,7 +305,9 @@ function yearCalendar(finds) {
   for (const f of finds) if (f.day.length >= 10) wd[wdOf(f.day)]++;
   const wdHtml = `<div class="type-coverage" style="margin-top:8px;">` +
     WD_OPTS.map(([i, l]) => `<span class="type-chip" style="border-color:#89b4fa; color:#89b4fa;">${l} ${wd[i]}</span>`).join('') + `</div>`;
-  return `<div class="fq-scroll"><table class="dt-matrix fq-cal">${head}${rows}${tot}</table></div>${wdHtml}`;
+  const missingHtml = `<details style="margin-top:8px;"><summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Päivät ilman löytöä (${missing.length})</summary>
+    <div class="type-coverage" style="margin-top:6px;">${missing.map(d => `<span class="type-chip miss">${d}</span>`).join('')}</div></details>`;
+  return `<div class="fq-scroll"><table class="dt-matrix fq-cal">${head}${rows}${tot}</table></div>${wdHtml}${missingHtml}`;
 }
 
 // Löytöpäiväjakauma: montako päivää on 1,2,3... löytöä + eniten löytöjä sisältäneet päivät
@@ -523,8 +533,9 @@ const FINDS_QUERIES = [
     filters: ['types', 'attr', 'countries'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => !input.year || +f.day.slice(0, 4) === +input.year), input);
+      const yrLabel = input.year ? String(input.year) : 'kaikki vuodet';
       return [
-        { title: `Vuosikalenteri ${input.year || ''} — ${hits.length} löytöä`, html: yearCalendar(hits) },
+        { title: `Vuosikalenteri (${yrLabel}) — ${hits.length} löytöä`, html: yearCalendar(hits, input.year || null) },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tänä vuonna.</p>' }
       ];
     }
@@ -603,7 +614,7 @@ function renderInputs(query, inputDiv, finds) {
       <datalist id="fqLocList">${locs.map(([l]) => `<option value="${l}">`).join('')}</datalist>
       <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
   } else if (query.input === 'year') {
-    html += `<div class="fq-grp"><label>Vuosi</label>${accField('fqYear', years.map(y => [y, y]), years.at(-1) || '')}</div>`;
+    html += `<div class="fq-grp"><label>Vuosi</label>${accField('fqYear', yrOptsAll, '')}</div>`;
   } else if (query.input === 'custom') {
     html += `<div class="fq-grp"><label>Kuukaudet (poista rajaamatta)</label>${chipSel('fqMonths', monShort, '*', 'fq-multi fq-x')}</div>
       <div class="fq-grp"><label>Viikonpäivät</label>${chipSel('fqWeekdays', WD_OPTS, '*', 'fq-multi fq-x')}</div>
