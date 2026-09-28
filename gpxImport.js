@@ -33,6 +33,7 @@ export const GPX_TYPE_TO_INDEX = {
   'Giga-Event': 13,
   'Giga-Event Cache': 13,
   'Lost and Found Event': 6,
+  'Lost and Found Event Cache': 6,
   'Locationless (Reverse) Cache': 12,
   'Groundspeak Block Party': 13,
   'Geocaching HQ Celebration': 13,

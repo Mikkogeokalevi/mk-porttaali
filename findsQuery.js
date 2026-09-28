@@ -271,11 +271,19 @@ const MONTHS_SHORT = ['Tam', 'Hel', 'Maa', 'Huh', 'Tou', 'Kes', 'Hei', 'Elo', 'S
 const WD_OPTS = [[1, 'Ma'], [2, 'Ti'], [3, 'Ke'], [4, 'To'], [5, 'Pe'], [6, 'La'], [0, 'Su']];
 function wdOf(day) { const [y, m, d] = day.split('-').map(Number); return new Date(y, m - 1, d).getDay(); }
 
+// Viimeksi renderöidyn vuosikalenterin päiväkohtaiset löydöt (klikkauspoppupia varten)
+let calFinds = {};
+
 // Vuosikalenteri geocache.fi-tyyliin: kuukaudet x päivät, solun sinisävy = löytömäärä.
 // Kuluva päivä korostetaan punaisella, ja kalenterin alle listataan puuttuvat päivät.
 function yearCalendar(finds, year = null) {
   const cnt = {};
-  for (const f of finds) if (f.day.length >= 10) { const k = f.day.slice(5); cnt[k] = (cnt[k] || 0) + 1; }
+  calFinds = {};
+  for (const f of finds) if (f.day.length >= 10) {
+    const k = f.day.slice(5);
+    cnt[k] = (cnt[k] || 0) + 1;
+    (calFinds[k] = calFinds[k] || []).push(f);
+  }
   const max = Math.max(0, ...Object.values(cnt));
   const leap = year ? (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) : true;
   const MLEN = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -296,7 +304,7 @@ function yearCalendar(finds, year = null) {
       const tdCls = k === todayKey ? ' class="today"' : '';
       rt += n; colT[di] += n; total += n;
       if (!n) missing.push(`${d}.${mi + 1}.`);
-      return n ? `<td${tdCls} style="background:${bg(n)}; color:#111;">${n}</td>` : `<td${tdCls}></td>`;
+      return n ? `<td${tdCls} data-mmdd="${k}" style="background:${bg(n)}; color:#111; cursor:pointer;">${n}</td>` : `<td${tdCls} data-mmdd="${k}" style="cursor:pointer;"></td>`;
     }).join('');
     return `<tr><th>${mn}</th>${tds}<th>${rt || ''}</th></tr>`;
   }).join('');
@@ -357,9 +365,54 @@ document.addEventListener('click', e => {
     return;
   }
   const td = e.target.closest('.dt-matrix td[data-break]');
-  if (!td) { closeDtPopup(); return; }
-  if (dtPopup?._for === td) { closeDtPopup(); return; }
+  const ctd = e.target.closest('.fq-cal td[data-mmdd]');
+  if (!td && !ctd) { closeDtPopup(); return; }
+  if (dtPopup?._for === (td || ctd)) { closeDtPopup(); return; }
   closeDtPopup();
+
+  // Vuosikalenterin solu: popup-listaus päivän löydöistä + löytölistan suodatus
+  if (ctd) {
+    const items = calFinds[ctd.dataset.mmdd] || [];
+    const [mm, dd] = ctd.dataset.mmdd.split('-');
+    const res = document.getElementById('fqResult');
+    if (res && items.length) {
+      const codes = new Set(items.map(f => f.code));
+      let shown = 0;
+      res.querySelectorAll('.finds-table tbody tr').forEach(r => {
+        r.classList.remove('fq-hidden');
+        const ok = codes.has(r.dataset.code);
+        r.style.display = ok ? '' : 'none';
+        if (ok) shown++;
+      });
+      res.querySelector('.fq-dtfilter')?.remove();
+      const table = res.querySelector('.finds-table');
+      if (table) {
+        const note = document.createElement('div');
+        note.className = 'fq-dtfilter';
+        note.innerHTML = `Päivä ${+dd}.${+mm}.: ${shown} löytöä · <b class="fq-dt-reset">Näytä kaikki</b>`;
+        table.closest('.fq-scroll')?.before(note);
+      }
+    }
+    dtPopup = document.createElement('div');
+    dtPopup.className = 'dt-popup';
+    dtPopup._for = ctd;
+    dtPopup.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">${+dd}.${+mm}.</div>` +
+      (items.length ? items.map(f =>
+        `<div style="display:flex; justify-content:space-between; gap:12px; padding:2px 0;">
+          <a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:600; text-decoration:none;">${f.code}</a>
+          <span style="color:${TYPE_COLORS[f.type] || '#888'};">${TYPE_NAMES[f.type] || '?'}</span></div>`).join('')
+        : '<div style="opacity:0.6;">Ei löytöjä</div>');
+    document.body.appendChild(dtPopup);
+    const cr = ctd.getBoundingClientRect();
+    const pw = dtPopup.offsetWidth, ph = dtPopup.offsetHeight;
+    let left = Math.min(Math.max(8, cr.left + cr.width / 2 - pw / 2), window.innerWidth - pw - 8);
+    let top = cr.bottom + window.scrollY + 6;
+    if (top + ph > window.scrollY + window.innerHeight - 8) top = cr.top + window.scrollY - ph - 6;
+    dtPopup.style.left = left + 'px';
+    dtPopup.style.top = top + 'px';
+    return;
+  }
+
   const res = document.getElementById('fqResult');
   if (res) dtFilterList(res, td.dataset.dv, td.dataset.tv);
   dtPopup = document.createElement('div');
@@ -711,13 +764,16 @@ export const renderFindsQueries = async (db, user, content) => {
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       ${(() => {
         const noDate = finds.filter(f => f.day.length < 10);
-        if (!noDate.length) return '';
-        return `<div class="panel" style="padding:10px 12px; margin-top:8px; border-color:var(--c-peach);">
-          <b style="color:var(--c-peach);">⚠ ${noDate.length} löytöä ilman päivämäärää</b> — ne eivät näy kalenteri/D/T-haussa. Tuo GPX uudelleen korjataksesi.
-          <details style="margin-top:6px;"><summary style="font-size:0.8em; cursor:pointer;">Näytä koodit</summary>
-          <div class="type-coverage" style="margin-top:6px;">${noDate.map(f =>
+        const noType = finds.filter(f => f.type < 0 || f.type >= TYPE_NAMES.length);
+        if (!noDate.length && !noType.length) return '';
+        const listHtml = arr => `<details style="margin-top:6px;"><summary style="font-size:0.8em; cursor:pointer;">Näytä koodit</summary>
+          <div class="type-coverage" style="margin-top:6px;">${arr.map(f =>
             `<a class="type-chip miss" href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="text-decoration:none;">${f.code}</a>`).join('')}</div>
-          </details></div>`;
+          </details>`;
+        return `<div class="panel" style="padding:10px 12px; margin-top:8px; border-color:var(--c-peach);">` +
+          (noDate.length ? `<b style="color:var(--c-peach);">⚠ ${noDate.length} löytöä ilman päivämäärää</b> — eivät näy kalenteri/D/T-haussa. Tuo GPX uudelleen.${listHtml(noDate)}` : '') +
+          (noType.length ? `<b style="color:var(--c-peach);">⚠ ${noType.length} löytöä tunnistamattomalla tyypillä</b> — eivät täsmää tyyppisuodattimiin.${listHtml(noType)}` : '') +
+        `</div>`;
       })()}
       <label>Haku:</label>
       ${accField('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0)}

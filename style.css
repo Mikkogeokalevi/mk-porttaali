@@ -1247,7 +1247,9 @@ summary:hover { color: var(--accent-color); }
   font-size: 0.85em;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   min-width: 130px;
-  max-width: 220px;
+  max-width: 260px;
+  max-height: 280px;
+  overflow-y: auto;
   cursor: pointer;
 }
 

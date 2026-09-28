@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.3</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.4</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>28.9.2026:</strong> Vuosikalenterin solut <b>klikattavissa</b> — popup listaa päivän kätköt (koodi-linkki + tyyppi) ja suodattaa löytölistan. Tyypittömien löytöjen varoitus + 'Lost and Found Event Cache' -tyyppimäppäys.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.3</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>28.9.2026:</strong> Löytöhaut näyttää nyt <b>varoituksen päivättömistä löydöistä</b> (koodilistalla) — jos GPX-tuonnissa on löytöjä ilman päivämäärää, ne eivät ilmesty kalenteriin ennen kuin tuot tiedoston uudelleen.</li>
             </ul>
