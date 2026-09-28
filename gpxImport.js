@@ -183,6 +183,22 @@ function extractFirst(block, re) {
   return m ? m[1].trim() : '';
 }
 
+// groundspeak:date on UTC-aikaleima (esim. "2020-01-09T04:14:14Z"), mutta
+// geocaching.com ja geocache.fi näyttävät lokin päivän Pacific Time -vyöhykkeellä
+// (Geocaching HQ, Seattle). Suomessa aamuyöllä tehty kirjaus kuuluu PT:n mukaan
+// edelliseen päivään → muunnetaan aina PT-päiväksi, jotta kalenterit täsmäävät.
+// Ilman aikavyöhykemerkintää (vanhat GPX:t) arvo oletetaan jo PT-muodoksi.
+const PT_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
+function gpxLogDayPT(s) {
+  s = (s || '').trim();
+  if (!s) return '';
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d)) return PT_FMT.format(d);
+  }
+  return s.slice(0, 10);
+}
+
 export function parseGpxPoints(text, nickname = '') {
   const points = [];
   const nickLower = (nickname || '').toLowerCase();
@@ -242,7 +258,7 @@ export function parseGpxPoints(text, nickname = '') {
     while ((lm = logRe.exec(block))) {
       const log = lm[1];
       const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
-      const logDate = extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/).slice(0, 10);
+      const logDate = gpxLogDayPT(extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/));
       const isFindType = /Found it|Attended|Webcam Photo Taken/i.test(logType);
       const finder = extractFirst(log, /<groundspeak:finder[^>]*>([^<]*)<\/groundspeak:finder>/);
       if (nickLower && finder.toLowerCase() === nickLower) {

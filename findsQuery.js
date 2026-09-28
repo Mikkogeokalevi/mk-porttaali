@@ -108,7 +108,8 @@ function dtMatrix(finds) {
       const topType = +segs[0][0];
       const total = segs.reduce((a, s) => a + s[1], 0);
       rowTotal += total; colTotals[ti] += total; grandTotal += total;
-      if (topType >= 0) usedTypes.add(topType);
+      // Legenda näyttää KAIKKI ruudukossa esiintyvät tyypit, ei vain yleisimmät
+      segs.forEach(([ty]) => { const i = +ty; if (i >= 0) usedTypes.add(i); });
       const c = TYPE_COLORS[topType] || '#a6e3a1';
       // Pinottu väripalkki: jokaisen tyypin osuus ruudussa; monityyppiruudut näkyvät selkeästi
       const bar = `<div style="display:flex; height:4px; border-radius:2px; overflow:hidden; margin-top:2px;">` +
