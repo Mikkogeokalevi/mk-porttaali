@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v91'; // PÄIVITETTY: v90 -> v91
+const CACHE_NAME = 'mk-porttaali-v92'; // PÄIVITETTY: v91 -> v92
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -33,6 +33,7 @@ const ASSETS_TO_CACHE = [
   './yksikot.json',
   './mikkokalevi.png',
   './mklogo.png',  
+  './kuntarajat_100k.geojson',  // <--- UUSI: tarkat MML 1:100k kuntarajat (korvaa ~23-kulmaisen raakileaineiston)
   './kunnat.json'
 ];
 

@@ -3,6 +3,7 @@ import { maakuntienKunnat } from "./data.js"; // Tarvitaan maakuntatietoa linkke
 
 // KARTTALÄHTEET
 const GEOJSON_URLS = [
+    './kuntarajat_100k.geojson',
     'https://raw.githubusercontent.com/samilaine/hallinnollisetrajat/master/kuntarajat.json',
     'https://raw.githubusercontent.com/TeemuKoivisto/map-of-finland/master/kuntarajat-2018-raw.json',
     './kunnat.json'

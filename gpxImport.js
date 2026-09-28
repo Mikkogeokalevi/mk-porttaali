@@ -7,8 +7,10 @@ import { collection, doc, getDoc, getDocs, setDoc, Timestamp } from "https://www
 import { maakuntienKunnat } from "./data.js";
 import { COUNTRY_CONFIGS } from "./map_countries.js";
 
-// Suomen kuntarajat (samat lähteet kuin map.js / map_all.js)
+// Suomen kuntarajat: ensisijaisesti tarkka MML 1:100 000 -aineisto reposta
+// (vanhat GitHub-lähteet olivat ~23-kulmaisia raakileita -> väärät kuntamääritykset rajan lähellä)
 const FINLAND_GEOJSON_URLS = [
+  './kuntarajat_100k.geojson',
   'https://raw.githubusercontent.com/samilaine/hallinnollisetrajat/master/kuntarajat.json',
   'https://raw.githubusercontent.com/TeemuKoivisto/map-of-finland/master/kuntarajat-2018-raw.json'
 ];

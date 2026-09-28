@@ -4,6 +4,7 @@ import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./
 
 // Käytetään samoja varmoja karttalähteitä
 const GEOJSON_URLS = [
+    './kuntarajat_100k.geojson',
     'https://raw.githubusercontent.com/samilaine/hallinnollisetrajat/master/kuntarajat.json',
     'https://raw.githubusercontent.com/TeemuKoivisto/map-of-finland/master/kuntarajat-2018-raw.json',
     './kunnat.json'
