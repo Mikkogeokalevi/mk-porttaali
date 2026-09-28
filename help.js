@@ -13,7 +13,7 @@ export const renderHelp = (content, app) => {
         <div class="panel panel-success" style="margin-bottom:30px;">
             <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.4</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>28.9.2026:</strong> Vuosikalenterin solut <b>klikattavissa</b> — popup listaa päivän kätköt (koodi-linkki + tyyppi) ja suodattaa löytölistan. Tyypittömien löytöjen varoitus + 'Lost and Found Event Cache' -tyyppimäppäys.</li>
+                <li><strong>28.9.2026:</strong> <b>Tärkeä löytöpäiväkorjaus</b>: pocket query -tiedostoissa käyttäjän omaa logia ei ole — päiväksi tuli virheellisesti kätkön piilotuspäivä. Nyt päivä jätetään tyhjäksi eikä tallennettuja päiviä ylikirjoiteta; eventeille käytetään tapahtumapäivää. Raportti varoittaa jos tiedosto ei ole My Finds -muotoa. Vuosikalenterin solut klikattavissa — popup listaa päivän kätköt ja suodattaa löytölistan. Tyypittömien löytöjen varoitus + 'Lost and Found Event Cache' -mäppäys.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.3</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">

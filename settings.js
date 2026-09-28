@@ -356,6 +356,7 @@ export const renderSettingsView = (content, db, user, app) => {
                         ${countryLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌍 ${countryLines.join(' • ')}</p>` : ''}
                         ${otherLines.length ? `<p style="margin:5px 0 0; font-size:0.9em;">🌐 Muut maat: ${otherLines.join(' • ')}</p>` : ''}
                         ${report.nearest ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">${report.nearest} kätköä oli kuntarajan ulkopuolella (saari/reunavesi) — merkittiin lähimpään.</p>` : ''}
+                        ${report.noOwnLog ? `<p style="margin:5px 0 0; font-size:0.85em; color:#f9e2af;">⚠️ ${report.noOwnLog} löydöltä puuttui oma lokisi tiedostosta — löytöpäivät jätettiin tyhjäksi eikä vanhoja päiviä korvattu (tiedosto ei ole "My Finds" -muotoa, vaan sisältää vain viimeisimmät logit). ${report.dateKept ? `${report.dateKept} aiemmin tallennettua päivää säilytettiin. ` : ''}Oikeat löytöpäivät saat lataamalla <b>My Finds</b> -kyselyn geocaching.comista (Pocket Queries → My Finds) ja tuomalla sen.</p>` : ''}
                         ${report.unmatchedList && report.unmatchedList.length ? `
                             <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Kuntiin osumattomat (maa tunnettu, kunta ei löytynyt):</p>
                             <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.8;">

@@ -223,13 +223,16 @@ export function parseGpxPoints(text, nickname = '') {
       attrs.push(am[2] === '1' ? id : -id);
     }
 
-    // Löytöpäivä = käyttäjän OMA login päivä. Joissain GPX-tiedostoissa (erityisesti
-    // eventit) logit ovat "Unknown"-tyyppisiä, joten omalla löytäjällä hyväksytään
-    // mikä tahansa logityyppi — wpt on joka tapauksessa merkitty löydetyksi (<sym>Found</sym>).
-    // Järjestys: oma logi > wpt <time> (My Finds -GPX:ssä = oma löytöpäivä) > vieraan löytölogi.
-    const wptTime = extractFirst(block, /<time>([^<]*)<\/time>/).slice(0, 10);
+    // Löytöpäivä = käyttäjän OMA login päivä. HUOM: <wpt><time> on kätkön
+    // PIILOTUSPÄIVÄ — ei koskaan löytöpäivä, sitä ei saa käyttää!
+    // Pocket query -tiedostoissa käyttäjän omaa logia ei ole mukana (vain
+    // viimeisimmät logit tulevat mukanaan) → päivä jää tyhjäksi.
+    // Poikkeus: eventeissä vieraan attend/found-login päivä = tapahtumapäivä,
+    // joten se kelpaa löytöpäiväksi kun käyttäjä on ollut paikalla.
+    const isEvent = /event|celebration|block party|maze|geocaching hq/i.test(type || '');
     let findDate = '';
     let foreignDate = '';
+    let unknownLogDate = '';
     const logRe = /<groundspeak:log[^>]*>([\s\S]*?)<\/groundspeak:log>/g;
     let lm;
     while ((lm = logRe.exec(block))) {
@@ -239,9 +242,10 @@ export function parseGpxPoints(text, nickname = '') {
       if (nickLower && finder.toLowerCase() === nickLower) { findDate = logDate; break; }
       const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
       if (!foreignDate && /Found it|Attended|Webcam Photo Taken/i.test(logType)) foreignDate = logDate;
+      if (!unknownLogDate && /Unknown/i.test(logType)) unknownLogDate = logDate;
     }
 
-    points.push({ lat, lon, code, time: findDate || wptTime || foreignDate, country, type, difficulty, terrain, attrs });
+    points.push({ lat, lon, code, time: findDate || (isEvent ? (foreignDate || unknownLogDate) : ''), noOwnLog: !findDate, country, type, difficulty, terrain, attrs });
   }
   return points;
 }
@@ -451,12 +455,32 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
 
   const findsByYear = {}; // '2023' -> {code: [t,d,D,T,loc,attrs]} ja 'unknown'
 
+  // Aiemmin tallennetut löytöpäivät: pocket query -tiedostoista puuttuu käyttäjän
+  // oma logi → uusi merkintä jää päivättömäksi, eikä sillä saa pyyhkiä jo
+  // tallennettua päivää (esim. My Finds -tuonnin oikeaa päivää).
+  let allFdsDocs = [];
+  const existingDays = {}; // code -> tallennettu päivä ('' jos ei ole)
+  try {
+    const allFds = await getDocs(collection(db, 'users', uid, 'findsdata'));
+    allFdsDocs = allFds.docs;
+    for (const d of allFdsDocs)
+      for (const [code, rec] of Object.entries(d.data().finds || {}))
+        existingDays[code] = rec[1] || '';
+  } catch (e) { console.warn('findsdata-haku epäonnistui:', e); }
+
   // Osumatteily
   const fi = fiReplace ? {} : Object.fromEntries(Object.entries(existingFi).map(([k, v]) => [k, ensureEntryShape(v)]));
   const report = {
     totalFound: points.length,
     finland: { municipalities: 0, newMunicipalities: 0, replaced: fiReplace },
-    countries: {}, other: {}, duplicates: 0, nearest: 0, unmatched: 0, unmatchedList: [], unknownTypes: []
+    countries: {}, other: {}, duplicates: 0, nearest: 0, unmatched: 0, unmatchedList: [], unknownTypes: [],
+    noOwnLog: 0, dateKept: 0
+  };
+  // Kirjoita findsdata-merkintä. Päivättömät eivät ylikirjoita jo tallennettua päivää.
+  const queueFind = (code, rec) => {
+    if (!rec[1] && existingDays[code]) { report.dateKept++; return; }
+    const y = (rec[1] || '').slice(0, 4) || 'unknown';
+    (findsByYear[y] = findsByYear[y] || {})[code] = rec;
   };
 
   onStatus(`Osumatellaan ${points.length} pistettä kuntiin...`);
@@ -467,6 +491,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     }
     const p = points[i];
     const typeIdx = GPX_TYPE_TO_INDEX[p.type] !== undefined ? GPX_TYPE_TO_INDEX[p.type] : -1;
+    if (p.noOwnLog) report.noOwnLog++;
     if (p.type && typeIdx === -1 && !report.unknownTypes.includes(p.type)) report.unknownTypes.push(p.type);
 
     const day = (p.time || '').slice(0, 10);
@@ -506,16 +531,14 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         report.finland.seen.add(loc);
       } else report.duplicates++;
       // findsdata kirjataan aina (myös duplikaatit) — täydentää mahdolliset aiemmin puuttuneet kirjaukset
-      const y = day.slice(0, 4) || 'unknown';
-      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
     } else if (bucket === 'foreign') {
       const docData = countryDocs[country];
       const entry = docData[loc] = ensureEntryShape(docData[loc]);
       if (addFindTo(entry, p.code, typeIdx)) {
         report.countries[country] = (report.countries[country] || 0) + 1;
       } else report.duplicates++;
-      const y = day.slice(0, 4) || 'unknown';
-      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')];
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
     } else {
       // Muut maat
       const cname = country || 'Tuntematon';
@@ -523,8 +546,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       if (addFindTo(entry, p.code, typeIdx)) {
         report.other[cname] = (report.other[cname] || 0) + 1;
       } else report.duplicates++;
-      const y = day.slice(0, 4) || 'unknown';
-      (findsByYear[y] = findsByYear[y] || {})[p.code] = [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')];
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')]);
     }
   }
 
@@ -576,8 +598,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   for (const [y, fy] of Object.entries(findsByYear))
     for (const code of Object.keys(fy)) codeYear[code] = y;
   try {
-    const allFds = await getDocs(collection(db, 'users', uid, 'findsdata'));
-    for (const d of allFds.docs) {
+    for (const d of allFdsDocs) {
       const oldFinds = d.data().finds || {};
       const cleaned = {};
       let dirty = false;
