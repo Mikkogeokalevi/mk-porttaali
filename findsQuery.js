@@ -574,6 +574,7 @@ const FINDS_QUERIES = [
       return [
         { title: `${input.loc || '—'}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
+        { title: 'Vuosikalenteri', html: yearCalendar(hits) },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä — tarkista nimi tai valitse se listasta.</p>' }
       ];
     }
