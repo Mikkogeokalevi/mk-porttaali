@@ -709,6 +709,16 @@ export const renderFindsQueries = async (db, user, content) => {
       <div class="view-header"><h1>Löytöhaut</h1>
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
+      ${(() => {
+        const noDate = finds.filter(f => f.day.length < 10);
+        if (!noDate.length) return '';
+        return `<div class="panel" style="padding:10px 12px; margin-top:8px; border-color:var(--c-peach);">
+          <b style="color:var(--c-peach);">⚠ ${noDate.length} löytöä ilman päivämäärää</b> — ne eivät näy kalenteri/D/T-haussa. Tuo GPX uudelleen korjataksesi.
+          <details style="margin-top:6px;"><summary style="font-size:0.8em; cursor:pointer;">Näytä koodit</summary>
+          <div class="type-coverage" style="margin-top:6px;">${noDate.map(f =>
+            `<a class="type-chip miss" href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="text-decoration:none;">${f.code}</a>`).join('')}</div>
+          </details></div>`;
+      })()}
       <label>Haku:</label>
       ${accField('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0)}
       <div id="fqInput" style="margin-top:8px;"></div>
