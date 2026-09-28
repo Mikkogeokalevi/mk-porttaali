@@ -223,29 +223,45 @@ export function parseGpxPoints(text, nickname = '') {
       attrs.push(am[2] === '1' ? id : -id);
     }
 
-    // Löytöpäivä = käyttäjän OMA login päivä. HUOM: <wpt><time> on kätkön
-    // PIILOTUSPÄIVÄ — ei koskaan löytöpäivä, sitä ei saa käyttää!
-    // Pocket query -tiedostoissa käyttäjän omaa logia ei ole mukana (vain
-    // viimeisimmät logit tulevat mukanaan) → päivä jää tyhjäksi.
-    // Poikkeus: eventeissä vieraan attend/found-login päivä = tapahtumapäivä,
-    // joten se kelpaa löytöpäiväksi kun käyttäjä on ollut paikalla.
-    const isEvent = /event|celebration|block party|maze|geocaching hq/i.test(type || '');
-    let findDate = '';
-    let foreignDate = '';
-    let unknownLogDate = '';
+    // Löytöpäivän määritys:
+    // - Oma löytölogi (Found it / Attended / Webcam Photo Taken) on ainoa
+    //   luotettava löytöpäivä. Will Attend / Write note / Announcement -logit
+    //   eivät KOSKAAN ole löytöpäiviä (esim. ilmoittautuminen miittiin viikkoa
+    //   ennen tapahtumaa kirjaantui aiemmin v87-korjauksessa).
+    // - <wpt><time> on PIILOTUSPÄIVÄ — ei löytöpäivä tavallisille kätköille.
+    //   Eventeille se on tapahtumapäivä (eventin "hidden"-kenttä = event date).
+    // - Eventeille päivä = tapahtumapäivä (kuten geocache.fi): yleisin
+    //   attend-tyyppisten logien päivä > oma Attended-logi > wpt <time>.
+    const isEvent = /event|celebration|block party|maze|geocaching hq|lost and found/i.test(type || '');
+    const wptTime = extractFirst(block, /<time>([^<]*)<\/time>/).slice(0, 10);
+    let ownFind = '';   // oma find-tyyppinen logi (Found/Attended/Webcam)
+    let ownOther = '';  // oma muu logi (Unknown/Will Attend/Note...) — hätävara
+    const eventDates = {}; // attend-tyyppisten logien päiväfrekvenssit (eventit)
     const logRe = /<groundspeak:log[^>]*>([\s\S]*?)<\/groundspeak:log>/g;
     let lm;
     while ((lm = logRe.exec(block))) {
       const log = lm[1];
-      const finder = extractFirst(log, /<groundspeak:finder[^>]*>([^<]*)<\/groundspeak:finder>/);
-      const logDate = extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/).slice(0, 10);
-      if (nickLower && finder.toLowerCase() === nickLower) { findDate = logDate; break; }
       const logType = extractFirst(log, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
-      if (!foreignDate && /Found it|Attended|Webcam Photo Taken/i.test(logType)) foreignDate = logDate;
-      if (!unknownLogDate && /Unknown/i.test(logType)) unknownLogDate = logDate;
+      const logDate = extractFirst(log, /<groundspeak:date>([^<]*)<\/groundspeak:date>/).slice(0, 10);
+      const isFindType = /Found it|Attended|Webcam Photo Taken/i.test(logType);
+      const finder = extractFirst(log, /<groundspeak:finder[^>]*>([^<]*)<\/groundspeak:finder>/);
+      if (nickLower && finder.toLowerCase() === nickLower) {
+        if (isFindType && !ownFind) ownFind = logDate;
+        else if (!isFindType && !ownOther) ownOther = logDate;
+        if (ownFind && !isEvent) break;
+      }
+      if (isEvent && logDate && (isFindType || /Unknown/i.test(logType)))
+        eventDates[logDate] = (eventDates[logDate] || 0) + 1;
+    }
+    let day;
+    if (isEvent) {
+      const ed = Object.keys(eventDates);
+      day = ed.sort((a, b) => eventDates[b] - eventDates[a] || (a < b ? -1 : 1))[0] || ownFind || wptTime || ownOther;
+    } else {
+      day = ownFind || ownOther;
     }
 
-    points.push({ lat, lon, code, time: findDate || (isEvent ? (foreignDate || unknownLogDate) : ''), noOwnLog: !findDate, country, type, difficulty, terrain, attrs });
+    points.push({ lat, lon, code, time: day, noOwnLog: !(ownFind || ownOther), country, type, difficulty, terrain, attrs });
   }
   return points;
 }
