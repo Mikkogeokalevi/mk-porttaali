@@ -255,8 +255,12 @@ export function parseGpxPoints(text, nickname = '') {
     }
     let day;
     if (isEvent) {
+      // Eventin päivä = tapahtumapäivä: yleisin attend-login päivä (tarkin jos
+      // muita logeja mukana) > wpt <time> (PQ:ssa = tapahtumapäivä; My Findsissä
+      // joko tapahtumapäivä tai oma löytöpäivä — molemmat pätevät) > oma logi.
+      // Oma Attended voi olla kirjattu väärälle päivälle → ei ensisijainen.
       const ed = Object.keys(eventDates);
-      day = ed.sort((a, b) => eventDates[b] - eventDates[a] || (a < b ? -1 : 1))[0] || ownFind || wptTime || ownOther;
+      day = ed.sort((a, b) => eventDates[b] - eventDates[a] || (a < b ? -1 : 1))[0] || wptTime || ownFind || ownOther;
     } else {
       day = ownFind || ownOther;
     }

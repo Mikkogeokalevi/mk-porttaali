@@ -1319,6 +1319,11 @@ tr.fq-hidden { display: none; }
 .fq-cal td.na { background: rgba(255, 255, 255, 0.04); }
 .fq-cal td { min-width: 22px; }
 .fq-cal td.today { outline: 2px solid #f38ba8; outline-offset: -2px; }
+/* Vuosikalenteri mahdumaan mobiilinäytölle: tiiviit solut */
+.fq-cal { table-layout: fixed; width: 100%; }
+.fq-cal td, .fq-cal th { min-width: 0; padding: 1px 0; font-size: 0.62em; text-align: center; }
+.fq-cal th:first-child { width: 26px; font-size: 0.7em; }
+.fq-cal td.na { cursor: default !important; }
 
 /* D/T-ruudun listasuodatuksen ilmoituspalkki */
 .fq-dtfilter {
