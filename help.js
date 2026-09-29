@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.9</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.10</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>29.9.2026:</strong> <b>Vuosikalenteri täydennetty</b>: uusi <b>vrk</b>-sarake kuukausiriveillä (montako päivää täynnä — vihreä kun koko kuukausi täynnä) ja <b>vrk</b>-rivi alalaidassa (monessako kuukaudessa päivänumero on täynnä — vihreä kun kaikki mahdolliset). Kalenterin alle yhteenveto: <b>"löytöjä X päivänä (Y%) 366:sta mahdollisesta"</b> — geocache.fi-tyylinen 366-päivähaasteen seuranta. Kalenterin päiväpopup ei enää sulkeudu vieritettäessä/klikattaessa sen sisältä (✕-nappi + muualta klikkaus sulkee) ja näyttää löytövuoden.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.9</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>29.9.2026:</strong> <b>Mobiili-UX-kiillotus</b>: kaikki selaimen omat alert/confirm/prompt-ikkunat korvattu sovelluksen teemaan sopivilla ilmoituksilla (toastit) ja vahvistusdialogeilla — myös Reissuapurissa ja suosikkihakujen muokkauksessa. <b>Safe-area-tuki</b>: notch-lovet ja kotipalkki otettu huomioon (viewport-fit=cover, yläpalkki ja alareunan bannerit työntyvät turva-alueelle). <b>Kosketuskohteet suurennettu</b>: pienet napit, chip-valitsimet ja hampurilaisvalikko ovat nyt väh. ~36-44px. Ei enää vahinkotuplapainallus-zoomia (touch-action: manipulation). <b>Modaalien scroll-lukitus</b>: tausta ei enää vieritä modaalin alla. Muuntimet-iframe käyttää dvh-korkeutta. Manifest ja theme-color yhtenäistetty. <b>Kalenterin päiväpopup</b>: ei enää sulkeudu vieritettäessä tai klikatessa sen sisällä — sulkeutuu ✕-napista tai muualta klikatessa; riveillä näkyy nyt myös löytövuosi.</li>
             </ul>

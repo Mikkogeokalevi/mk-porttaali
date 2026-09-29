@@ -294,12 +294,14 @@ function yearCalendar(finds, year = null) {
   const now = new Date();
   const todayKey = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const bg = n => `rgba(137,180,250,${(0.15 + 0.85 * n / (max || 1)).toFixed(2)})`;
-  const head = `<tr><th></th>${Array.from({ length: 31 }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>yht</th></tr>`;
+  const head = `<tr><th></th>${Array.from({ length: 31 }, (_, i) => `<th>${i + 1}</th>`).join('')}<th>kpl</th><th>vrk</th></tr>`;
   const colT = Array(31).fill(0);
+  const colV = Array(31).fill(0); // päivänumero: monessako kuukaudessa se on täynnä
   const missing = [];
   let total = 0;
+  const fullStyle = ' style="background:rgba(166,227,161,0.85); color:#111; font-weight:700;"';
   const rows = MONTHS_SHORT.map((mn, mi) => {
-    let rt = 0;
+    let rt = 0, rv = 0;
     const tds = Array.from({ length: 31 }, (_, di) => {
       const d = di + 1;
       if (d > MLEN[mi]) return '<td class="na"></td>';
@@ -307,19 +309,27 @@ function yearCalendar(finds, year = null) {
       const n = cnt[k] || 0;
       const tdCls = k === todayKey ? ' class="today"' : '';
       rt += n; colT[di] += n; total += n;
-      if (!n) missing.push(`${d}.${mi + 1}.`);
+      if (n) { rv++; colV[di]++; } else missing.push(`${d}.${mi + 1}.`);
       return n ? `<td${tdCls} data-mmdd="${k}" style="background:${bg(n)}; color:#111; cursor:pointer;">${n}</td>` : `<td${tdCls} data-mmdd="${k}" style="cursor:pointer;"></td>`;
     }).join('');
-    return `<tr><th>${mn}</th>${tds}<th>${rt || ''}</th></tr>`;
+    // vrk-sarake: montako kuukauden päivästä on täynnä (vihreä = koko kk)
+    return `<tr><th>${mn}</th>${tds}<th>${rt || ''}</th><th${rv === MLEN[mi] ? fullStyle : ''}>${rv || ''}</th></tr>`;
   }).join('');
-  const tot = `<tr><th>yht</th>${colT.map(n => `<th>${n || ''}</th>`).join('')}<th style="color:var(--c-green);">${total || ''}</th></tr>`;
+  // Pystysarake-vrk: monessako kuukaudessa päivänumero on täynnä (vihreä = kaikki kk joissa päivä on olemassa)
+  const colMax = Array.from({ length: 31 }, (_, di) => MLEN.filter(l => di + 1 <= l).length);
+  const tot = `<tr><th>kpl</th>${colT.map(n => `<th>${n || ''}</th>`).join('')}<th style="color:var(--c-green);">${total || ''}</th><th></th></tr>`;
+  const vrk = `<tr><th>vrk</th>${colV.map((n, di) => `<th${n === colMax[di] ? fullStyle : ''}>${n || ''}</th>`).join('')}<th></th><th></th></tr>`;
+  // Yhteenveto: montako kalenteripäivää on täynnä (366 = yleiskalenteri / vuosi karkausvuodella)
+  const covered = Object.keys(cnt).length;
+  const possible = year ? (leap ? 366 : 365) : 366;
+  const coverHtml = `<div style="margin-top:8px; font-size:0.85em; color:var(--subtext-color);">Kätkölöytöjä <b style="color:var(--text-color);">${covered}</b> päivänä (${(covered / possible * 100).toFixed(1)}%) ${possible}:sta mahdollisesta päivästä.</div>`;
   const wd = [0, 0, 0, 0, 0, 0, 0];
   for (const f of finds) if (f.day.length >= 10) wd[wdOf(f.day)]++;
   const wdHtml = `<div class="type-coverage" style="margin-top:8px;">` +
     WD_OPTS.map(([i, l]) => `<span class="type-chip" style="border-color:#89b4fa; color:#89b4fa;">${l} ${wd[i]}</span>`).join('') + `</div>`;
   const missingHtml = `<details style="margin-top:8px;"><summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Päivät ilman löytöä (${missing.length})</summary>
     <div class="type-coverage" style="margin-top:6px;">${missing.map(d => `<span class="type-chip miss">${d}</span>`).join('')}</div></details>`;
-  return `<div class="fq-scroll"><table class="dt-matrix fq-cal">${head}${rows}${tot}</table></div>${wdHtml}${missingHtml}`;
+  return `<div class="fq-scroll"><table class="dt-matrix fq-cal">${head}${rows}${tot}${vrk}</table></div>${coverHtml}${wdHtml}${missingHtml}`;
 }
 
 // Löytöpäiväjakauma: montako päivää on 1,2,3... löytöä + eniten löytöjä sisältäneet päivät

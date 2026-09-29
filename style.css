@@ -1350,7 +1350,7 @@ tr.fq-hidden { display: none; }
 .fq-cal td.na { background: rgba(255, 255, 255, 0.04); cursor: default !important; }
 .fq-cal td.today { outline: 2px solid #f38ba8; outline-offset: -2px; }
 .fq-cal td:first-child, .fq-cal th:first-child { width: 24px; font-size: 9px; font-weight: 600; }
-.fq-cal td:last-child, .fq-cal th:last-child { width: 30px; font-weight: 700; }
+.fq-cal td:last-child, .fq-cal th:last-child, .fq-cal td:nth-last-child(2), .fq-cal th:nth-last-child(2) { width: 26px; font-weight: 700; }
 @media (min-width: 700px) { .fq-cal { font-size: 10px; } }
 
 /* D/T-ruudun listasuodatuksen ilmoituspalkki */
