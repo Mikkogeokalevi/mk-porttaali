@@ -368,6 +368,10 @@ document.addEventListener('click', e => {
     res?.querySelector('.fq-dtfilter')?.remove();
     return;
   }
+  // Popupin oma sulje-nappi
+  if (e.target.closest('.dt-popup-close')) { closeDtPopup(); return; }
+  // Klikkaus popupin sisällä (linkit, vieritys) ei sulje sitä
+  if (dtPopup && dtPopup.contains(e.target)) return;
   const td = e.target.closest('.dt-matrix td[data-break]');
   const ctd = e.target.closest('.fq-cal td[data-mmdd]');
   if (!td && !ctd) { closeDtPopup(); return; }
@@ -400,10 +404,12 @@ document.addEventListener('click', e => {
     dtPopup = document.createElement('div');
     dtPopup.className = 'dt-popup';
     dtPopup._for = ctd;
-    dtPopup.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">${+dd}.${+mm}.</div>` +
+    dtPopup.innerHTML = `<div style="font-weight:700; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <span>${+dd}.${+mm}.</span><span class="dt-popup-close" style="cursor:pointer; opacity:0.55; padding:2px 6px;" title="Sulje">✕</span></div>` +
       (items.length ? items.map(f =>
-        `<div style="display:flex; justify-content:space-between; gap:12px; padding:2px 0;">
+        `<div style="display:flex; justify-content:space-between; gap:10px; padding:2px 0;">
           <a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:600; text-decoration:none;">${f.code}</a>
+          <span style="color:var(--subtext-color); font-size:0.85em;">${f.day.slice(0, 4)}</span>
           <span style="color:${TYPE_COLORS[f.type] || '#888'};">${TYPE_NAMES[f.type] || '?'}</span></div>`).join('')
         : '<div style="opacity:0.6;">Ei löytöjä</div>');
     document.body.appendChild(dtPopup);
@@ -426,7 +432,7 @@ document.addEventListener('click', e => {
     const [ty, n] = p.split(':');
     return `<div style="display:flex; justify-content:space-between; gap:12px; padding:3px 0;">
       <span style="color:${TYPE_COLORS[+ty] || '#888'}; font-weight:600;">${TYPE_NAMES[+ty] || '?'}</span><span>${n}</span></div>`;
-  }).join('') + `<div style="font-size:0.72em; opacity:0.6; margin-top:5px; border-top:1px solid rgba(127,127,127,0.25); padding-top:4px;">Lista rajattu tähän ruutuun · klikkaa sulkeaksesi</div>`;
+  }).join('') + `<div style="font-size:0.72em; opacity:0.6; margin-top:5px; border-top:1px solid rgba(127,127,127,0.25); padding-top:4px;">Lista rajattu tähän ruutuun · klikkaa muualta sulkeaksesi</div>`;
   document.body.appendChild(dtPopup);
   const r = td.getBoundingClientRect();
   const pw = dtPopup.offsetWidth, ph = dtPopup.offsetHeight;
@@ -436,7 +442,10 @@ document.addEventListener('click', e => {
   dtPopup.style.left = left + 'px';
   dtPopup.style.top = top + 'px';
 });
-document.addEventListener('scroll', closeDtPopup, true);
+// Suljetaan vain jos vieritetään muualla kuin popupin sisällä (popup pysyy
+// paikallaan suhteessa soluun koska se on ankkuroitu dokumenttikoordinaatteihin,
+// mutta muu vieritys = käyttäjä siirtyi muuhun -> siisti sulkeminen)
+document.addEventListener('scroll', e => { if (!dtPopup?.contains(e.target)) closeDtPopup(); }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDtPopup(); });
 
 // Yksi delegoitu kuuntelija riittää kaikille finds-table-sorttauksille (myös dynaamisesti lisätyille)

@@ -1268,7 +1268,6 @@ summary:hover { color: var(--accent-color); }
   max-height: 280px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  cursor: pointer;
 }
 
 /* Chip-valitsimet (korvaavat natiivit selectit mobiilissa) */
