@@ -87,6 +87,8 @@ export const renderAdminView = async (content, db, currentUser) => {
         event.target.classList.add('active');
     };
 
+    const users = []; // renderAdminView-tason taulukko -> adminOpenPremium löytää nimen uid:lla
+
     const loadUsers = async () => {
         const container = document.getElementById('usersContainer');
         container.innerHTML = 'Ladataan uusimmat 100 käyttäjää...';
@@ -95,7 +97,7 @@ export const renderAdminView = async (content, db, currentUser) => {
             const q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(100));
             const snapshot = await getDocs(q);
             
-            const users = [];
+            users.length = 0;
             snapshot.forEach(docSnap => {
                 users.push({ id: docSnap.id, ...docSnap.data() });
             });
@@ -168,7 +170,7 @@ export const renderAdminView = async (content, db, currentUser) => {
                                 Reissuapuri
                             </label>
                             <button class="btn btn-sm btn-sky" onclick="app.previewAsUser('${String(u.nickname||'').replace(/'/g,"\\'")}', '${u.role||'user'}', '${u.plan||'free'}', ${!!u.reissuapuriEnabled})">👁 Näytä</button>
-                            <button class="btn btn-sm btn-peach" onclick="app.adminOpenPremium('${uid}', '${u.nickname}')">💎 Lisää Premium</button>
+                            <button class="btn btn-sm btn-peach" onclick="app.adminOpenPremium('${uid}')">💎 Lisää Premium</button>
                             <button class="btn btn-sm btn-danger" onclick="app.adminDeleteUser('${uid}')">🗑️ Poista</button>
                         </div>
                     </div>`;
@@ -300,8 +302,9 @@ export const renderAdminView = async (content, db, currentUser) => {
     
     window.app.adminChangeStatus = async (uid, newStatus) => { await updateDoc(doc(db, "users", uid), { status: newStatus }); loadUsers(); };
     window.app.adminToggleReissuapuri = async (uid, enabled) => { await updateDoc(doc(db, "users", uid), { reissuapuriEnabled: enabled }); loadUsers(); };
-    window.app.adminOpenPremium = (uid, name) => {
-        document.getElementById('premiumTargetUser').textContent = `Lisätään käyttäjälle: ${name}`;
+    window.app.adminOpenPremium = (uid) => {
+        const target = users.find(u => u.id === uid);
+        document.getElementById('premiumTargetUser').textContent = `Lisätään käyttäjälle: ${target?.nickname || uid}`;
         const list = document.getElementById('productList'); list.innerHTML = '';
         PRODUCTS.forEach(prod => {
             const btn = document.createElement('button'); btn.className = 'product-btn'; btn.style.backgroundColor = prod.color; btn.innerHTML = `<span>${prod.name}</span> <span>${prod.price}</span>`;
@@ -319,7 +322,19 @@ export const renderAdminView = async (content, db, currentUser) => {
         alert(`✅ Lisätty ${product.name}!`);
         loadUsers();
     };
-    window.app.adminDeleteUser = async (uid) => { if(!confirm("Poistetaanko käyttäjä?")) return; await deleteDoc(doc(db, "stats", uid)); await deleteDoc(doc(db, "users", uid)); loadUsers(); };
+    window.app.adminDeleteUser = async (uid) => {
+        if(!confirm("Poistetaanko käyttäjä ja KAIKKI hänen tietonsa (löydöt, tilastot, maakartat)?")) return;
+        // Alikokoelmat eivät poistu päädokumentin mukana — siivotaan erikseen.
+        try {
+            const fds = await getDocs(collection(db, "users", uid, "findsdata"));
+            for (const d of fds.docs) await deleteDoc(d.ref);
+            for (const p of ["sweden", "norway", "estonia", "other_countries"])
+                await deleteDoc(doc(db, "users", uid, p, "finds"));
+        } catch (e) { console.warn("Alikokoelmien siivous epäonnistui:", e); }
+        await deleteDoc(doc(db, "stats", uid));
+        await deleteDoc(doc(db, "users", uid));
+        loadUsers();
+    };
 
     loadUsers();
 };

@@ -239,8 +239,17 @@ export const deleteMyAccount = async (auth, db) => {
     if (!confirmDelete) return;
 
     try {
-        await deleteDoc(doc(db, "users", user.uid));
-        await deleteDoc(doc(db, "stats", user.uid));
+        const uid = user.uid;
+        // Alikokoelmat eivät poistu dokumentin mukana — ne on poistettava erikseen,
+        // muuten käyttäjän löytödata jää orvoksi tietokantaan.
+        try {
+            const fds = await getDocs(collection(db, "users", uid, "findsdata"));
+            for (const d of fds.docs) await deleteDoc(d.ref);
+            for (const p of ["sweden", "norway", "estonia", "other_countries"])
+                await deleteDoc(doc(db, "users", uid, p, "finds"));
+        } catch (e) { console.warn("Alikokoelmien siivous epäonnistui:", e); }
+        await deleteDoc(doc(db, "users", uid));
+        await deleteDoc(doc(db, "stats", uid));
         await deleteUser(user);
         alert("Tili poistettu.");
         window.location.reload();
@@ -305,14 +314,30 @@ export const loadFriends = async (db, uid, containerId, selectId) => {
             // 1. Hallintalista (Asetukset-sivu)
             const container = document.getElementById(containerId);
             if (container) {
-                container.innerHTML = list.length ? '' : '<span style="opacity:0.5; font-size:0.9em;">Ei tallennettuja kavereita.</span>';
+                container.innerHTML = '';
+                if (!list.length) {
+                    const empty = document.createElement('span');
+                    empty.style.cssText = 'opacity:0.5; font-size:0.9em;';
+                    empty.textContent = 'Ei tallennettuja kavereita.';
+                    container.appendChild(empty);
+                }
+                // Nimet renderöidään DOM:n kautta (ei innerHTML/inline-onclick) —
+                // vältetään XSS ja apostrofien rikkominen kaverinimissä.
                 list.forEach(f => {
                     const div = document.createElement('div');
                     div.className = 'friend-item';
-                    div.innerHTML = `
-                        <span>${f.name} <span style="font-size:0.8em; opacity:0.6;">(${f.id || '-'})</span></span>
-                        <button class="btn-delete" onclick="app.removeFriend('${f.name}')">✕</button>
-                    `;
+                    const span = document.createElement('span');
+                    span.textContent = f.name + ' ';
+                    const idSpan = document.createElement('span');
+                    idSpan.style.cssText = 'font-size:0.8em; opacity:0.6;';
+                    idSpan.textContent = `(${f.id || '-'})`;
+                    span.appendChild(idSpan);
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-delete';
+                    btn.textContent = '✕';
+                    btn.addEventListener('click', () => app.removeFriend(f.name));
+                    div.appendChild(span);
+                    div.appendChild(btn);
                     container.appendChild(div);
                 });
             }

@@ -1,0 +1,71 @@
+rules_version = '2';
+// MK Porttaali — Firestore-sääntöluonnos (v2.18.8)
+//
+// TÄRKEÄÄ: Tämä tiedosto EI tule voimaan pelkällä commitilla.
+// Kopsaa sisältö Firebase Console -> Firestore -> Rules -välilehdelle
+// JA TESTAA ensin Rules-simulaattorilla, koska virheelliset säännöt
+// voivat estää sovelluksen toiminnan kokonaan.
+//
+// Sovelluksen kirjoitukset joita sääntöjen on sallittava:
+//  - users/{uid}: luonti (rekisteröinti), lastLogin, nickname/gcId,
+//    saved_usernames, reissuapuriEnabled (admin), plan (vain admin!)
+//    HUOM: premiumin vanhenemisessa asiakas kirjoittaa plan:'free' itse —
+//    alla sallittu DOWNGRADE, mutta ei plan:'premium' itseään.
+//  - stats/{uid}: GPX-tuonti + adminin kuntataulukko (sama uid)
+//  - users/{uid}/findsdata|sweden|norway|estonia|other_countries: omistaja
+//  - settings/global: luku kaikille kirjauneille, kirjoitus vain admin
+//  - Reissuapuri käyttää REALTIME DATABASEa (reissuapuri/{uid}) — eri
+//    tuote, vaatii omat RTDB-sääntönsä Firebase Consolesta!
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    match /settings/global {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      // Rekisteröinti: vain oletusarvoja, ei admin- tai premium-oikeuksia
+      allow create: if isOwner(uid)
+        && request.resource.data.role == 'user'
+        && request.resource.data.plan == 'free';
+      allow update: if isAdmin()
+        || (isOwner(uid) && (
+          // Omistaja ei saa muuttaa roolia/status/reissuapuri-lippua
+          request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.reissuapuriEnabled == resource.data.reissuapuriEnabled
+          // Plan: vain premiumin vanhenemis-downgrade itsessään sallittu
+          && (request.resource.data.plan == resource.data.plan
+              || (resource.data.plan == 'premium' && request.resource.data.plan == 'free'))
+        ));
+      allow delete: if isOwner(uid) || isAdmin();
+
+      // Löytödata-alikokoelmat: vain omistaja (+ admin lukuun)
+      match /{sub=**} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid);
+        allow delete: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    match /stats/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid);
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // Kaikki muu estetty oletuksena
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

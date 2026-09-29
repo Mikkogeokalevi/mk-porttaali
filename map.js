@@ -127,7 +127,13 @@ export const renderTripletMap = async (content, db, user, app) => {
 
         const labelLayer = L.layerGroup().addTo(map);
 
+        let lastLabelSig = '';
         const refreshLabels = () => {
+            // Ohitetaan turha uudelleenrakennus jos näkymä ei muuttunut
+            // (zoomend ja moveend voivat laueta peräkkäin samalle tilalle)
+            const sig = map.getZoom() + '|' + map.getBounds().toBBoxString();
+            if (sig === lastLabelSig) return;
+            lastLabelSig = sig;
             labelLayer.clearLayers();
             geoLayer.eachLayer(layer => {
                 if (!layer.getBounds) return;

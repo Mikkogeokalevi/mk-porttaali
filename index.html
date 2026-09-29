@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>MK Porttaali v2.18.7</title>
+  <title>MK Porttaali v2.18.8</title>
   
   <link rel="icon" type="image/png" href="mklogo.png">
   
@@ -32,11 +32,11 @@
     <button class="mobile-toggle" onclick="app.toggleMenu()">☰</button>
     <nav id="mainNav">
       <ul>
-        <li><button class="nav-btn" onclick="app.router('home')">Etusivu</button></li>
-        <li><button class="nav-btn" onclick="app.router('generator')">Kuvageneraattori</button></li>
-        <li><button class="nav-btn" onclick="app.router('stats')">Tilastot</button></li>
-        <li><button class="nav-btn" onclick="app.router('links')">Linkkikirjasto</button></li>
-        <li><button class="nav-btn" onclick="app.router('help')">Ohjeet & Tuki</button></li>
+        <li><button class="nav-btn" data-view="home" onclick="app.router('home')">Etusivu</button></li>
+        <li><button class="nav-btn" data-view="generator" onclick="app.router('generator')">Kuvageneraattori</button></li>
+        <li><button class="nav-btn" data-view="stats" onclick="app.router('stats')">Tilastot</button></li>
+        <li><button class="nav-btn" data-view="links" onclick="app.router('links')">Linkkikirjasto</button></li>
+        <li><button class="nav-btn" data-view="help" onclick="app.router('help')">Ohjeet & Tuki</button></li>
       </ul>
       <div id="authContainer">
         <span id="userNameDisplay" class="user-info hidden"></span>
@@ -51,13 +51,34 @@
   </main>
 
   <script type="module" src="app.js"></script>
+  <div id="swUpdateBanner" style="display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:9999; background:#313244; color:#cdd6f4; border:1px solid #f9e2af; border-radius:10px; padding:12px 14px; align-items:center; gap:12px; box-shadow:0 4px 18px rgba(0,0,0,.5); font-size:.95em;">
+    <span style="flex:1;">🔄 Uusi versio asennettu — päivitä sivu saadaksesi sen käyttöön.</span>
+    <button class="btn btn-sm btn-primary" onclick="location.reload()">Päivitä</button>
+    <button class="btn btn-sm" onclick="document.getElementById('swUpdateBanner').style.display='none'" style="padding:4px 10px;">Myöhemmin</button>
+  </div>
   <script>
     if ('serviceWorker' in navigator) {
+      const showSwUpdate = () => {
+        const b = document.getElementById('swUpdateBanner');
+        if (b) b.style.display = 'flex';
+      };
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker rekisteröity: ', reg.scope))
+          .then(reg => {
+            console.log('Service Worker rekisteröity: ', reg.scope);
+            // Uusi SW odottaa tai asentui juuri -> ilmoita käyttäjälle
+            if (reg.waiting) showSwUpdate();
+            reg.addEventListener('updatefound', () => {
+              const sw = reg.installing;
+              if (sw) sw.addEventListener('statechange', () => {
+                if (sw.state === 'installed' && navigator.serviceWorker.controller) showSwUpdate();
+              });
+            });
+          })
           .catch(err => console.log('Service Worker virhe: ', err));
       });
+      // Jos sivun ohjaava SW vaihtuu (skipWaiting), kehoita päivittämään
+      navigator.serviceWorker.addEventListener('controllerchange', showSwUpdate);
     }
   </script>
 </body>

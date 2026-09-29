@@ -3,9 +3,10 @@
 
 import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./locationHelpers.js";
-import { loadFinds, findsList } from "./findsQuery.js";
+import { loadFinds, findsList, invalidateFindsCache } from "./findsQuery.js";
+import { GPX_TYPE_TO_INDEX } from "./gpxImport.js";
 
-// Kätkötyypit Suomen karttojen tyyliin
+// Kätkötyypit Suomen karttojen tyyliin (sama 14-tyypin järjestys kuin gpxImport.js)
 const CACHE_TYPES = [
   { index: 0, name: 'Tradi', icon: 'kuvat/tradi.gif' },
   { index: 1, name: 'Multi', icon: 'kuvat/multi.gif' },
@@ -18,27 +19,10 @@ const CACHE_TYPES = [
   { index: 8, name: 'Cito', icon: 'kuvat/cito.gif' },
   { index: 9, name: 'Wherigo', icon: 'kuvat/wherigo.gif' },
   { index: 10, name: 'Com.Cel', icon: 'kuvat/ccemiitti.gif' },
-  { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' }
+  { index: 11, name: 'Mega', icon: 'kuvat/mega.gif' },
+  { index: 12, name: 'No Loc', icon: null },
+  { index: 13, name: 'Juhla', icon: null }
 ];
-
-// GPX:n englanninkieliset kätkötyypit -> CACHE_TYPES-indeksi
-const GPX_TYPE_TO_INDEX = {
-  'Traditional Cache': 0,
-  'Multi-cache': 1,
-  'Webcam Cache': 2,
-  'Unknown Cache': 3,
-  'Letterbox Hybrid': 4,
-  'Earthcache': 5,
-  'Event Cache': 6,
-  'Virtual Cache': 7,
-  'Cache In Trash Out Event': 8,
-  'Wherigo Cache': 9,
-  'Community Celebration Event': 10,
-  'Mega-Event': 11,
-  'Giga-Event': 11,
-  'Lost and Found Event': 6,
-  'Groundspeak Block Party': 6
-};
 
 export const COUNTRY_CONFIGS = {
   sweden: {
@@ -184,6 +168,8 @@ async function saveFound(uid, data, db, config, lastGpxImport = null) {
       console.warn(`${config.name}-löytöjen tallennus Firestoreen epäonnistui:`, e);
     }
   }
+  // Municipalities-muutokset vaikuttavat löytöjen kunta->maa-päättelyyn (loadFinds)
+  invalidateFindsCache();
 }
 
 // -------- Pisteen sijainti polygonin sisällä (ray casting) --------
@@ -509,7 +495,8 @@ async function renderCountryMap(content, db, user, app, config) {
       CACHE_TYPES.forEach(t => {
         const count = s[t.index] || 0;
         if (count > 0) {
-          foundHtml += `<div style="display:inline-block;margin:2px 6px 2px 0;white-space:nowrap;"><img src="${t.icon}" style="width:14px;vertical-align:middle;margin-right:3px;"> <b>${t.name}:</b> ${count}</div>`;
+          const iconHtml = t.icon ? `<img src="${t.icon}" style="width:14px;vertical-align:middle;margin-right:3px;">` : '';
+          foundHtml += `<div style="display:inline-block;margin:2px 6px 2px 0;white-space:nowrap;">${iconHtml} <b>${t.name}:</b> ${count}</div>`;
         } else {
           missingHtml += `<span style="display:inline-block;background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;font-size:0.8em;margin:2px;">${t.name}</span>`;
         }

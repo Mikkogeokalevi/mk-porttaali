@@ -1,0 +1,13 @@
+# Salaisuudet ja ympäristömuuttujat
+.env
+.env.local
+
+# Henkilökohtainen käyttäjädata (GPX-löydöt eivät kuulu repoon)
+*.gpx
+*.zip
+
+# Työkalu- ja tilapäistiedostot
+a.txt
+Thumbs.db
+.DS_Store
+node_modules/

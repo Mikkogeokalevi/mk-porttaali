@@ -6,6 +6,7 @@
 import { collection, doc, getDoc, getDocs, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
 import { COUNTRY_CONFIGS } from "./map_countries.js";
+import { invalidateFindsCache } from "./findsQuery.js";
 
 // Suomen kuntarajat: ensisijaisesti tarkka MML 1:100 000 -aineisto reposta
 // (vanhat GitHub-lähteet olivat ~23-kulmaisia raakileita -> väärät kuntamääritykset rajan lähellä)
@@ -682,6 +683,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   const codeYear = {};
   for (const [y, fy] of Object.entries(findsByYear))
     for (const code of Object.keys(fy)) codeYear[code] = y;
+  const cleanedByYear = {}; // year -> siivotut finds (vältetään uudelleenhaku merge-vaiheessa)
   try {
     for (const d of allFdsDocs) {
       const oldFinds = d.data().finds || {};
@@ -691,6 +693,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         if (codeYear[code] && codeYear[code] !== d.id) dirty = true;
         else cleaned[code] = rec;
       }
+      cleanedByYear[d.id] = cleaned;
       if (dirty) {
         onStatus(`Siivotaan findsdata/${d.id}...`);
         await setDoc(doc(db, 'users', uid, 'findsdata', d.id), { finds: cleaned, updatedAt: now });
@@ -699,11 +702,17 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   } catch (e) { console.warn('findsdata-siivous epäonnistui:', e); }
 
   for (const [year, yearFinds] of Object.entries(findsByYear)) {
-    const snap = await getDoc(doc(db, 'users', uid, 'findsdata', year));
-    const merged = snap.exists() ? { ...(snap.data().finds || {}), ...yearFinds } : yearFinds;
-    await setDoc(doc(db, 'users', uid, 'findsdata', year), { finds: merged, updatedAt: now });
+    // Käytetään jo ladattua+siivottua snapshotia; haetaan vain jos vuosidokumentti
+    // ei ollut allFdsDocs-listassa (uusi vuosi tai listahaku epäonnistui).
+    let existing = cleanedByYear[year];
+    if (existing === undefined) {
+      const snap = await getDoc(doc(db, 'users', uid, 'findsdata', year));
+      existing = snap.exists() ? (snap.data().finds || {}) : {};
+    }
+    await setDoc(doc(db, 'users', uid, 'findsdata', year), { finds: { ...existing, ...yearFinds }, updatedAt: now });
   }
 
+  invalidateFindsCache(); // Löytöhaut/maakartat näkevät heti uuden datan
   return report;
 }
 
@@ -741,6 +750,14 @@ export async function assignFindToFinnishMunicipality(db, uid, { code, typeName 
   const sData = statsSnap.exists() ? statsSnap.data() : {};
   const municipalities = sData.municipalities || {};
   const fixes = sData.fixes || {};
+  // Jos kätkö on jo toisessa Suomen kunnassa, poistetaan sieltä ensin —
+  // muuten sama löytö laskettaisiin kahteen kuntaan seuraavaan tuontiin asti.
+  for (const [k, e] of Object.entries(municipalities)) {
+    if (k === kunta || !e || !Array.isArray(e.ids) || !e.ids.includes(code)) continue;
+    e.ids = e.ids.filter(c => c !== code);
+    if (Array.isArray(e.s) && typeIdx >= 0 && typeIdx < e.s.length && e.s[typeIdx] > 0) e.s[typeIdx]--;
+    if (!e.ids.length) delete municipalities[k];
+  }
   const entry = municipalities[kunta] = ensureEntryShape(municipalities[kunta]);
   if (!entry.ids.includes(code)) {
     entry.ids.push(code);
@@ -771,4 +788,5 @@ export async function assignFindToFinnishMunicipality(db, uid, { code, typeName 
       await setDoc(doc(db, 'users', uid, 'findsdata', y), { finds: { [code]: rec } }, { merge: true });
     }
   }
+  invalidateFindsCache();
 }

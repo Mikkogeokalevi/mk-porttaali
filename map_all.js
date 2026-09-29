@@ -225,10 +225,14 @@ export const renderAllFindsMap = async (content, db, user, app) => {
                 });
                 if (visible) layer.bringToBack();
             });
-            refreshLabels();
+            refreshLabels(true); // suodatin muuttui -> labelit pakotettuna uusiksi
         };
 
-        const refreshLabels = () => {
+        let lastLabelSig = '';
+        const refreshLabels = (force = false) => {
+            const sig = map.getZoom() + '|' + map.getBounds().toBBoxString();
+            if (!force && sig === lastLabelSig) return;
+            lastLabelSig = sig;
             labelLayer.clearLayers();
             geoLayer.eachLayer(layer => {
                 if (!layer.getBounds || !matchesMissingFilter(layer)) return;

@@ -11,9 +11,16 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.6</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.8</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>28.9.2026:</strong> <b>Päivitysilmoitus</b>: kun uusi versio on asennettu taustalla, ruudun alalaitaan ilmestyy "Päivitä"-banneri — ei enää tarvetta tyhjentää välimuistia käsin. <b>Navigaation korostus korjattu</b>: Tilastot/Linkkikirjasto näyttävät nyt aktiivisen sivun oikein (myös tilastojen alinäkymät ja maakartat). <b>Löytöhaut päivittyvät heti</b> GPX-tuonnin jälkeen ilman sivun uudelleenlatausta. <b>Tietoturva</b>: kaverinimet renderöidään turvallisesti; käyttäjän poisto siivoaa nyt myös löytödata-alikokoelmat (myös admin-poisto). <b>Ulkomaiden karttojen GPX-tuonti</b> käyttää nyt samaa kätkötyyppitaulukkoa kuin päätuonti (Giga/Juhla/Block Party -määritykset korjattu) ja popup näyttää kaikki 14 tyyppiä. Manuaalinen kunta-määritys poistaa löydön aiemmasta kunnasta heti.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.7</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>28.9.2026:</strong> <b>Tarkat kuntarajat (MML 1:100&nbsp;000)</b>: aiempi kunta-aineisto oli ~23-kulmainen yleistys, joka sijoitti rajojen lähellä olevat kätköt naapurikuntiin (esim. Lahti +45). Nyt käytössä Maanmittauslaitoksen virallinen kuntajako — korjaa sekä kuntamääritykset että piirretyt rajat kuntakartoilla. Vaatii ZIP-uudelleentuonnin.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.6</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>28.9.2026:</strong> <b>Löytöpäivät Pacific Timeen</b>: GPX:n lokipäivämäärät ovat UTC-aikaleimoja — geocaching.com/geocache.fi näyttävät ne PT-vyöhykkeellä (Seattle). <b>Kuntamääritys korjattu</b>: lähimmän kunnan "napautus" oli 10 km (naapurikunnan kätköjä lipsui väärälle) → nyt 2 km + raportti listaa ohjatut; koodi poistetaan vanhasta sijainnista kun se siirtyy toiseen kuntaan/maahan (aiemmin saattoi olla molemmissa). D/T-ruudukon legenda näyttää kaikki esiintyvät tyypit. Paikkakunta-hakuun vuosikalenteri.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.5</strong></div>

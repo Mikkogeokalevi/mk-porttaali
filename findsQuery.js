@@ -30,6 +30,9 @@ const WEEKDAYS_FI = [['Maanantai', 1], ['Tiistai', 2], ['Keskiviikko', 3], ['Tor
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
 let findsCache = null;
+// Kutsutaan kun findsdata/talousdata muuttuu (GPX-tuonti, kunta-määritykset,
+// maakarttojen tallennukset) — muuten haut näyttäisivät vanhaa dataa istunnossa.
+export function invalidateFindsCache() { findsCache = null; }
 export async function loadFinds(db, uid) {
   if (findsCache) return findsCache;
   // loc-kentässä on kunta (FI/SE/NO/EE) tai maanimi (muut maat) — rakennetaan kunta->maa-kartta

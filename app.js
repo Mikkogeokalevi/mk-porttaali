@@ -32,10 +32,10 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v92';
-const APP_DISPLAY_VERSION = '2.18.7';
-const APP_SW_CACHE = 'mk-porttaali-v92';
-const APP_UPDATED_AT = '27.9.2026';
+const APP_VERSION = 'v93';
+const APP_DISPLAY_VERSION = '2.18.8';
+const APP_SW_CACHE = 'mk-porttaali-v93';
+const APP_UPDATED_AT = '28.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
 
@@ -91,12 +91,18 @@ window.app = {
         }
     }
 
-    // Päivitetään navigaation aktiivinen tila
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(targetView) || 
-            (targetView === 'home' && btn.textContent === 'Etusivu') ||
-            (targetView === 'generator' && btn.textContent === 'Kuvageneraattori') ||
-            (targetView === 'help' && btn.textContent === 'Ohjeet & Tuki'));
+    // Päivitetään navigaation aktiivinen tila (data-view-pohjainen; stats-alinäkymät
+    // ja maakartat korostavat Tilastot-painiketta)
+    const NAV_VIEW = {
+        home: 'home', generator: 'generator', links: 'links', help: 'help',
+        stats: 'stats', stats_triplet: 'stats', stats_map: 'stats', stats_map_all: 'stats',
+        stats_all: 'stats', stats_top: 'stats', stats_external: 'stats', stats_other: 'stats',
+        stats_queries: 'stats', country_maps: 'stats',
+        sweden_map: 'stats', norway_map: 'stats', estonia_map: 'stats'
+    };
+    const navView = NAV_VIEW[targetView] || null;
+    document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === navView);
     });
 
     // Suoritetaan näkymän renderöinti virheenkäsittelyllä
@@ -125,7 +131,7 @@ window.app = {
             content.innerHTML = `
               <div class="card home-card">
                 <img src="mklogo.png" alt="MK Porttaali" class="app-logo">
-                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</span></div>
+                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}·${APP_VERSION}</span></div>
                 <p class="muted" style="margin-top:15px;">Geokätköilijän työkalupakki: tilastot, kartat, kuvageneraattori ja muuntimet.</p>
                 <div class="divider"><span>Kirjaudu jatkaaksesi</span></div>
                 <button class="btn btn-primary btn-block" onclick="app.router('login_view')">Kirjaudu sisään</button>
@@ -155,7 +161,7 @@ window.app = {
             <div class="home-card" style="padding-bottom:5px;">
                 <img src="mklogo.png" alt="MK Porttaali" class="app-logo">
                 <div>${statusBadge}</div>
-                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}</span></div>
+                <div><span class="version-pill" onclick="app.router('help')" title="Katso ohjeet ja versiohistoria">v${APP_DISPLAY_VERSION}·${APP_VERSION}</span></div>
             </div>
 
             <div class="launcher-grid">

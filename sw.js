@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v92'; // PÄIVITETTY: v91 -> v92
+const CACHE_NAME = 'mk-porttaali-v93'; // PÄIVITETTY: v92 -> v93
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -42,7 +42,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching assets (v19)');
+      console.log('[SW] Caching assets (' + CACHE_NAME + ')');
       // Lisätty virheenkäsittely, jotta yksi puuttuva tiedosto ei kaada koko asennusta
       return Promise.all(
         ASSETS_TO_CACHE.map(url => {
@@ -68,6 +68,11 @@ self.addEventListener('activate', (event) => {
     })
   );
   self.clients.claim();
+});
+
+// Viesti sivulta: aktivoidaan odottava uusi versio heti
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Haku: Verkko ensin, sitten välimuisti (Network First strategy)
