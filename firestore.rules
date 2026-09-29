@@ -33,10 +33,15 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
-      // Rekisteröinti: vain oletusarvoja, ei admin- tai premium-oikeuksia
+      // Rekisteröinti: vain oletusarvoja, ei admin- tai premium-oikeuksia.
+      // Jos requireApproval on päällä, uusi tili on pakotettu 'pending'-tilaan
+      // (muuten käyttäjä voisi luoda itsensä suoraan hyväksyttynä).
       allow create: if isOwner(uid)
         && request.resource.data.role == 'user'
-        && request.resource.data.plan == 'free';
+        && request.resource.data.plan == 'free'
+        && (!exists(/databases/$(database)/documents/settings/global)
+            || !get(/databases/$(database)/documents/settings/global).data.requireApproval
+            || request.resource.data.status == 'pending');
       allow update: if isAdmin()
         || (isOwner(uid) && (
           // Omistaja ei saa muuttaa roolia/status/reissuapuri-lippua

@@ -1,6 +1,7 @@
 import { 
     collection, getDocs, doc, updateDoc, deleteDoc, getDoc, setDoc, query, orderBy, limit, Timestamp 
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { toast, confirmDialog } from "./ui.js";
 
 // --- TUOTEHALLINTA ---
 const PRODUCTS = [
@@ -75,7 +76,7 @@ export const renderAdminView = async (content, db, currentUser) => {
             <h2 style="margin-top:0;">Lisää Premium 💎</h2>
             <p id="premiumTargetUser" style="opacity:0.7; margin-bottom:20px;">...</p>
             <div id="productList" style="display:grid; gap:10px;"></div>
-            <button class="btn" style="margin-top:20px; width:100%;" onclick="document.getElementById('premiumModal').classList.remove('open')">Peruuta</button>
+            <button class="btn" style="margin-top:20px; width:100%;" onclick="document.getElementById('premiumModal').classList.remove('open'); document.body.classList.remove('modal-open')">Peruuta</button>
         </div>
     </div>
     `;
@@ -298,7 +299,7 @@ export const renderAdminView = async (content, db, currentUser) => {
 
     const settingsRef = doc(db, "settings", "global");
     getDoc(settingsRef).then(snap => { if(snap.exists()) document.getElementById('settingRequireApproval').checked = snap.data().requireApproval || false; });
-    document.getElementById('saveSettingsBtn').onclick = async () => { await setDoc(settingsRef, { requireApproval: document.getElementById('settingRequireApproval').checked }, { merge: true }); alert("Asetukset tallennettu."); };
+    document.getElementById('saveSettingsBtn').onclick = async () => { await setDoc(settingsRef, { requireApproval: document.getElementById('settingRequireApproval').checked }, { merge: true }); toast("Asetukset tallennettu.", 'ok'); };
     
     window.app.adminChangeStatus = async (uid, newStatus) => { await updateDoc(doc(db, "users", uid), { status: newStatus }); loadUsers(); };
     window.app.adminToggleReissuapuri = async (uid, enabled) => { await updateDoc(doc(db, "users", uid), { reissuapuriEnabled: enabled }); loadUsers(); };
@@ -311,6 +312,7 @@ export const renderAdminView = async (content, db, currentUser) => {
             btn.onclick = () => app.adminApplyPremium(uid, prod); list.appendChild(btn);
         });
         document.getElementById('premiumModal').classList.add('open');
+        document.body.classList.add('modal-open');
     };
     window.app.adminApplyPremium = async (uid, product) => {
         const uSnap = await getDoc(doc(db, "users", uid));
@@ -319,11 +321,12 @@ export const renderAdminView = async (content, db, currentUser) => {
         currentExp.setDate(currentExp.getDate() + product.days);
         await updateDoc(doc(db, "users", uid), { plan: 'premium', premiumExpires: Timestamp.fromDate(currentExp) });
         document.getElementById('premiumModal').classList.remove('open');
-        alert(`✅ Lisätty ${product.name}!`);
+        document.body.classList.remove('modal-open');
+        toast(`Lisätty ${product.name}!`, 'ok');
         loadUsers();
     };
     window.app.adminDeleteUser = async (uid) => {
-        if(!confirm("Poistetaanko käyttäjä ja KAIKKI hänen tietonsa (löydöt, tilastot, maakartat)?")) return;
+        if(!await confirmDialog("Poistetaanko käyttäjä ja KAIKKI hänen tietonsa (löydöt, tilastot, maakartat)?", { okText: 'Poista käyttäjä' })) return;
         // Alikokoelmat eivät poistu päädokumentin mukana — siivotaan erikseen.
         try {
             const fds = await getDocs(collection(db, "users", uid, "findsdata"));

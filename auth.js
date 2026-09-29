@@ -23,6 +23,8 @@ import {
     getDocs
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+import { toast, confirmDialog } from "./ui.js";
+
 // --- APUFUNKTIOT ---
 
 function generateShortId() {
@@ -197,16 +199,16 @@ export const handleRegister = async (auth, db, email, password, nickname, onSucc
         });
 
         if (initialStatus === 'pending') {
-            alert("Tili luotu! Odottaa ylläpitäjän hyväksyntää.");
+            toast("Tili luotu! Odottaa ylläpitäjän hyväksyntää.", 'ok');
         } else {
-            alert(`Tervetuloa! Sinun ID:si on ${shortId}`);
+            toast(`Tervetuloa! Sinun ID:si on ${shortId}`, 'ok');
         }
         
         if(onSuccess) onSuccess('home');
 
     } catch (error) {
         console.error(error);
-        alert("Rekisteröinti epäonnistui: " + error.message);
+        toast("Rekisteröinti epäonnistui: " + error.message, 'err');
     }
 };
 
@@ -223,7 +225,7 @@ export const loginGoogle = (auth, callback) => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
         .then(() => callback('home'))
-        .catch((error) => alert(error.message));
+        .catch((error) => toast(error.message, 'err'));
 };
 
 export const logout = (auth, callback) => {
@@ -235,7 +237,7 @@ export const logout = (auth, callback) => {
 export const deleteMyAccount = async (auth, db) => {
     const user = auth.currentUser;
     if (!user) return;
-    const confirmDelete = confirm("Oletko varma? Tämä poistaa kaikki tietosi ja tilastosi pysyvästi.");
+    const confirmDelete = await confirmDialog("Oletko varma? Tämä poistaa kaikki tietosi ja tilastosi pysyvästi.", { okText: 'Poista tili' });
     if (!confirmDelete) return;
 
     try {
@@ -251,25 +253,25 @@ export const deleteMyAccount = async (auth, db) => {
         await deleteDoc(doc(db, "users", uid));
         await deleteDoc(doc(db, "stats", uid));
         await deleteUser(user);
-        alert("Tili poistettu.");
+        toast("Tili poistettu.", 'ok');
         window.location.reload();
     } catch (error) {
-        alert("Virhe poistossa: " + error.message);
+        toast("Virhe poistossa: " + error.message, 'err');
     }
 };
 
 // --- KAVERILISTA JA TIETOJEN TALLENNUS ---
 
 export const saveGCNickname = async (db, uid, nickname, gcId) => {
-    if(!uid) return alert("Kirjaudu ensin!");
+    if(!uid) { toast("Kirjaudu ensin!", 'warn'); return; }
     try {
         await updateDoc(doc(db, "users", uid), {
             nickname: nickname,
             gcId: gcId
         });
-        alert("Tallennettu!");
+        toast("Tallennettu!", 'ok');
         window.location.reload();
-    } catch (e) { console.error(e); alert("Virhe tallennuksessa."); }
+    } catch (e) { console.error(e); toast("Virhe tallennuksessa.", 'err'); }
 };
 
 export const addFriend = async (db, uid, name, id, onSuccess) => {
@@ -284,7 +286,7 @@ export const addFriend = async (db, uid, name, id, onSuccess) => {
             await updateDoc(userRef, { saved_usernames: friends });
             if(onSuccess) onSuccess();
         } else {
-            alert("Kaveri on jo listalla.");
+            toast("Kaveri on jo listalla.", 'warn');
         }
     } catch (e) { console.error(e); }
 };

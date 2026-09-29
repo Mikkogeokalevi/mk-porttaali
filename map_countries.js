@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebase
 import { getZoomBySpeed, requestScreenWakeLock, releaseScreenWakeLock } from "./locationHelpers.js";
 import { loadFinds, findsList, invalidateFindsCache } from "./findsQuery.js";
 import { GPX_TYPE_TO_INDEX } from "./gpxImport.js";
+import { toast, confirmDialog, noticeDialog } from "./ui.js";
 
 // Kätkötyypit Suomen karttojen tyyliin (sama 14-tyypin järjestys kuin gpxImport.js)
 const CACHE_TYPES = [
@@ -618,14 +619,14 @@ async function renderCountryMap(content, db, user, app, config) {
     watching = false;
     updateLocateButton();
     updateLocationStatus('');
-    alert('Paikannus epäonnistui. Varmista, että sijainti on sallittu selaimessa.');
+    toast('Paikannus epäonnistui. Varmista, että sijainti on sallittu selaimessa.', 'err', 5000);
   });
 
   // Tyhjennys
   const clearBtn = document.getElementById(`${config.id}ClearBtn`);
   if (clearBtn) {
     clearBtn.onclick = async () => {
-      if (confirm(`Tyhjennätkö kaikki ${config.name}-kartalle merkityt löydöt?`)) {
+      if (await confirmDialog(`Tyhjennätkö kaikki ${config.name}-kartalle merkityt löydöt?`, { okText: 'Tyhjennä' })) {
         found.clear();
         for (const key in foundStats) delete foundStats[key];
         lastGpxImport = null;
@@ -667,7 +668,7 @@ async function renderCountryMap(content, db, user, app, config) {
         });
 
         if (points.length === 0) {
-          alert('GPX-tiedostosta ei löytynyt löydettyjä kätköjä.');
+          toast('GPX-tiedostosta ei löytynyt löydettyjä kätköjä.', 'warn');
           return;
         }
 
@@ -721,10 +722,10 @@ async function renderCountryMap(content, db, user, app, config) {
         updateGpxTime();
         refreshStyle();
         updateLocationStatus(`${addedMunicipalities} uutta kuntaa, ${typeHits} tyyppiä merkitty, ${duplicateCaches} duplikaatti, ${fallbackMatches} lähimpään kuntaan, ${outOfBounds} kartan ulkopuolella (yht. ${found.size} / ${config.totalMunicipalities})`);
-        alert(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\n${duplicateCaches} kätköä oli jo aiemmin lisätty.\n${fallbackMatches} kätköä osui saarelle tai kunnan reunan tuntumaan ja merkittiin lähimpään kuntaan (10 km raja).\n${outOfBounds} kätköä jäi tämän maan kunnan ulkopuolelle.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
+        await noticeDialog(`GPX-tuonti valmis.\n\n${addedMunicipalities} uutta kuntaa merkittiin löydetyksi.\n${typeHits} kätkölle tunnistettiin tyyppi.\n${duplicateCaches} kätköä oli jo aiemmin lisätty.\n${fallbackMatches} kätköä osui saarelle tai kunnan reunan tuntumaan ja merkittiin lähimpään kuntaan (10 km raja).\n${outOfBounds} kätköä jäi tämän maan kunnan ulkopuolelle.\nYhteensä ${found.size} / ${config.totalMunicipalities} ${config.label}.`);
       } catch (err) {
         console.error('GPX-tuonti epäonnistui:', err);
-        alert('GPX-tiedoston lukeminen epäonnistui: ' + err.message);
+        toast('GPX-tiedoston lukeminen epäonnistui: ' + err.message, 'err', 5000);
         updateLocationStatus('');
       } finally {
         gpxInput.value = '';

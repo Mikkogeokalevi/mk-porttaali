@@ -2,6 +2,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-
 import { maakuntienKunnat } from "./data.js";
 import { assignFindToFinnishMunicipality, countryNameFi } from "./gpxImport.js";
 import { loadFinds, findsList } from "./findsQuery.js";
+import { toast } from "./ui.js";
 
 // Maanimet jotka reititetään Suomeen — näille voi tehdä käsin kunta-määrityksen
 const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
@@ -327,7 +328,7 @@ export const loadOtherCountries = async (db, user, content) => {
                 } catch (err) {
                     console.error('Kunta-määritys:', err);
                     sel.disabled = false;
-                    alert('Merkintä epäonnistui: ' + err.message);
+                    toast('Merkintä epäonnistui: ' + err.message, 'err');
                 }
             };
         });

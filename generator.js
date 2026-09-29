@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { toast, confirmDialog, promptDialog, choiceDialog } from "./ui.js";
 
 const GEN_LAST_STATE_KEY = 'mk_generator_last_state_v1';
 const GEN_PRESETS_KEY = 'mk_generator_presets_v1';
@@ -549,7 +550,11 @@ function renderPresetManagerList(presets) {
     btnMore.textContent = '⋯';
     btnMore.style.padding = '8px 10px';
     btnMore.onclick = async () => {
-      const choice = prompt('Valitse toiminto: 1=Päivitä asetukset, 2=Nimeä uudelleen, 3=Poista', '1');
+      const choice = await choiceDialog(`Suosikkihaku: ${p.name || '(nimetön)'}`, [
+        { label: 'Päivitä asetukset', value: '1' },
+        { label: 'Nimeä uudelleen', value: '2' },
+        { label: 'Poista', value: '3', danger: true },
+      ]);
       const select = getPresetSelect();
       if (select) select.value = p.id;
       if (choice === '1') await updateSelectedGeneratorPreset();
@@ -573,6 +578,7 @@ export async function openGeneratorPresetManager() {
   const modal = getPresetModal();
   if (!modal) return;
   modal.style.display = 'flex';
+  document.body.classList.add('modal-open');
   await refreshGeneratorPresets();
   renderPresetManagerList(getLoadedPresetsFromSelect());
 }
@@ -581,6 +587,7 @@ export function closeGeneratorPresetManager() {
   const modal = getPresetModal();
   if (!modal) return;
   modal.style.display = 'none';
+  document.body.classList.remove('modal-open');
 }
 
 function getLoadedPresetsFromSelect() {
@@ -602,7 +609,7 @@ export function applySelectedGeneratorPreset() {
 }
 
 export async function saveGeneratorPreset() {
-  const name = (prompt('Anna haulle nimi (näkyy suosikeissa):') || '').trim();
+  const name = (await promptDialog('Anna haulle nimi (näkyy suosikeissa):') || '').trim();
   if (!name) return;
 
   const state = readGeneratorFormState();
@@ -668,7 +675,7 @@ export async function moveSelectedGeneratorPreset(presetId, delta) {
 
 export async function updateSelectedGeneratorPreset() {
   const select = getPresetSelect();
-  if (!select || !select.value) return alert('Valitse ensin suosikkihaku.');
+  if (!select || !select.value) return toast('Valitse ensin suosikkihaku.', 'warn');
 
   const id = select.value;
   const state = readGeneratorFormState();
@@ -700,13 +707,13 @@ export async function updateSelectedGeneratorPreset() {
 
 export async function renameSelectedGeneratorPreset() {
   const select = getPresetSelect();
-  if (!select || !select.value) return alert('Valitse ensin suosikkihaku.');
+  if (!select || !select.value) return toast('Valitse ensin suosikkihaku.', 'warn');
 
   const id = select.value;
   const presets = getLoadedPresetsFromSelect();
   const existing = presets.find(p => p && p.id === id);
   const currentName = existing?.name || '';
-  const name = (prompt('Uusi nimi:', currentName) || '').trim();
+  const name = (await promptDialog('Uusi nimi:', { defaultValue: currentName }) || '').trim();
   if (!name) return;
 
   const { db, uid } = getDbAndUid();
@@ -735,13 +742,13 @@ export async function renameSelectedGeneratorPreset() {
 
 export async function deleteSelectedGeneratorPreset() {
   const select = getPresetSelect();
-  if (!select || !select.value) return alert('Valitse ensin suosikkihaku.');
+  if (!select || !select.value) return toast('Valitse ensin suosikkihaku.', 'warn');
 
   const id = select.value;
   const presets = getLoadedPresetsFromSelect();
   const existing = presets.find(p => p && p.id === id);
   const name = existing?.name || id;
-  const ok = confirm(`Poistetaanko suosikkihaku "${name}"?`);
+  const ok = await confirmDialog(`Poistetaanko suosikkihaku "${name}"?`, { okText: 'Poista' });
   if (!ok) return;
 
   const { db, uid } = getDbAndUid();
@@ -882,11 +889,13 @@ export const toggleRegionList = () => {
 
 export const openPaikkakuntaModal = () => {
     document.getElementById('paikkakuntaModal').style.display = 'flex';
+    document.body.classList.add('modal-open');
     showModalRegionSelection();
 };
 
 export const closePaikkakuntaModal = () => {
     document.getElementById('paikkakuntaModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
 };
 
 export const showModalRegionSelection = () => {
@@ -992,7 +1001,7 @@ export const generateStatImage = () => {
     });
     refreshGeneratorRecents();
 
-    if (!user) { alert("Syötä käyttäjätunnus!"); return; }
+    if (!user) { toast("Syötä käyttäjätunnus!", 'warn'); return; }
 
     // Logiikka ID:n etsimiseen
     let userId = null;

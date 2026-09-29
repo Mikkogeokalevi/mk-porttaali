@@ -11,9 +11,13 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.8</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.9</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>28.9.2026:</strong> <b>Päivitysilmoitus</b>: kun uusi versio on asennettu taustalla, ruudun alalaitaan ilmestyy "Päivitä"-banneri — ei enää tarvetta tyhjentää välimuistia käsin. <b>Navigaation korostus korjattu</b>: Tilastot/Linkkikirjasto näyttävät nyt aktiivisen sivun oikein (myös tilastojen alinäkymät ja maakartat). <b>Löytöhaut päivittyvät heti</b> GPX-tuonnin jälkeen ilman sivun uudelleenlatausta. <b>Tietoturva</b>: kaverinimet renderöidään turvallisesti; käyttäjän poisto siivoaa nyt myös löytödata-alikokoelmat (myös admin-poisto). <b>Ulkomaiden karttojen GPX-tuonti</b> käyttää nyt samaa kätkötyyppitaulukkoa kuin päätuonti (Giga/Juhla/Block Party -määritykset korjattu) ja popup näyttää kaikki 14 tyyppiä. Manuaalinen kunta-määritys poistaa löydön aiemmasta kunnasta heti.</li>
+                <li><strong>29.9.2026:</strong> <b>Mobiili-UX-kiillotus</b>: kaikki selaimen omat alert/confirm/prompt-ikkunat korvattu sovelluksen teemaan sopivilla ilmoituksilla (toastit) ja vahvistusdialogeilla — myös Reissuapurissa ja suosikkihakujen muokkauksessa. <b>Safe-area-tuki</b>: notch-lovet ja kotipalkki otettu huomioon (viewport-fit=cover, yläpalkki ja alareunan bannerit työntyvät turva-alueelle). <b>Kosketuskohteet suurennettu</b>: pienet napit, chip-valitsimet ja hampurilaisvalikko ovat nyt väh. ~36-44px. Ei enää vahinkotuplapainallus-zoomia (touch-action: manipulation). <b>Modaalien scroll-lukitus</b>: tausta ei enää vieritä modaalin alla. Muuntimet-iframe käyttää dvh-korkeutta. Manifest ja theme-color yhtenäistetty.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.8</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>29.9.2026:</strong> <b>Päivitysilmoitus</b>: kun uusi versio on asennettu taustalla, ruudun alalaitaan ilmestyy "Päivitä"-banneri — ei enää tarvetta tyhjentää välimuistia käsin. <b>Navigaation korostus korjattu</b>: Tilastot/Linkkikirjasto näyttävät nyt aktiivisen sivun oikein (myös tilastojen alinäkymät ja maakartat). <b>Löytöhaut päivittyvät heti</b> GPX-tuonnin jälkeen ilman sivun uudelleenlatausta. <b>Tietoturva</b>: kaverinimet renderöidään turvallisesti; käyttäjän poisto siivoaa nyt myös löytödata-alikokoelmat (myös admin-poisto). <b>Ulkomaiden karttojen GPX-tuonti</b> käyttää nyt samaa kätkötyyppitaulukkoa kuin päätuonti (Giga/Juhla/Block Party -määritykset korjattu) ja popup näyttää kaikki 14 tyyppiä. Manuaalinen kunta-määritys poistaa löydön aiemmasta kunnasta heti.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.7</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">

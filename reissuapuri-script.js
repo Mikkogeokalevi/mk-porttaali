@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getDatabase, ref, set, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+import { toast, confirmDialog, promptDialog } from "./ui.js";
 
 // --- ASETUKSET ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -525,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsAndHelpContainer.classList.remove('hidden');
         } else {
             settingsAndHelpContainer.classList.add('hidden');
-            if (!("geolocation" in navigator)) return alert("Selaimesi ei tue paikannusta.");
+            if (!("geolocation" in navigator)) return toast("Selaimesi ei tue paikannusta.", 'err');
             await requestWakeLock();
             const CHECK_MUNICipality_INTERVAL_METERS = 500;
             trackingWatcher = navigator.geolocation.watchPosition(
@@ -547,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 },
-                (error) => { console.error("Paikannusvirhe:", error); alert("Paikannus epäonnistui."); updateStatusDisplay(null); },
+                (error) => { console.error("Paikannusvirhe:", error); toast("Paikannus epäonnistui.", 'err'); updateStatusDisplay(null); },
                 { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
             );
             toggleTrackingBtn.textContent = '🛑 Lopeta seuranta';
@@ -819,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         if (uniqueNewNames.length === 0) {
-            alert("Kaikki syötetyt kunnat ovat jo listalla.");
+            toast("Kaikki syötetyt kunnat ovat jo listalla.", 'warn');
             return;
         }
 
@@ -854,7 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (notFound.length > 0) {
-            alert(`Seuraavia kuntia ei löytynyt: ${notFound.join(', ')}`);
+            toast(`Seuraavia kuntia ei löytynyt: ${notFound.join(', ')}`, 'warn', 6000);
         }
         
         bulkAddInput.value = '';
@@ -942,14 +943,14 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             globalPgcPasteArea.value = '';
         } else {
-             alert("Ei voitu jäsentää kelvollisia kätkötietoja syötetystä tekstistä.");
+             toast("Ei voitu jäsentää kelvollisia kätkötietoja syötetystä tekstistä.", 'warn');
         }
         globalAddFromPgcBtn.disabled = false; globalAddFromPgcBtn.textContent = "Lisää ja paikanna";
     });
 
     const handleGpxImport = async () => {
         if (gpxFileInput.files.length === 0) {
-            alert("Valitse ensin GPX-tiedosto.");
+            toast("Valitse ensin GPX-tiedosto.", 'warn');
             return;
         }
 
@@ -1055,9 +1056,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (cachesAddedCount > 0) {
                 saveState();
-                alert(`Lisättiin ${cachesAddedCount} uutta kätköä. ${cachesAlreadyExist} kätköä oli jo listalla.`);
+                toast(`Lisättiin ${cachesAddedCount} uutta kätköä. ${cachesAlreadyExist} kätköä oli jo listalla.`, 'ok', 5000);
             } else {
-                alert(`Ei lisätty uusia kätköjä. ${cachesAlreadyExist} kätköä oli jo ennestään listalla.`);
+                toast(`Ei lisätty uusia kätköjä. ${cachesAlreadyExist} kätköä oli jo ennestään listalla.`, 'warn');
             }
 
             // Nollaa tila
@@ -1069,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         reader.onerror = () => {
-            alert("Virhe tiedoston lukemisessa.");
+            toast("Virhe tiedoston lukemisessa.", 'err');
             importGpxBtn.disabled = false;
             importGpxBtn.textContent = "Tuo kätköt";
         };
@@ -1108,11 +1109,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) { console.error("Lohkon jäsentäminen epäonnistui:", [line1, line2, line3], e); }
         }
         if (cachesAddedCount > 0) { saveState(); logPgcPasteArea.value = ''; } 
-        else { alert("Ei voitu jäsentää kelvollisia kätkötietoja syötetystä tekstistä."); }
+        else { toast("Ei voitu jäsentää kelvollisia kätkötietoja syötetystä tekstistä.", 'warn'); }
         logAddFromPgcBtn.disabled = false; logAddFromPgcBtn.textContent = "Lisää löydetyt lokiin";
     });
 
-    municipalityList.addEventListener('click', (e) => {
+    municipalityList.addEventListener('click', async (e) => {
         const button = e.target.closest('button, input[type="checkbox"]');
         if (!button) return;
         
@@ -1154,24 +1155,24 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (button.classList.contains('set-coords-btn')) {
                 const cache = municipalities[munIndex].caches[cacheIndex];
                 const currentCoords = cache.lat ? `${cache.lat.toFixed(6)} ${cache.lon.toFixed(6)}` : '';
-                const input = prompt(`Syötä kätkön "${cache.name}" koordinaatit:`, currentCoords);
+                const input = await promptDialog(`Syötä kätkön "${cache.name}" koordinaatit:`, { defaultValue: currentCoords });
                 if(input !== null) {
                     const coords = parseCoordinates(input);
                     if(coords) { cache.lat = coords.lat; cache.lon = coords.lon; } 
                     else if (input.trim() === '') { delete cache.lat; delete cache.lon; } 
-                    else { alert("Virheellinen koordinaattimuoto.\nEsimerkki: N 60 58.794 E 26 11.341"); }
+                    else { toast("Virheellinen koordinaattimuoto.\nEsimerkki: N 60 58.794 E 26 11.341", 'err', 6000); }
                     needsSave = true;
                 }
             } else if (button.classList.contains('edit-municipality-btn')) {
                 const oldName = municipalities[munIndex].name;
-                const newName = prompt("Muokkaa kunnan nimeä:", oldName);
+                const newName = await promptDialog("Muokkaa kunnan nimeä:", { defaultValue: oldName });
                 if (newName && newName.trim() && newName.trim().toLowerCase() !== oldName.toLowerCase()) {
                     municipalities[munIndex].name = newName.trim();
                     delete municipalities[munIndex].lat; delete municipalities[munIndex].lon;
                     ensureAllCoordsAreFetched(municipalities);
                 }
             } else if (button.classList.contains('delete-municipality-btn')) {
-                if (confirm(`Haluatko poistaa kunnan "${municipalities[munIndex].name}"?`)) {
+                if (await confirmDialog(`Haluatko poistaa kunnan "${municipalities[munIndex].name}"?`)) {
                     municipalities.splice(munIndex, 1);
                     needsSave = true;
                 }
@@ -1188,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     needsSave = true;
                 }
             } else if (button.classList.contains('delete-cache-btn')) {
-                if (confirm(`Poistetaanko kätkö "${municipalities[munIndex].caches[cacheIndex].name}"?`)) {
+                if (await confirmDialog(`Poistetaanko kätkö "${municipalities[munIndex].caches[cacheIndex].name}"?`)) {
                     municipalities[munIndex].caches.splice(cacheIndex, 1);
                     needsSave = true;
                 }
@@ -1259,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         directAddInput.value = '';
     });
 
-    foundCachesList.addEventListener('click', (e) => {
+    foundCachesList.addEventListener('click', async (e) => {
         const target = e.target;
         const cacheId = parseFloat(target.closest('[data-cache-id]')?.dataset.cacheId);
         if (isNaN(cacheId)) return;
@@ -1288,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             editCacheModal.classList.add('hidden');
         } else if (target.classList.contains('delete-found-btn')) {
-            if (confirm(`Haluatko varmasti poistaa lokista kätkön "${cache.name}"?`)) {
+            if (await confirmDialog(`Haluatko varmasti poistaa lokista kätkön "${cache.name}"?`)) {
                 const cacheIndex = foundCaches.findIndex(c => c.id === cacheId);
                 if(cacheIndex > -1) {
                     foundCaches.splice(cacheIndex, 1);
@@ -1312,7 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch((error) => {
                     console.error("Virhe tallennettaessa lokittajia:", error);
-                    alert("Lokittajien tallennus epäonnistui! Tarkista konsoli.");
+                    toast("Lokittajien tallennus epäonnistui!", 'err');
                 });
         }
     });
@@ -1330,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch((error) => {
                     console.error("Virhe poistettaessa lokittajaa:", error);
-                    alert("Lokittajan poisto epäonnistui! Tarkista konsoli.");
+                    toast("Lokittajan poisto epäonnistui!", 'err');
                 });
         }
     });
@@ -1342,17 +1343,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldListName = button.dataset.listName;
 
         if (button.classList.contains('delete-list-btn')) {
-            if (confirm(`Haluatko varmasti poistaa reissulistan "${oldListName}"?\nTätä toimintoa ei voi perua.`)) {
+            if (await confirmDialog(`Haluatko varmasti poistaa reissulistan "${oldListName}"?\nTätä toimintoa ei voi perua.`)) {
                 try {
                     await remove(ref(database, oldListName));
-                    alert(`Lista "${oldListName}" poistettu.`);
+                    toast(`Lista "${oldListName}" poistettu.`, 'ok');
                 } catch (error) {
                     console.error("Virhe listan poistossa:", error);
-                    alert("Listan poisto epäonnistui.");
+                    toast("Listan poisto epäonnistui.", 'err');
                 }
             }
         } else if (button.classList.contains('edit-list-name-btn')) {
-            const newListName = prompt("Anna uusi nimi reissulistalle:", oldListName);
+            const newListName = await promptDialog("Anna uusi nimi reissulistalle:", { defaultValue: oldListName });
             if (newListName && newListName.trim() && newListName.trim() !== oldListName) {
                 const oldListRef = ref(database, oldListName);
                 const newListRef = ref(database, newListName.trim());
@@ -1362,11 +1363,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (snapshot.exists()) {
                         await set(newListRef, snapshot.val());
                         await remove(oldListRef);
-                        alert(`Lista "${oldListName}" on nyt nimetty uudelleen: "${newListName.trim()}"`);
+                        toast(`Lista "${oldListName}" on nyt nimetty uudelleen: "${newListName.trim()}"`, 'ok');
                     }
                 } catch (error) {
                     console.error("Virhe listan nimen muokkauksessa:", error);
-                    alert("Nimen muokkaus epäonnistui.");
+                    toast("Nimen muokkaus epäonnistui.", 'err');
                 }
             }
         }

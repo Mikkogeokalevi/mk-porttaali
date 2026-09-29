@@ -1,10 +1,10 @@
 {
   "name": "MK Porttaali",
-  "short_name": "MK",
+  "short_name": "MK Porttaali",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1e1e2e",
-  "theme_color": "#1e1e2e",
+  "theme_color": "#000000",
   "orientation": "any",
   "icons": [
     {

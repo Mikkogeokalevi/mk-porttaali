@@ -14,7 +14,8 @@ import * as MapAllView from "./map_all.js";
 import * as MapCountriesView from "./map_countries.js";
 import * as FindsQuery from "./findsQuery.js";
 import { renderAdminView } from "./admin.js";
-import { renderSettingsView } from "./settings.js"; 
+import { renderSettingsView } from "./settings.js";
+import { toast } from "./ui.js"; 
 
 const firebaseConfig = {
   apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyDxDmo274iZuwufe4meobYPoablUNinZGY",
@@ -32,10 +33,10 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v93';
-const APP_DISPLAY_VERSION = '2.18.8';
-const APP_SW_CACHE = 'mk-porttaali-v93';
-const APP_UPDATED_AT = '28.9.2026';
+const APP_VERSION = 'v94';
+const APP_DISPLAY_VERSION = '2.18.9';
+const APP_SW_CACHE = 'mk-porttaali-v94';
+const APP_UPDATED_AT = '29.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
 
@@ -304,8 +305,8 @@ window.app = {
       const e = document.getElementById('email').value;
       const p = document.getElementById('password').value;
       const n = document.getElementById('regNick').value;
-      if(!e || !p) { alert("Täytä sähköposti ja salasana!"); return; }
-      if(!n) { alert("Anna nimimerkki!"); return; }
+      if(!e || !p) { toast("Täytä sähköposti ja salasana!", 'warn'); return; }
+      if(!n) { toast("Anna nimimerkki!", 'warn'); return; }
       Auth.handleRegister(auth, db, e, p, n, (v) => window.app.router(v));
   },
   deleteMyAccount: () => Auth.deleteMyAccount(auth, db),

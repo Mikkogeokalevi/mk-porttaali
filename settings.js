@@ -3,6 +3,7 @@ import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-a
 import * as Auth from "./auth.js";
 import * as GpxImport from "./gpxImport.js";
 import { maakuntienKunnat } from "./data.js";
+import { toast } from "./ui.js";
 
 // Kopioitu admin.js:stä datan tuontia varten (tarvitaan "älykkääseen" parsintaan)
 const SUOMEN_MAAKUNNAT = [
@@ -179,7 +180,7 @@ export const renderSettingsView = (content, db, user, app) => {
         const newNick = document.getElementById('setNick').value.trim();
         const newId = document.getElementById('setGcId').value.trim();
         
-        if(!newNick) return alert("Nimimerkki ei voi olla tyhjä.");
+        if(!newNick) return toast("Nimimerkki ei voi olla tyhjä.", 'warn');
 
         try {
             await updateDoc(doc(db, "users", user.uid), {
@@ -190,10 +191,10 @@ export const renderSettingsView = (content, db, user, app) => {
             app.savedNickname = newNick;
             app.savedId = newId;
             
-            alert("Tiedot tallennettu! ✅");
+            toast("Tiedot tallennettu!", 'ok');
         } catch(e) {
             console.error(e);
-            alert("Virhe tallennuksessa.");
+            toast("Virhe tallennuksessa.", 'err');
         }
     };
 
@@ -391,7 +392,7 @@ export const renderSettingsView = (content, db, user, app) => {
                             } catch (err2) {
                                 console.error('Kunta-määritys:', err2);
                                 sel.disabled = false;
-                                alert('Merkintä epäonnistui: ' + err2.message);
+                                toast('Merkintä epäonnistui: ' + err2.message, 'err');
                             }
                         };
                     });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mk-porttaali-v93'; // PÄIVITETTY: v92 -> v93
+const CACHE_NAME = 'mk-porttaali-v94'; // PÄIVITETTY: v93 -> v94
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -17,6 +17,7 @@ const ASSETS_TO_CACHE = [
   './locationHelpers.js',  // <--- UUSI TIEDOSTO LISÄTTY (paikannus-zoom ja wake lock)
   './gpxImport.js',        // <--- UUSI TIEDOSTO LISÄTTY (GPX/ZIP -tuonti Suomi + ulkomaat + muut maat)
   './findsQuery.js',       // <--- UUSI TIEDOSTO LISÄTTY (Löytöhaut -kyselyt findsdata-datan päälle)
+  './ui.js',               // <--- UUSI TIEDOSTO LISÄTTY (toast/confirm/prompt -komponentit)
   './maailma.geojson',     // <--- UUSI TIEDOSTO LISÄTTY (maailmankartta Muut maat -näkymään)
   './sverige_kommuner.geojson',
   './norge_kommuner.geojson',

@@ -2,9 +2,9 @@
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
-  <title>MK Porttaali v2.18.8</title>
+  <title>MK Porttaali v2.18.9</title>
   
   <link rel="icon" type="image/png" href="mklogo.png">
   
@@ -51,7 +51,7 @@
   </main>
 
   <script type="module" src="app.js"></script>
-  <div id="swUpdateBanner" style="display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:9999; background:#313244; color:#cdd6f4; border:1px solid #f9e2af; border-radius:10px; padding:12px 14px; align-items:center; gap:12px; box-shadow:0 4px 18px rgba(0,0,0,.5); font-size:.95em;">
+  <div id="swUpdateBanner" style="display:none; position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); z-index:9999; background:#313244; color:#cdd6f4; border:1px solid #f9e2af; border-radius:10px; padding:12px 14px; align-items:center; gap:12px; box-shadow:0 4px 18px rgba(0,0,0,.5); font-size:.95em;">
     <span style="flex:1;">🔄 Uusi versio asennettu — päivitä sivu saadaksesi sen käyttöön.</span>
     <button class="btn btn-sm btn-primary" onclick="location.reload()">Päivitä</button>
     <button class="btn btn-sm" onclick="document.getElementById('swUpdateBanner').style.display='none'" style="padding:4px 10px;">Myöhemmin</button>
