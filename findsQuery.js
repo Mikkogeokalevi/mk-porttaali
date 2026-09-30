@@ -27,6 +27,8 @@ const DT_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 const MONTHS_FI = ['Tammikuu', 'Helmikuu', 'Maaliskuu', 'Huhtikuu', 'Toukokuu', 'Kesäkuu', 'Heinäkuu', 'Elokuu', 'Syyskuu', 'Lokakuu', 'Marraskuu', 'Joulukuu'];
 const WEEKDAYS_FI = [['Maanantai', 1], ['Tiistai', 2], ['Keskiviikko', 3], ['Torstai', 4], ['Perjantai', 5], ['Lauantai', 6], ['Sunnuntai', 0]];
 
+const emptyState = (text) => `<div class="empty-state"><span class="empty-icon">🔍</span><p>${text}</p></div>`;
+
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
 let findsCache = null;
@@ -161,7 +163,7 @@ export function findsList(finds, limit = 300) {
     `<td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td>` +
     `<td>${f.day || '—'}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
-  const th = (k, label) => `<th data-k="${k}" data-label="${label}" title="Järjestä">${label}</th>`;
+  const th = (k, label) => `<th data-k="${k}" data-label="${label}" title="Järjestä" tabindex="0" role="button" aria-sort="none">${label}</th>`;
   return `<div class="fq-scroll"><table class="finds-table"><thead><tr>${th('code', 'Koodi')}${th('type', 'Tyyppi')}${th('day', 'Pvm')}${th('d', 'D')}${th('t', 'T')}${th('loc', 'Sijainti')}</tr></thead><tbody>${rows}</tbody></table></div>` +
     (sorted.length > limit ? `<button type="button" class="fq-showall">Näytä kaikki ${sorted.length} löytöä</button>` : '');
 }
@@ -459,6 +461,11 @@ document.addEventListener('scroll', e => { if (!dtPopup?.contains(e.target)) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDtPopup(); });
 
 // Yksi delegoitu kuuntelija riittää kaikille finds-table-sorttauksille (myös dynaamisesti lisätyille)
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const thEl = e.target.closest?.('.finds-table th[data-k]');
+  if (thEl) { e.preventDefault(); thEl.click(); }
+});
 document.addEventListener('click', e => {
   const thEl = e.target.closest('.finds-table th[data-k]');
   if (!thEl) return;
@@ -472,8 +479,9 @@ document.addEventListener('click', e => {
     const nx = parseFloat(x), ny = parseFloat(y);
     return (!isNaN(nx) && !isNaN(ny)) ? (nx - ny) * dir : x.localeCompare(y, 'fi') * dir;
   });
-  table.querySelectorAll('th[data-k]').forEach(h => { h.dataset.dir = ''; h.textContent = h.dataset.label; });
+  table.querySelectorAll('th[data-k]').forEach(h => { h.dataset.dir = ''; h.textContent = h.dataset.label; h.setAttribute('aria-sort', 'none'); });
   thEl.dataset.dir = dir === 1 ? 'asc' : 'desc';
+  thEl.setAttribute('aria-sort', dir === 1 ? 'ascending' : 'descending');
   thEl.textContent = `${thEl.dataset.label} ${dir === 1 ? '▲' : '▼'}`;
   rows.forEach(r => tbody.appendChild(r));
 });
@@ -510,7 +518,7 @@ const FINDS_QUERIES = [
       return [
         { title: `Kätkötyypit ${label}${yr} — ${cov.found}/${cov.total} löydetty`, html: cov.html },
         { title: `D/T-kattavuus — ${mx.filled}/${mx.total}`, html: mx.html },
-        { title: `Löydöt (${hits.length})`, html: hits.length ? findsList(hits) : '<p>Ei löytöjä valitulla välillä.</p>' }
+        { title: `Löydöt (${hits.length})`, html: hits.length ? findsList(hits) : emptyState('Ei löytöjä valitulla välillä.') }
       ];
     }
   },
@@ -527,7 +535,7 @@ const FINDS_QUERIES = [
       const mx = dtMatrix(hits);
       return [
         { title: `${MONTHS_FI[month - 1]}: D/T ${mx.filled}/${mx.total} (${hits.length} löytöä)`, html: mx.html },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tässä kuussa.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä tässä kuussa.') }
       ];
     }
   },
@@ -548,7 +556,7 @@ const FINDS_QUERIES = [
       const mx = dtMatrix(hits);
       return [
         { title: `${name}: D/T ${mx.filled}/${mx.total} (${hits.length} löytöä)`, html: mx.html },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tänä viikonpäivänä.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä tänä viikonpäivänä.') }
       ];
     }
   },
@@ -563,7 +571,7 @@ const FINDS_QUERIES = [
       const mx = dtMatrix(hits);
       return [
         { title: `Kaikki löydöt: D/T ${mx.filled}/${mx.total} (${hits.length} löytöä)`, html: mx.html },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä.') }
       ];
     }
   },
@@ -579,7 +587,7 @@ const FINDS_QUERIES = [
       const cov = typeCoverage(hits);
       return [
         { title: `${ATTR_EN[id] || id}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tällä attribuutilla.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä tällä attribuutilla.') }
       ];
     }
   },
@@ -598,7 +606,7 @@ const FINDS_QUERIES = [
         { title: `${input.loc || '—'}: ${hits.length} löytöä — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä — tarkista nimi tai valitse se listasta.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä — tarkista nimi tai valitse se listasta.') }
       ];
     }
   },
@@ -613,7 +621,7 @@ const FINDS_QUERIES = [
       const yrLabel = input.year ? String(input.year) : 'kaikki vuodet';
       return [
         { title: `Vuosikalenteri (${yrLabel}) — ${hits.length} löytöä`, html: yearCalendar(hits, input.year || null) },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä tänä vuonna.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä tänä vuonna.') }
       ];
     }
   },
@@ -638,7 +646,7 @@ const FINDS_QUERIES = [
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
         { title: 'Löytöpäivät', html: dayDist(hits) },
-        { title: 'Löydöt', html: hits.length ? findsList(hits) : '<p>Ei löytöjä.</p>' }
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä.') }
       ];
     }
   }
@@ -761,7 +769,7 @@ function renderInputs(query, inputDiv, finds) {
 }
 
 export const renderFindsQueries = async (db, user, content) => {
-  content.innerHTML = `<div class="card"><h1>Löytöhaut</h1><p>Ladataan löytödataa...</p></div>`;
+  content.innerHTML = `<div class="card"><h1>Löytöhaut</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
   let finds;
   try {
     finds = await loadFinds(db, user.uid);

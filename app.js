@@ -33,12 +33,23 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
 });
 const db = getFirestore(firebaseApp);
 
-const APP_VERSION = 'v95';
-const APP_DISPLAY_VERSION = '2.18.10';
-const APP_SW_CACHE = 'mk-porttaali-v95';
+const APP_VERSION = 'v96';
+const APP_DISPLAY_VERSION = '2.18.11';
+const APP_SW_CACHE = 'mk-porttaali-v96';
 const APP_UPDATED_AT = '29.9.2026';
 
 document.title = `MK Porttaali v${APP_DISPLAY_VERSION}`;
+
+// Mobiilivalikko: suljetaan kun klikataan sen ulkopuolelle tai painetaan ESC:ää
+document.addEventListener('click', e => {
+  const nav = document.getElementById('mainNav');
+  if (!nav || !nav.classList.contains('open')) return;
+  if (nav.contains(e.target) || e.target.closest('.mobile-toggle')) return;
+  nav.classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('mainNav')?.classList.remove('open');
+});
 
 window.app = {
   db,

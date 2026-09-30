@@ -141,7 +141,7 @@ const GEO_ALIASES = {
 };
 
 export const loadOtherCountries = async (db, user, content) => {
-    content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Ladataan...</p></div>`;
+    content.innerHTML = `<div class="card"><h1>Muut maat</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
     try {
         const [otherSnap, seSnap, noSnap, eeSnap, statsSnap] = await Promise.all([
             getDoc(doc(db, 'users', user.uid, 'other_countries', 'finds')),
@@ -353,7 +353,7 @@ function formatUpdateDate(timestamp) {
 // --- 1. TOP-LISTAT ---
 export const loadTopStats = async (db, user, content) => {
     if (!user) return;
-    content.innerHTML = `<div class="card"><h1>Top-listat</h1><p>Ladataan...</p></div>`;
+    content.innerHTML = `<div class="card"><h1>Top-listat</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
 
     try {
         const docData = await fetchFullDoc(db, user.uid);
@@ -435,7 +435,7 @@ export const loadTopStats = async (db, user, content) => {
 // --- 2. MAAKUNNAT & LÖYDÖT ---
 export const loadAllStats = async (db, user, content) => {
     if (!user) return;
-    content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><p>Ladataan...</p></div>`;
+    content.innerHTML = `<div class="card"><h1>Maakunnat & Löydöt</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
     
     try {
         const docData = await fetchFullDoc(db, user.uid);
@@ -622,7 +622,7 @@ export const loadAllStats = async (db, user, content) => {
 // --- 3. TRIPLETTIJAHTI ---
 export const loadTripletData = async (db, user, content) => {
     if (!user) return;
-    content.innerHTML = `<div class="card"><h1>Triplettijahti</h1><p>Ladataan...</p></div>`;
+    content.innerHTML = `<div class="card"><h1>Triplettijahti</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
     try {
         const docData = await fetchFullDoc(db, user.uid);
         if (!docData || !docData.municipalities) { content.innerHTML += `<p>Ei dataa.</p>`; return; }

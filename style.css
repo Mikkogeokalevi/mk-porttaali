@@ -167,6 +167,10 @@ nav {
 nav.open {
   display: flex;
   animation: slideDown 0.18s ease-out;
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 nav ul {
@@ -607,6 +611,16 @@ label {
 
 /* Latausindikaattori */
 .loading-wrap { text-align: center; margin-top: 50px; padding: 20px; }
+
+/* Tyhjätila: yhtenäinen "ei löytynyt dataa" -ilme */
+.empty-state {
+  text-align: center;
+  padding: 26px 16px;
+  color: var(--subtext-color);
+}
+.empty-state .empty-icon { display: block; font-size: 1.8rem; opacity: 0.5; margin-bottom: 8px; }
+.empty-state p { margin: 0; }
+
 .spinner {
   display: inline-block;
   width: 40px; height: 40px;
@@ -709,6 +723,7 @@ summary:hover { color: var(--accent-color); }
   z-index: 2000;
   width: calc(100% - 60px);
   box-shadow: var(--shadow-lg);
+  overscroll-behavior: contain;
 }
 
 .region-list-item {
@@ -909,9 +924,8 @@ summary:hover { color: var(--accent-color); }
 
 .map-loading {
   padding: 14px 22px;
-  color: var(--bg-color);
-  background: #fff;
-  opacity: 0.9;
+  color: var(--text-color);
+  background: rgba(0, 0, 0, 0.75);
   text-align: center;
   position: absolute;
   top: 50%; left: 50%;
@@ -947,6 +961,19 @@ summary:hover { color: var(--accent-color); }
   border-bottom-color: var(--border-color);
 }
 .leaflet-bar a:hover { background: var(--button-bg); color: #fff; }
+
+/* Leaflet-popupit tummaan teemaan */
+.leaflet-popup-content-wrapper {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+.leaflet-popup-tip { background: var(--card-bg); border: 1px solid var(--border-color); }
+.leaflet-popup-content { margin: 12px 14px; font-family: inherit; line-height: 1.5; }
+.leaflet-popup-content a { color: var(--accent-color); }
+.leaflet-popup-close-button { color: var(--subtext-color) !important; }
 .leaflet-control-attribution {
   background: rgba(0, 0, 0, 0.55) !important;
   color: rgba(255, 255, 255, 0.6) !important;
@@ -1413,4 +1440,43 @@ details.oc-country[open] > summary.oc-row .oc-caret { transform: rotate(90deg); 
 .type-chip.miss {
   opacity: 0.45;
   text-decoration: line-through;
+}
+
+/* ---------- KOSKETUSLAITTEET: EI "TARTTUVAA" HOVER-TILAA ----------
+   iOS/Android jättävät :hover-tilan näkyviin napautuksen jälkeen.
+   Neutralisoidaan hover-arvot takaisin perustiloihin kun hover ei ole tuettu. */
+@media (hover: none), (pointer: coarse) {
+  .mobile-toggle:hover { background: none; }
+  nav a:hover, nav button.nav-btn:hover { background-color: transparent; color: var(--text-color); }
+  nav button.nav-btn.active:hover { background-color: rgba(137, 180, 250, 0.15); color: var(--accent-color); }
+  #authButton:hover, #logoutButton:hover { filter: none; }
+  .version-pill:hover { color: var(--subtext-color); border-color: var(--border-color); }
+  a:hover { text-decoration: none; }
+  .btn:hover { background-color: var(--button-bg); transform: none; }
+  .btn-primary:hover { background-color: var(--accent-color); }
+  .btn-green:hover   { background-color: var(--c-green); }
+  .btn-yellow:hover  { background-color: var(--c-yellow); }
+  .btn-peach:hover   { background-color: var(--c-peach); }
+  .btn-sky:hover     { background-color: var(--c-sky); }
+  .btn-blue:hover    { background-color: var(--accent-color); }
+  .btn-mauve:hover   { background-color: var(--c-mauve); }
+  .btn-teal:hover    { background-color: var(--c-teal); }
+  .btn-red:hover, .btn-danger:hover { background-color: var(--c-red); }
+  .btn-primary:hover, .btn-green:hover, .btn-yellow:hover, .btn-peach:hover,
+  .btn-sky:hover, .btn-blue:hover, .btn-mauve:hover, .btn-teal:hover,
+  .btn-red:hover, .btn-danger:hover { filter: none; }
+  .btn-google:hover { background-color: #db4437; }
+  .btn-icon:hover { background-color: var(--card-bg); }
+  .launcher-btn:hover { filter: none; transform: none; }
+  .btn-delete:hover { background-color: transparent; }
+  summary:hover { color: inherit; }
+  .region-list-item:hover { background-color: transparent; }
+  .modal-content li:hover, .gen-type-options li:hover { background-color: transparent; }
+  .leaflet-bar a:hover { background: var(--card-bg); color: var(--text-color); }
+  .tab-btn:hover { color: var(--subtext-color); }
+  .product-btn:hover { filter: none; }
+  .link-card:hover { background: rgba(255, 255, 255, 0.03); transform: none; border-color: var(--border-color); }
+  .link-card:hover .link-arrow { opacity: 0.35; color: inherit; }
+  .gen-accordion-option:hover { background-color: var(--bg-color); color: var(--text-color); }
+  .finds-table th[data-k]:hover { color: var(--subtext-color); }
 }
