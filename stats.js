@@ -144,7 +144,7 @@ const GEO_ALIASES = {
     'Republic of Moldova': 'Moldova'
 };
 
-export const loadOtherCountries = async (db, user, content) => {
+export const loadOtherCountries = async (db, user, content, reopen = null) => {
     content.innerHTML = `<div class="card"><h1>Muut maat</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
     try {
         const [otherSnap, seSnap, noSnap, eeSnap, statsSnap] = await Promise.all([
@@ -204,7 +204,7 @@ export const loadOtherCountries = async (db, user, content) => {
             // (FI-aliakset + maakuntatason korit, esim. pitkänmatkan-multien 'Varsinais-Suomi')
             const fixable = (FI_COUNTRY_ALIASES.has(e.name) || MAAKUNTA_NAMES.has(e.name)) && e.ids.length;
             const fixBlock = fixable ? `
-                <details style="margin-top:8px;">
+                <details class="oc-fixdet" style="margin-top:8px;">
                     <summary style="font-size:0.8em; color:var(--warning-color);">Kuntaa ei tunnistettu — merkitse käsin:</summary>
                     <div style="margin-top:6px;">
                         ${e.ids.map(code => `<div style="display:flex; gap:8px; align-items:center; margin:5px 0; font-size:0.85em;">
@@ -235,7 +235,7 @@ export const loadOtherCountries = async (db, user, content) => {
         // Käsin määrityt kunnat (stats.fixes) — pysyvät, korjattavissa + uuden lisäys
         const fixEntries = Object.entries(fixes).sort((a, b) => a[0].localeCompare(b[0]));
         const fixesBlock = `
-            <details style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.12); padding-top:10px;">
+            <details id="fixListDet" style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.12); padding-top:10px;">
                 <summary style="cursor:pointer; font-weight:600;">✏️ Käsin määrityt kunnat (${fixEntries.length})</summary>
                 <p style="font-size:0.78em; opacity:0.7; margin:8px 0 4px;">Määritykset ovat pysyviä — jokainen GPX-tuonti käyttää niitä automaattisesti. Korjaa kunta pudotusvalikosta tai poista määritys kokonaan; poistettu löytö luokitellaan uudelleen seuraavassa tuonnissa.</p>
                 ${fixEntries.map(([code, kunta]) => `
@@ -352,13 +352,17 @@ export const loadOtherCountries = async (db, user, content) => {
                 const kunta = sel.value;
                 if (!kunta) return;
                 sel.disabled = true;
+                const cname = sel.closest('details.oc-country')?.dataset.name || null;
                 try {
                     await assignFindToFinnishMunicipality(db, user.uid, {
                         code: sel.dataset.code,
                         fromCname: sel.dataset.cname,
                         kunta
                     });
-                    loadOtherCountries(db, user, content); // päivitä näkymä
+                    toast(`${sel.dataset.code} → ${kunta}`, 'ok');
+                    // Päivitä näkymä ja palauta sama maa-rivi + määritysvalikko auki
+                    // jos korjattavia löytöjä on vielä jäljellä
+                    loadOtherCountries(db, user, content, { country: cname });
                 } catch (err) {
                     console.error('Kunta-määritys:', err);
                     sel.disabled = false;
@@ -376,7 +380,7 @@ export const loadOtherCountries = async (db, user, content) => {
                 try {
                     await assignFindToFinnishMunicipality(db, user.uid, { code: sel.dataset.code, kunta });
                     toast(`${sel.dataset.code} siirretty kuntaan ${kunta}`, 'ok');
-                    loadOtherCountries(db, user, content);
+                    loadOtherCountries(db, user, content, { fixes: true });
                 } catch (err) {
                     console.error('Kunta-määrityksen korjaus:', err);
                     sel.disabled = false;
@@ -391,7 +395,7 @@ export const loadOtherCountries = async (db, user, content) => {
                 try {
                     await removeFinnishMunicipalityFix(db, user.uid, btn.dataset.code);
                     toast('Määritys poistettu', 'ok');
-                    loadOtherCountries(db, user, content);
+                    loadOtherCountries(db, user, content, { fixes: true });
                 } catch (err) {
                     console.error('Määrityksen poisto:', err);
                     btn.disabled = false;
@@ -409,13 +413,36 @@ export const loadOtherCountries = async (db, user, content) => {
             try {
                 await assignFindToFinnishMunicipality(db, user.uid, { code, kunta });
                 toast(`${code} merkitty kuntaan ${kunta}`, 'ok');
-                loadOtherCountries(db, user, content);
+                loadOtherCountries(db, user, content, { fixes: true });
             } catch (err) {
                 console.error('Kunta-määrityksen lisäys:', err);
                 addBtn.disabled = false;
                 toast('Merkintä epäonnistui: ' + err.message, 'err');
             }
         };
+
+        // Palauta avoinna olleet valikot kunta-määrityksen jälkeen
+        if (reopen) {
+            if (reopen.country) {
+                content.querySelectorAll('details.oc-country').forEach(det2 => {
+                    if (det2.dataset.name === reopen.country) {
+                        det2.open = true; // toggle-event -> löytölista latautuu automaattisesti
+                        const fixDet = det2.querySelector('details.oc-fixdet');
+                        if (fixDet) {
+                            fixDet.open = true;
+                            fixDet.scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                });
+            }
+            if (reopen.fixes) {
+                const fd = content.querySelector('#fixListDet');
+                if (fd) {
+                    fd.open = true;
+                    fd.scrollIntoView({ block: 'nearest' });
+                }
+            }
+        }
     } catch (e) {
         console.error(e);
         content.innerHTML = `<div class="card"><h1>Muut maat</h1><p style="color:var(--c-red);">Lataus epäonnistui.</p><p style="font-size:0.8em; opacity:0.65;">${e.message || e}</p></div>`;
