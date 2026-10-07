@@ -54,7 +54,8 @@ const FI_MUNICIPALITY_FIX = {
 
 // Englanninkieliset maanimet -> suomi (yleisimmät; fallback = englanti)
 const COUNTRY_FI = {
-  'Aland Islands': 'Ahvenanmaa', 'Austria': 'Itävalta', 'Belgium': 'Belgia',
+  'Aland Islands': 'Ahvenanmaa', 'Åland Islands': 'Ahvenanmaa', 'Åland': 'Ahvenanmaa',
+  'Ahvenanmaa': 'Ahvenanmaa', 'Austria': 'Itävalta', 'Belgium': 'Belgia',
   'Belarus': 'Valko-Venäjä', 'Bulgaria': 'Bulgaria', 'Canada': 'Kanada',
   'Croatia': 'Kroatia', 'Cyprus': 'Kypros', 'Czech Republic': 'Tšekki',
   'Czechia': 'Tšekki', 'Denmark': 'Tanska', 'Estonia': 'Viro',
@@ -472,6 +473,9 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   const COUNTRY_TO_SET = { 'Finland': fiSet, 'Sweden': countrySets.Sweden, 'Norway': countrySets.Norway, 'Estonia': countrySets.Estonia };
   // Geocaching.com kirjaa Ahvenanmaan maaksi 'Aland Islands' — reititetään Suomeen
   const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
+  // Åland-maaksi merkitty mutta koordinaatit mantereella -> valekoordinaatti
+  // (myssyn/multin julkaisupiste) — ei kuulu mannerkuntaan, merkitään maakuntatasolle
+  const ALAND_COUNTRIES = new Set(['Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
 
   // Kunta -> maakunta -kartta
   const kuntaToRegion = {};
@@ -574,6 +578,12 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
           if (report.unmatchedList.length < 100) {
             report.unmatchedList.push({ code: p.code, type: p.type, country: p.country || '?', lat: p.lat, lon: p.lon, day });
           }
+          bucket = 'other';
+        } else if (ALAND_COUNTRIES.has(country) && kuntaToRegion[loc] !== 'Ahvenanmaa') {
+          // Åland-maatason kätkö mutta koordinaatit ovat mantereella — kyseessä on
+          // myssyn/multin valekoordinaatti. Ei saastuteta mannerkuntaa, vaan
+          // merkitään maakuntatasolle (loc='Åland Islands' muut maat -koriin).
+          loc = null;
           bucket = 'other';
         } else {
           bucket = isFinland ? 'finland' : 'foreign';
