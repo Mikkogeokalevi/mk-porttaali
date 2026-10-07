@@ -4,6 +4,7 @@
 
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { ATTR_EN, countryNameFi } from "./gpxImport.js";
+import { maakuntienKunnat, suomenMaakunnat } from "./data.js";
 
 const TYPE_NAMES = ['Tradi', 'Multi', 'Webcam', 'Mysse', 'Letteri', 'Öörtti', 'Miitti', 'Virtu', 'Cito', 'Wherigo', 'Com.Cel', 'Mega', 'No Loc', 'Juhla'];
 // Tyyppikohtaiset värit (D/T-ruudukko + type-chips)
@@ -88,23 +89,34 @@ export function fmtTsFI(t) {
 
 // ---------- Suodatus-apuri (tyyppi + attribuutti -filterit) ----------
 
-function applyFilters(finds, { types = null, attr = null, countries = null, loc = null, yearP = null, dateFrom = null, dateTo = null } = {}) {
+function applyFilters(finds, { types = null, attr = null, countries = null, loc = null, region = null, yearP = null, ym = null, dateFrom = null, dateTo = null } = {}) {
   const typeSet = types && types.length ? new Set(types.map(Number)) : null;
   const attrId = attr ? +attr : null;
   const countrySet = countries && countries.length ? new Set(countries) : null;
   const locL = loc ? loc.trim().toLowerCase() : null;
+  const regionSet = region && maakuntienKunnat[region] ? new Set(maakuntienKunnat[region]) : null;
   const yp = yearP ? +yearP : null;
-  if (!typeSet && !attrId && !countrySet && !locL && !yp && !dateFrom && !dateTo) return finds;
+  if (!typeSet && !attrId && !countrySet && !locL && !regionSet && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!countrySet || countrySet.has(f.country)) &&
     (!locL || (f.loc || '').toLowerCase() === locL) &&
+    (!regionSet || regionSet.has(f.loc)) &&
     (!yp || +f.day.slice(0, 4) === yp) &&
+    (!ym || f.day.slice(0, 7) === ym) &&
     (!dateFrom || (f.day.length >= 10 && f.day >= dateFrom)) &&
     (!dateTo || (f.day.length >= 10 && f.day <= dateTo))
   );
 }
+
+// Tulosotsikoiden aikarajaus-teksti (esim. "— vuosi 2025" / "— 01.06.2025–31.08.2025")
+const periodLabel = input =>
+  input.yearP ? ` — vuosi ${input.yearP}` :
+  input.ym ? ` — ${MONTHS_FI[+input.ym.slice(5, 7) - 1]} ${input.ym.slice(0, 4)}` :
+  input.dateFrom && input.dateTo ? ` — ${fmtDayFI(input.dateFrom)}–${fmtDayFI(input.dateTo)}` :
+  input.dateFrom ? ` — alkaen ${fmtDayFI(input.dateFrom)}` :
+  input.dateTo ? ` — asti ${fmtDayFI(input.dateTo)}` : '';
 
 // ---------- Jaetut tulosrenderöijät ----------
 
@@ -153,6 +165,21 @@ function dtMatrix(finds) {
   return {
     filled, total: DT_VALUES.length * DT_VALUES.length,
     html: `<div class="fq-scroll"><table class="dt-matrix">${head}${rows}${totalsRow}</table></div>${legend}`
+  };
+}
+
+// Maakunnan kuntakattavuus: löydetyt kunnat vihreinä + lukumäärä, puuttuvat himmennettyinä
+function kuntaCoverage(region, hits) {
+  const kunnat = maakuntienKunnat[region] || [];
+  const counts = {};
+  for (const f of hits) counts[f.loc] = (counts[f.loc] || 0) + 1;
+  const found = kunnat.filter(k => counts[k]).length;
+  return {
+    found, total: kunnat.length,
+    html: `<div class="type-coverage">${kunnat.map(k =>
+      counts[k]
+        ? `<span class="type-chip" style="border-color:var(--c-green); color:var(--c-green); background:#a6e3a122;">${k} ${counts[k]}</span>`
+        : `<span class="type-chip miss">${k}</span>`).join('')}</div>`
   };
 }
 
@@ -522,7 +549,7 @@ const FINDS_QUERIES = [
     title: 'Kalenteripäivähaku',
     desc: 'Yksittäinen päivä tai päiväväli (pp.kk.–pp.kk., voi ylittää vuodenvaihteen) kaikkina vuosina tai valittuna vuosina — puuttuvat tyypit ja D/T-kattavuus.',
     input: 'day',
-    filters: ['types', 'attr', 'countries', 'loc'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region'],
     run(finds, input) {
       const { month, day } = input;
       const m2 = input.month2 || month, d2 = input.day2 || day;
@@ -552,7 +579,7 @@ const FINDS_QUERIES = [
     title: 'Kuukauden D/T-taulukko',
     desc: 'D/T-ruudukko valitulta kuukaudelta kaikkina vuosina.',
     input: 'month',
-    filters: ['types', 'attr', 'countries', 'loc', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
     run(finds, input) {
       const { month } = input;
       const mm = String(month).padStart(2, '0');
@@ -569,7 +596,7 @@ const FINDS_QUERIES = [
     title: 'Viikonpäivän D/T-taulukko',
     desc: 'D/T-ruudukko valitulta viikonpäivältä (esim. kaikki lauantai-löydöt).',
     input: 'weekday',
-    filters: ['types', 'attr', 'countries', 'loc', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
     run(finds, input) {
       const wd = +input.weekday;
       const hits = applyFilters(finds.filter(f => {
@@ -590,7 +617,7 @@ const FINDS_QUERIES = [
     title: 'Koko D/T-matriisi',
     desc: 'Kaikkien löytöjen D/T-ruudukko — suodata vapaasti tyypeillä ja attribuuteilla.',
     input: null,
-    filters: ['types', 'attr', 'countries', 'loc', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
     run(finds, input) {
       const hits = applyFilters(finds, input);
       const mx = dtMatrix(hits);
@@ -605,7 +632,7 @@ const FINDS_QUERIES = [
     title: 'Attribuuttihaku',
     desc: 'Löydöt joilla valittu attribuutti (esim. kiipeily, lumikengät, yökätköily).',
     input: 'attr',
-    filters: ['types', 'countries', 'loc', 'period'],
+    filters: ['types', 'countries', 'loc', 'region', 'period'],
     run(finds, input) {
       const id = +input.attr;
       const hits = applyFilters(finds.filter(f => f.attrs.includes(id)), input);
@@ -627,15 +654,32 @@ const FINDS_QUERIES = [
       const hits = applyFilters(finds.filter(f => (f.loc || '').toLowerCase() === loc), input);
       const cov = typeCoverage(hits);
       const mx = dtMatrix(hits);
-      const per = input.yearP ? ` — vuosi ${input.yearP}` :
-        input.dateFrom && input.dateTo ? ` — ${fmtDayFI(input.dateFrom)}–${fmtDayFI(input.dateTo)}` :
-        input.dateFrom ? ` — alkaen ${fmtDayFI(input.dateFrom)}` :
-        input.dateTo ? ` — asti ${fmtDayFI(input.dateTo)}` : '';
       return [
-        { title: `${input.loc || '—'}: ${hits.length} löytöä${per} — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
+        { title: `${input.loc || '—'}: ${hits.length} löytöä${periodLabel(input)} — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä — tarkista nimi tai valitse se listasta.') }
+      ];
+    }
+  },
+  {
+    id: 'maakunta',
+    title: 'Maakuntahaku',
+    desc: 'Mitä kätköjä olen hakenut maakunnasta — valitse maakunta listasta. Voit rajata tulokset kunnalla, vuodella tai vapaalla aikavälillä.',
+    input: 'region',
+    filters: ['types', 'attr', 'loc', 'period'],
+    run(finds, input) {
+      const kunnat = new Set(maakuntienKunnat[input.region] || []);
+      const hits = applyFilters(finds.filter(f => kunnat.has(f.loc)), input);
+      const cov = typeCoverage(hits);
+      const mx = dtMatrix(hits);
+      const kun = kuntaCoverage(input.region, hits);
+      return [
+        { title: `${input.region || '—'}: ${hits.length} löytöä${periodLabel(input)}`, html: kun.html },
+        { title: `Kunnat ${kun.found}/${kun.total} — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
+        { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
+        { title: 'Vuosikalenteri', html: yearCalendar(hits) },
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä — valitse maakunta listasta.') }
       ];
     }
   },
@@ -644,7 +688,7 @@ const FINDS_QUERIES = [
     title: 'Vuosikalenteri',
     desc: 'Kalenteriruudukko valitulta vuodelta: kuukaudet x päivät, värin voimakkuus = löytömäärä.',
     input: 'year',
-    filters: ['types', 'attr', 'countries', 'loc'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => !input.year || +f.day.slice(0, 4) === +input.year), input);
       const yrLabel = input.year ? String(input.year) : 'kaikki vuodet';
@@ -659,7 +703,7 @@ const FINDS_QUERIES = [
     title: 'Monihaku',
     desc: 'Yhdistä vapaasti kuukaudet, viikonpäivät, paikkakunta ja aikarajaus + tyypit/maat/attribuutit. Tuloksena tyypit, D/T-ruudukko, vuosikalenteri, löytöpäiväjakauma ja lista.',
     input: 'custom',
-    filters: ['types', 'attr', 'countries', 'loc', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => {
         if (f.day.length < 10) return false;
@@ -728,6 +772,8 @@ function renderInputs(query, inputDiv, finds) {
       <input id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0;">
       ${locDataList('fqLocList')}
       <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
+  } else if (query.input === 'region') {
+    html += `<div class="fq-grp"><label>Maakunta</label>${accField('fqRegion', [['', '— Valitse maakunta —'], ...suomenMaakunnat.map(m => [m, m])], '')}</div>`;
   } else if (query.input === 'year') {
     html += `<div class="fq-grp"><label>Vuosi</label>${accField('fqYear', yrOptsAll, '')}</div>`;
   } else if (query.input === 'custom') {
@@ -742,10 +788,19 @@ function renderInputs(query, inputDiv, finds) {
       ${locDataList('fqLocListF')}</div>`;
   }
 
-  // Jaettu aikarajaus (geocache.fi-malli: Kaikki ajat / Tietty vuosi / Vapaa aikaväli)
+  // Jaettu maakunta-suodatin (geocache.fi-malli: mkunta)
+  if (query.filters?.includes('region')) {
+    html += `<div class="fq-grp"><label>Maakunta</label>${accField('fqRegionF', [['', 'Kaikki maakunnat'], ...suomenMaakunnat.map(m => [m, m])], '')}</div>`;
+  }
+
+  // Jaettu aikarajaus (geocache.fi-malli: Kaikki ajat / Tietty vuosi / Tietty kuukausi / Vapaa aikaväli)
   if (query.filters?.includes('period')) {
-    html += `<div class="fq-grp"><label>Aikarajaus</label>${accField('fqPeriod', [['all', 'Kaikki ajat'], ['year', 'Tietty vuosi'], ['range', 'Vapaa aikaväli']], 'all')}</div>
+    html += `<div class="fq-grp"><label>Aikarajaus</label>${accField('fqPeriod', [['all', 'Kaikki ajat'], ['year', 'Tietty vuosi'], ['month', 'Tietty kuukausi'], ['range', 'Vapaa aikaväli']], 'all')}</div>
       <div id="fqPeriodYear" class="hidden"><div class="fq-grp"><label>Vuosi</label>${accField('fqYearP', years.map(y => [y, y]), years.at(-1) || '')}</div></div>
+      <div id="fqPeriodMonth" class="hidden"><div class="gen-accordion-row">
+        <div class="fq-half"><label>Vuosi</label>${accField('fqYearM', years.map(y => [y, y]), years.at(-1) || '')}</div>
+        <div class="fq-half"><label>Kuukausi</label>${accField('fqMonthP', monOpts, new Date().getMonth() + 1)}</div>
+      </div></div>
       <div id="fqPeriodRange" class="hidden"><div class="gen-accordion-row">
         <div class="fq-half"><label>Alkaen</label><input type="date" id="fqDateFrom" style="margin:0;"></div>
         <div class="fq-half"><label>Asti</label><input type="date" id="fqDateTo" style="margin:0;"></div>
@@ -784,13 +839,15 @@ function renderInputs(query, inputDiv, finds) {
     rangeSel.addEventListener('change', () => extra.classList.toggle('hidden', rangeSel.value !== 'range'));
   }
 
-  // Jaettu aikarajaus: Tietty vuosi -> vuosivalitsin, Vapaa aikaväli -> pvm-kentät
+  // Jaettu aikarajaus: Tietty vuosi -> vuosivalitsin, Tietty kuukausi -> vuosi+kk, Vapaa aikaväli -> pvm-kentät
   const periodSel = inputDiv.querySelector('#fqPeriod');
   if (periodSel) {
     const yWrap = inputDiv.querySelector('#fqPeriodYear');
+    const mWrap = inputDiv.querySelector('#fqPeriodMonth');
     const rWrap = inputDiv.querySelector('#fqPeriodRange');
     periodSel.addEventListener('change', () => {
       yWrap.classList.toggle('hidden', periodSel.value !== 'year');
+      mWrap.classList.toggle('hidden', periodSel.value !== 'month');
       rWrap.classList.toggle('hidden', periodSel.value !== 'range');
     });
   }
@@ -905,9 +962,13 @@ export const renderFindsQueries = async (db, user, content) => {
       months: chipVals(inputDiv, 'fqMonths'),
       weekdays: chipVals(inputDiv, 'fqWeekdays'),
       loc: sel('fqLoc')?.value || null,
-      locFilter: sel('fqLocFilter')?.value || null,  // jaettu paikkakuntasuodatin
-      period: sel('fqPeriod')?.value || 'all',       // jaettu aikarajaus
+      locFilter: sel('fqLocFilter')?.value || null,    // jaettu paikkakuntasuodatin
+      region: sel('fqRegion')?.value || null,          // maakunta-pääkenttä (maakuntahaku)
+      regionFilter: sel('fqRegionF')?.value || null,   // jaettu maakuntasuodatin
+      period: sel('fqPeriod')?.value || 'all',         // jaettu aikarajaus
       yearP: gv('fqYearP'),
+      yearM: gv('fqYearM'),
+      monthP: gv('fqMonthP'),
       dateFrom: sel('fqDateFrom')?.value || null,
       dateTo: sel('fqDateTo')?.value || null,
       attr: sel('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
@@ -918,8 +979,12 @@ export const renderFindsQueries = async (db, user, content) => {
     if (input.attrFilter && !input.attr) input.attr = input.attrFilter;
     // Jaettu paikkakuntasuodatin (kun pää-loc-kenttää ei ole)
     if (!input.loc && input.locFilter) input.loc = input.locFilter;
+    // Jaettu maakuntasuodatin (kun pää-region-kenttää ei ole)
+    if (!input.region && input.regionFilter) input.region = input.regionFilter;
     // Aikarajaus: sovelletaan vain valitun tilan mukaiset parametrit
     if (input.period !== 'year') input.yearP = null;
+    input.ym = (input.period === 'month' && input.yearM && input.monthP)
+      ? `${input.yearM}-${String(input.monthP).padStart(2, '0')}` : null;
     if (input.period !== 'range') { input.dateFrom = null; input.dateTo = null; }
     try {
       const sections = q.run(finds, input);
