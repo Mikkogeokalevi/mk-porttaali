@@ -1,14 +1,14 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { maakuntienKunnat } from "./data.js";
-import { assignFindToFinnishMunicipality, countryNameFi } from "./gpxImport.js";
+import { assignFindToFinnishMunicipality, removeFinnishMunicipalityFix, countryNameFi } from "./gpxImport.js";
 import { loadFinds, findsList } from "./findsQuery.js";
 import { toast } from "./ui.js";
 
 // Maanimet jotka reititetään Suomeen — näille voi tehdä käsin kunta-määrityksen
 const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
-const FI_KUNTA_OPTIONS = [...new Set(Object.values(maakuntienKunnat).flat())]
-    .sort((a, b) => a.localeCompare(b, 'fi'))
-    .map(k => `<option value="${k}">${k}</option>`).join('');
+const FI_KUNTA_LIST = [...new Set(Object.values(maakuntienKunnat).flat())].sort((a, b) => a.localeCompare(b, 'fi'));
+const FI_KUNTA_OPTIONS = FI_KUNTA_LIST.map(k => `<option value="${k}">${k}</option>`).join('');
+const kuntaOptions = sel => FI_KUNTA_LIST.map(k => `<option value="${k}"${k === sel ? ' selected' : ''}>${k}</option>`).join('');
 
 /* KONFIGURAATIO */
 const CACHE_TYPES = [
@@ -151,6 +151,7 @@ export const loadOtherCountries = async (db, user, content) => {
             getDoc(doc(db, 'stats', user.uid))
         ]);
         const countries = otherSnap.exists() ? (otherSnap.data().countries || {}) : {};
+        const fixes = statsSnap.exists() ? (statsSnap.data().fixes || {}) : {};
         const fiCount = Object.values(statsSnap.exists() ? (statsSnap.data().municipalities || {}) : {})
             .reduce((a, e) => a + ((e?.ids || []).length || (e?.s || []).reduce((x, y) => x + y, 0)), 0);
 
@@ -226,6 +227,20 @@ export const loadOtherCountries = async (db, user, content) => {
             </details>`;
         }).join('');
 
+        // Käsin määrityt kunnat (stats.fixes) — pysyvät, korjattavissa
+        const fixEntries = Object.entries(fixes).sort((a, b) => a[0].localeCompare(b[0]));
+        const fixesBlock = fixEntries.length ? `
+            <details style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.12); padding-top:10px;">
+                <summary style="cursor:pointer; font-weight:600;">✏️ Käsin määrityt kunnat (${fixEntries.length})</summary>
+                <p style="font-size:0.78em; opacity:0.7; margin:8px 0 4px;">Määritykset ovat pysyviä — jokainen GPX-tuonti käyttää niitä automaattisesti. Korjaa kunta pudotusvalikosta tai poista määritys kokonaan; poistettu löytö luokitellaan uudelleen seuraavassa tuonnissa.</p>
+                ${fixEntries.map(([code, kunta]) => `
+                    <div style="display:flex; gap:8px; align-items:center; margin:6px 0; font-size:0.85em;">
+                        <strong style="min-width:78px;">${code}</strong>
+                        <select class="fix-kunta-edit" data-code="${code}" style="flex:1; margin:0; padding:6px;">${kuntaOptions(kunta)}</select>
+                        <button class="btn btn-sm fix-remove" data-code="${code}" title="Poista määritys">✕</button>
+                    </div>`).join('')}
+            </details>` : '';
+
         const upd = [otherSnap, seSnap, noSnap, eeSnap, statsSnap]
             .map(s => s.exists() ? s.data().updatedAt : null)
             .filter(t => t && typeof t.toMillis === 'function')
@@ -246,6 +261,7 @@ export const loadOtherCountries = async (db, user, content) => {
             </div>
             <p style="font-size:0.85em; opacity:0.75;">Löydöt maittain — avaa maa nähdäksesi löytölistan. Kuntataso lisätään tarvittaessa — pyydä adminia, jos haluat jonkin maan kartaksi.</p>
             <div class="oc-table">${mapRows}${otherRows}</div>
+            ${fixesBlock}
         </div>`;
 
         // 🗺️ Maailmankartta: löydetyt maat väritettynä (laiska init)
@@ -336,6 +352,39 @@ export const loadOtherCountries = async (db, user, content) => {
                     console.error('Kunta-määritys:', err);
                     sel.disabled = false;
                     toast('Merkintä epäonnistui: ' + err.message, 'err');
+                }
+            };
+        });
+
+        // Tallennettujen kunta-määritysten korjaus/poisto (stats.fixes)
+        content.querySelectorAll('select.fix-kunta-edit').forEach(sel => {
+            sel.onchange = async () => {
+                const kunta = sel.value;
+                if (!kunta) return;
+                sel.disabled = true;
+                try {
+                    await assignFindToFinnishMunicipality(db, user.uid, { code: sel.dataset.code, kunta });
+                    toast(`${sel.dataset.code} siirretty kuntaan ${kunta}`, 'ok');
+                    loadOtherCountries(db, user, content);
+                } catch (err) {
+                    console.error('Kunta-määrityksen korjaus:', err);
+                    sel.disabled = false;
+                    toast('Korjaus epäonnistui: ' + err.message, 'err');
+                }
+            };
+        });
+        content.querySelectorAll('button.fix-remove').forEach(btn => {
+            btn.onclick = async () => {
+                if (!confirm(`Poistetaanko kätkön ${btn.dataset.code} kunta-määritys? Löytö luokitellaan uudelleen seuraavassa GPX-tuonnissa.`)) return;
+                btn.disabled = true;
+                try {
+                    await removeFinnishMunicipalityFix(db, user.uid, btn.dataset.code);
+                    toast('Määritys poistettu', 'ok');
+                    loadOtherCountries(db, user, content);
+                } catch (err) {
+                    console.error('Määrityksen poisto:', err);
+                    btn.disabled = false;
+                    toast('Poisto epäonnistui: ' + err.message, 'err');
                 }
             };
         });

@@ -804,3 +804,47 @@ export async function assignFindToFinnishMunicipality(db, uid, { code, typeName 
   }
   invalidateFindsCache();
 }
+
+// ---------- Käsin tehdyn kunta-määrityksen poisto ----------
+// Poistaa fixes[code]-määrityksen, vähentää löydön kunnan laskureista ja
+// tyhjentää findsdata-sijainnin — seuraava GPX-tuonti luokittelee löydön
+// uudelleen normaalisti (polygoni/maa).
+export async function removeFinnishMunicipalityFix(db, uid, code) {
+  if (!code) throw new Error('Kätkökoodi puuttuu.');
+
+  const statsSnap = await getDoc(doc(db, 'stats', uid));
+  const sData = statsSnap.exists() ? statsSnap.data() : {};
+  const municipalities = sData.municipalities || {};
+  const fixes = sData.fixes || {};
+  const kunta = fixes[code];
+  delete fixes[code];
+
+  // Tyyppi + vuosi findsdatasta laskurin vähennystä varten
+  let typeIdx = -1, year = null;
+  try {
+    const fSnaps = await getDocs(collection(db, 'users', uid, 'findsdata'));
+    for (const d of fSnaps.docs) {
+      const rec = d.data().finds?.[code];
+      if (rec) { typeIdx = +rec[0]; year = d.id; break; }
+    }
+  } catch {}
+
+  if (kunta && municipalities[kunta] && Array.isArray(municipalities[kunta].ids)) {
+    const e = municipalities[kunta];
+    e.ids = e.ids.filter(c => c !== code);
+    if (Array.isArray(e.s) && typeIdx >= 0 && typeIdx < e.s.length && e.s[typeIdx] > 0) e.s[typeIdx]--;
+    if (!e.ids.length) delete municipalities[kunta];
+  }
+  await setDoc(doc(db, 'stats', uid), { municipalities, fixes, updatedAt: Timestamp.now() }, { merge: true });
+
+  // findsdata-sijainti tyhjäksi — tuonti täydentää seuraavalla ajolla
+  if (year) {
+    const fSnap = await getDoc(doc(db, 'users', uid, 'findsdata', year));
+    const rec = fSnap.exists() ? fSnap.data().finds?.[code] : null;
+    if (rec && rec[4]) {
+      rec[4] = '';
+      await setDoc(doc(db, 'users', uid, 'findsdata', year), { finds: { [code]: rec } }, { merge: true });
+    }
+  }
+  invalidateFindsCache();
+}

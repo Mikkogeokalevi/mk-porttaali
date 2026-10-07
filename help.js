@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.20</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.21</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Käsin määrityt kunnat -hallinta</b>: Muut maat -näkymän alalaitaan uusi osio joka listaa kaikki tekemäsi kunta-määritykset (esim. pitkänmatkan-multit). Voit korjata väärän valinnan pudotusvalikosta tai poistaa määrityksen — muutokset ovat pysyviä ja jokainen GPX-tuonti noudattaa niitä automaattisesti.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.20</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Muut maat -kaatuminen korjattu</b>: "Data päivitetty" -aikaleiman laskenta kaatoi näkymän (null.toMillis-bugi versiosta 2.18.12 asti). Näkymä toimii nyt — mukaan lukien Ahvenanmaa-rivi jossa voi myös merkitä pitkänmatkan-multien oikeat kunnat.</li>
             </ul>
