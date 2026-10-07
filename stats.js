@@ -11,6 +11,8 @@ const MAAKUNTA_NAMES = new Set(Object.keys(maakuntienKunnat));
 const FI_KUNTA_LIST = [...new Set(Object.values(maakuntienKunnat).flat())].sort((a, b) => a.localeCompare(b, 'fi'));
 const FI_KUNTA_OPTIONS = FI_KUNTA_LIST.map(k => `<option value="${k}">${k}</option>`).join('');
 const kuntaOptions = sel => FI_KUNTA_LIST.map(k => `<option value="${k}"${k === sel ? ' selected' : ''}>${k}</option>`).join('');
+// GC-koodi -> geocache.fi:n kätkösivu (sieltä näkyy .fi:n kunta-määritys)
+const gcFiLink = code => `<a href="https://www.geocache.fi/caches/cachetieto.php?wp=${code}" target="_blank" rel="noopener" style="color:inherit; font-weight:700; text-decoration:underline; padding:4px 0;">${code}</a>`;
 
 /* KONFIGURAATIO */
 const CACHE_TYPES = [
@@ -206,7 +208,7 @@ export const loadOtherCountries = async (db, user, content) => {
                     <summary style="font-size:0.8em; color:var(--warning-color);">Kuntaa ei tunnistettu — merkitse käsin:</summary>
                     <div style="margin-top:6px;">
                         ${e.ids.map(code => `<div style="display:flex; gap:8px; align-items:center; margin:5px 0; font-size:0.85em;">
-                            <strong>${code}</strong>
+                            ${gcFiLink(code)}
                             <select class="fix-kunta-other" data-code="${code}" data-cname="${e.name}" style="flex:1; margin:0; padding:6px;">
                                 <option value="">→ valitse kunta…</option>${FI_KUNTA_OPTIONS}
                             </select>
@@ -238,7 +240,7 @@ export const loadOtherCountries = async (db, user, content) => {
                 <p style="font-size:0.78em; opacity:0.7; margin:8px 0 4px;">Määritykset ovat pysyviä — jokainen GPX-tuonti käyttää niitä automaattisesti. Korjaa kunta pudotusvalikosta tai poista määritys kokonaan; poistettu löytö luokitellaan uudelleen seuraavassa tuonnissa.</p>
                 ${fixEntries.map(([code, kunta]) => `
                     <div style="display:flex; gap:8px; align-items:center; margin:6px 0; font-size:0.85em;">
-                        <strong style="min-width:78px;">${code}</strong>
+                        <span style="min-width:78px;">${gcFiLink(code)}</span>
                         <select class="fix-kunta-edit" data-code="${code}" style="flex:1; margin:0; padding:6px;">${kuntaOptions(kunta)}</select>
                         <button class="btn btn-sm fix-remove" data-code="${code}" title="Poista määritys">✕</button>
                     </div>`).join('')}

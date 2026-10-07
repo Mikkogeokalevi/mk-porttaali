@@ -365,7 +365,7 @@ export const renderSettingsView = (content, db, user, app) => {
                         ${report.unmatchedList && report.unmatchedList.length ? `
                             <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Kuntiin osumattomat (maa tunnettu, kunta ei löytynyt):</p>
                             <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.8;">
-                                ${report.unmatchedList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — ${u.country} — ${u.day || 'ei pvm'} — ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)}${FI_COUNTRY_NAMES.has(u.country) ? `
+                                ${report.unmatchedList.map(u => `<li><strong><a href="https://www.geocache.fi/caches/cachetieto.php?wp=${u.code}" target="_blank" rel="noopener" style="color:#f9e2af; text-decoration:underline; padding:2px 0;">${u.code}</a></strong> — ${u.type || '?'} — ${u.country} — ${u.day || 'ei pvm'} — ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)}${FI_COUNTRY_NAMES.has(u.country) ? `
                                     <select class="fix-kunta" data-code="${u.code}" data-type="${u.type || ''}" data-cname="${u.country}" data-day="${u.day || ''}" style="width:auto; display:inline-block; margin:2px 0 0 6px; padding:4px 28px 4px 6px; font-size:0.95em;">
                                         <option value="">→ merkitse kuntaan…</option>${FI_KUNTA_OPTIONS}
                                     </select>` : ''}</li>`).join('')}
@@ -373,7 +373,7 @@ export const renderSettingsView = (content, db, user, app) => {
                         ${report.regionMismatchList && report.regionMismatchList.length ? `
                             <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Pitkänmatkan-multit / myssit (${report.regionMismatches}) — julkaisumaakunta ≠ koordinaattien kunta. Merkitty maakuntatasolle — korjaa oikea kunta:</p>
                             <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.8;">
-                                ${report.regionMismatchList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — julkaistu: <b>${u.region}</b> (koordinaatit: ${u.hitKunta}) — ${u.day || 'ei pvm'}
+                                ${report.regionMismatchList.map(u => `<li><strong><a href="https://www.geocache.fi/caches/cachetieto.php?wp=${u.code}" target="_blank" rel="noopener" style="color:#f9e2af; text-decoration:underline; padding:2px 0;">${u.code}</a></strong> — ${u.type || '?'} — julkaistu: <b>${u.region}</b> (koordinaatit: ${u.hitKunta}) — ${u.day || 'ei pvm'}
                                     <select class="fix-kunta" data-code="${u.code}" data-type="${u.type || ''}" data-cname="${u.region}" data-day="${u.day || ''}" style="width:auto; display:inline-block; margin:2px 0 0 6px; padding:4px 28px 4px 6px; font-size:0.95em;">
                                         <option value="">→ merkitse kuntaan…</option>${FI_KUNTA_OPTIONS}
                                     </select></li>`).join('')}
