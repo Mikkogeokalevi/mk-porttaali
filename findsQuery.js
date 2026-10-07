@@ -45,16 +45,22 @@ const regionLocSet = region => {
 const KUNTA_TO_MAAKUNTA = {};
 for (const [mk, ks] of Object.entries(maakuntienKunnat))
   for (const k of ks) KUNTA_TO_MAAKUNTA[canonLoc(k)] = mk;
+// maakuntanimi (canon) -> maakuntienKunnat-avain — GPX-tuonnin maakuntatason
+// sijainnit ('Varsinais-Suomi' tms. pitkänmatkan-multien korit) lukeutuvat maakuntaan
+const MAAKUNTA_BY_CANON = {};
+for (const mk of Object.keys(maakuntienKunnat)) MAAKUNTA_BY_CANON[canonLoc(mk)] = mk;
 // stats.municipalities[k].r — kunta->maakunta siten kuin löytökartta sen näkee
 let locRegionStats = {};
 // Kaikki tunnetut kunta-sijainnit (FI + SE/NO/EE-municipality-avaimet) — kattavuus-
 // diagnostiikassa erotellaan "tuntematon loc" vs "muun maan kunta" vs "maanimi"
 let knownKuntaLocs = new Set();
-// Löydön maakunta: 1) maakuntienKunnat, 2) Åland/legacy-loc, 3) stats-docin r-kenttä
+// Löydön maakunta: 1) maakuntienKunnat, 2) Åland/legacy-loc, 3) maakuntanimi,
+// 4) stats-docin r-kenttä
 const locRegion = loc => {
   const cl = canonLoc(loc);
   if (KUNTA_TO_MAAKUNTA[cl]) return KUNTA_TO_MAAKUNTA[cl];
   if (ALAND_REGION_LOCS.includes(cl)) return 'Ahvenanmaa';
+  if (MAAKUNTA_BY_CANON[cl]) return MAAKUNTA_BY_CANON[cl];
   return locRegionStats[cl] || null;
 };
 
@@ -99,7 +105,8 @@ export async function loadFinds(db, uid) {
   for (const c of Object.keys(otherSnap.data()?.countries || {})) locToCountry[c] = countryNameFi(c);
   const FI_LOC_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa', 'Suomi']);
   const resolveCountry = loc =>
-    locToCountry[loc] || (FI_LOC_ALIASES.has(loc) ? 'Suomi' : countryNameFi(loc || 'Tuntematon'));
+    MAAKUNTA_BY_CANON[canonLoc(loc)] ? 'Suomi'
+    : (locToCountry[loc] || (FI_LOC_ALIASES.has(loc) ? 'Suomi' : countryNameFi(loc || 'Tuntematon')));
 
   const finds = [];
   let maxTs = null;
@@ -1015,6 +1022,20 @@ export const renderFindsQueries = async (db, user, content) => {
       <div class="view-header"><h1>Löytöhaut</h1>
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
       <p style="font-size:0.85em; color:var(--success-color); margin-bottom:8px;">📅 Data päivitetty: <b>${fmtTsFI(getFindsUpdatedAt())}</b></p>
+      ${(() => {
+        // Löydöt joiden sijainti on vain maakuntatasoa (pitkänmatkan-multien
+        // valekoordinaatit, Åland/Islanti-tunnisteiset yms.) — vaativat
+        // kunta-määrityksen Muut maat -näkymässä
+        const regionLevel = finds.filter(f => locRegion(f.loc) && !KUNTA_TO_MAAKUNTA[canonLoc(f.loc)]).length;
+        return `<div class="panel" style="padding:12px 14px; margin:10px 0; border:2px solid var(--c-peach); background:rgba(249,226,175,0.07);">
+          <b style="color:var(--c-peach); font-size:1.02em;">⚠️ Kuntasijaintien rajoitus: pitkänmatkan-multit, mysstit ja wherigot</b>
+          <p style="margin:6px 0 4px; font-size:0.86em; line-height:1.55;">GPX-tiedosto sisältää kätkön <b>loppupisteen</b> koordinaatit — ei lähtöpistettä, jonka mukaan geocache.fi laskee kunnan. Jos lähtö ja loppu ovat eri kunnissa, löytö voi kirjautua väärään kuntaan. Tuonti tunnistaa maakuntatason erot automaattisesti (GPX:n maakuntatieto vs koordinaatit) ja siirtää ne maakuntatasolle.</p>
+          ${regionLevel
+            ? `<p style="margin:0 0 4px; font-size:0.86em;"><b style="color:var(--c-peach);">${regionLevel} löytöä</b> on tällä hetkellä vain maakuntatasolla — <b>korjaa kertaalleen</b>: Tilastot → Muut maat → "Käsin määrityt kunnat". Valinnat säilyvät pysyvästi jokaisessa tuonnissa.</p>`
+            : `<p style="margin:0 0 4px; font-size:0.86em; opacity:0.8;">Jos jokin löytö on väärässä kunnassa (esim. Orimattilasta alkava multi jonka purkki Lahdessa), korjaa se kertaalleen: Tilastot → Muut maat → "Käsin määrityt kunnat" → Lisää.</p>`}
+          <button class="btn btn-sm" onclick="app.router('stats_other')" style="margin-top:4px;">✏️ Avaa kunta-määritykset</button>
+        </div>`;
+      })()}
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       ${(() => {
         const noDate = finds.filter(f => f.day.length < 10);

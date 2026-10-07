@@ -230,6 +230,9 @@ export function parseGpxPoints(text, nickname = '') {
 
     const code = extractFirst(block, /<name>([^<]*)<\/name>/) || `${lat}|${lon}`;
     const country = extractFirst(block, /<groundspeak:country>([^<]*)<\/groundspeak:country>/);
+    // state = julkaisumaakunta: geocaching.com säilyttää sen alkuperäisenä vaikka
+    // header-koordinaatit siirrettäisiin loppupisteeseen (pitkänmatkan multit)
+    const state = extractFirst(block, /<groundspeak:state>([^<]*)<\/groundspeak:state>/);
     let type = extractFirst(block, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
     if (!type) {
       const plain = extractFirst(block, /<type>([^<]*)<\/type>/);
@@ -290,7 +293,7 @@ export function parseGpxPoints(text, nickname = '') {
       day = ownFind || ownOther;
     }
 
-    points.push({ lat, lon, code, time: day, noOwnLog: !(ownFind || ownOther), country, type, difficulty, terrain, attrs });
+    points.push({ lat, lon, code, time: day, noOwnLog: !(ownFind || ownOther), country, state, type, difficulty, terrain, attrs });
   }
   return points;
 }
@@ -482,6 +485,14 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
   for (const [maakunta, kunnat] of Object.entries(maakuntienKunnat)) {
     for (const k of kunnat) kuntaToRegion[k] = maakunta;
   }
+  // GPX:n <state> -> maakuntienKunnat-avain ('None'/tuntematon -> null)
+  const stateToRegion = {};
+  for (const mk of Object.keys(maakuntienKunnat)) stateToRegion[mk.toLowerCase()] = mk;
+  const normRegion = s => stateToRegion[(s || '').trim().toLowerCase()] || null;
+  // Tyypit joiden julkaisupiste voi olla aloituspisteessä kaukana purkista —
+  // vain näille state/koordinaatti-ero tulkitaan pitkänmatkan-merkiksi
+  const MOVABLE_TYPES = new Set(['Multi-cache', 'Unknown Cache', 'Project APE Cache',
+    'GPS Adventures Maze Exhibit', 'Letterbox Hybrid', 'Wherigo Cache']);
 
   // Ladataan nykyinen data
   onStatus('Ladataan tallennettuja tietoja...');
@@ -522,6 +533,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
     totalFound: points.length,
     finland: { municipalities: 0, newMunicipalities: 0, replaced: fiReplace },
     countries: {}, other: {}, duplicates: 0, nearest: 0, nearestList: [], unmatched: 0, unmatchedList: [], unknownTypes: [],
+    regionMismatches: 0, regionMismatchList: [],
     noOwnLog: 0, dateKept: 0
   };
   // Kirjoita findsdata-merkintä. Jos tiedostosta puuttuu päivä (ei omaa logia),
@@ -550,7 +562,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
 
     const day = (p.time || '').slice(0, 10);
     const country = p.country || '';
-    let loc = null, bucket = 'other';
+    let loc = null, bucket = 'other', otherName = null;
 
     const fixLoc = fiFixes[p.code]; // käsin merkitty kunta-määritys ohittaa polygonit
     if (fixLoc) {
@@ -579,14 +591,31 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
             report.unmatchedList.push({ code: p.code, type: p.type, country: p.country || '?', lat: p.lat, lon: p.lon, day });
           }
           bucket = 'other';
-        } else if (ALAND_COUNTRIES.has(country) && kuntaToRegion[loc] !== 'Ahvenanmaa') {
-          // Åland-maatason kätkö mutta koordinaatit ovat mantereella — kyseessä on
-          // myssyn/multin valekoordinaatti. Ei saastuteta mannerkuntaa, vaan
-          // merkitään maakuntatasolle (loc='Åland Islands' muut maat -koriin).
-          loc = null;
-          bucket = 'other';
         } else {
-          bucket = isFinland ? 'finland' : 'foreign';
+          const st = isFinland ? normRegion(p.state) : null;
+          if (ALAND_COUNTRIES.has(country) && kuntaToRegion[loc] !== 'Ahvenanmaa') {
+            // Åland-maatason kätkö mutta koordinaatit ovat mantereella — kyseessä on
+            // myssyn/multin valekoordinaatti. Ei saastuteta mannerkuntaa, vaan
+            // merkitään maakuntatasolle (loc='Åland Islands' muut maat -koriin).
+            otherName = st; // jos state kertoo maakunnan, käytetään sitä nimikkeenä
+            loc = null;
+            bucket = 'other';
+          } else if (st && kuntaToRegion[loc] !== st && MOVABLE_TYPES.has(p.type)) {
+            // Pitkänmatkan multi/myssy: julkaisukoordinaatit on siirretty
+            // loppupisteeseen (esim. Turusta alkava multi jonka purkki
+            // Hämeenlinnassa). state säilyy julkaisumaakuntana — jos se eroaa
+            // osumakunnan maakunnasta, koordinaattikunta on väärä. Merkitään
+            // maakuntatasolle (muut maat -koriin maakuntanimellä), josta ne
+            // voi merkitä oikeaan kuntaan kertaalleen pysyvästi.
+            report.regionMismatches++;
+            if (report.regionMismatchList.length < 200)
+              report.regionMismatchList.push({ code: p.code, type: p.type, region: st, hitKunta: loc, day });
+            loc = null;
+            otherName = st;
+            bucket = 'other';
+          } else {
+            bucket = isFinland ? 'finland' : 'foreign';
+          }
         }
       }
     }
@@ -614,7 +643,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
     } else {
       // Muut maat
-      const cname = country || 'Tuntematon';
+      const cname = otherName || country || 'Tuntematon';
       codeLoc[p.code] = 'ot:' + cname;
       const entry = otherData[cname] = ensureEntryShape(otherData[cname]);
       if (addFindTo(entry, p.code, typeIdx)) {
@@ -735,13 +764,16 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
 // 1) stats/{uid}.municipalities[kunta] += löytö + fixes[code]=kunta (tulevat tuonnit käyttävät määritystä)
 // 2) other_countries-merkinnästä poisto
 // 3) findsdata-sijainti päivitetään
-export async function assignFindToFinnishMunicipality(db, uid, { code, typeName = '', fromCname = 'Finland', kunta, day = '' } = {}) {
+export async function assignFindToFinnishMunicipality(db, uid, { code, typeName = '', fromCname = '', kunta, day = '' } = {}) {
   if (!code || !kunta) throw new Error('Kätkökoodi tai kunta puuttuu.');
   let typeIdx = GPX_TYPE_TO_INDEX[typeName] !== undefined ? GPX_TYPE_TO_INDEX[typeName] : -1;
   let recDay = day || '';
 
-  // Jos tyyppi tai pvm ei ole tiedossa (esim. Muut maat -näkymästä), etsitään findsdatasta
-  if (typeIdx === -1 || !recDay) {
+  // Jos tyyppi/pvm/lähtökorin nimi ei ole tiedossa (esim. Muut maat -näkymästä
+  // tai vapaasta GC-koodi-kentästä), etsitään findsdatasta. rec[4]=loc on
+  // muut maat -korin nimi ('Iceland', maakuntanimi, kunta...) — sen perusteella
+  // osataan poistaa löytö oikeasta kansallisesta korista.
+  if (typeIdx === -1 || !recDay || !fromCname) {
     try {
       const fSnap = await getDocs(collection(db, 'users', uid, 'findsdata'));
       for (const d of fSnap.docs) {
@@ -749,11 +781,13 @@ export async function assignFindToFinnishMunicipality(db, uid, { code, typeName 
         if (rec) {
           if (typeIdx === -1) typeIdx = +rec[0];
           if (!recDay) recDay = rec[1] || '';
+          if (!fromCname) fromCname = rec[4] || 'Finland';
           break;
         }
       }
     } catch {}
   }
+  if (!fromCname) fromCname = 'Finland';
 
   const kuntaToRegion = {};
   for (const [mk, ks] of Object.entries(maakuntienKunnat)) {

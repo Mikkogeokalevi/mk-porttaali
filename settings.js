@@ -370,6 +370,14 @@ export const renderSettingsView = (content, db, user, app) => {
                                         <option value="">→ merkitse kuntaan…</option>${FI_KUNTA_OPTIONS}
                                     </select>` : ''}</li>`).join('')}
                             </ul>` : ''}
+                        ${report.regionMismatchList && report.regionMismatchList.length ? `
+                            <p style="margin:10px 0 4px; font-size:0.85em; color:#f9e2af;">⚠️ Pitkänmatkan-multit / myssit (${report.regionMismatches}) — julkaisumaakunta ≠ koordinaattien kunta. Merkitty maakuntatasolle — korjaa oikea kunta:</p>
+                            <ul style="margin:0; padding-left:20px; font-size:0.8em; color:#f9e2af; line-height:1.8;">
+                                ${report.regionMismatchList.map(u => `<li><strong>${u.code}</strong> — ${u.type || '?'} — julkaistu: <b>${u.region}</b> (koordinaatit: ${u.hitKunta}) — ${u.day || 'ei pvm'}
+                                    <select class="fix-kunta" data-code="${u.code}" data-type="${u.type || ''}" data-cname="${u.region}" data-day="${u.day || ''}" style="width:auto; display:inline-block; margin:2px 0 0 6px; padding:4px 28px 4px 6px; font-size:0.95em;">
+                                        <option value="">→ merkitse kuntaan…</option>${FI_KUNTA_OPTIONS}
+                                    </select></li>`).join('')}
+                            </ul>` : ''}
                         ${report.unknownTypes.length ? `<p style="margin:5px 0 0; font-size:0.8em; opacity:0.7;">Tuntemattomat kätkötyypit: ${report.unknownTypes.join(', ')}</p>` : ''}
                     </div>`;
 

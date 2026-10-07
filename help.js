@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.21</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.22</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Pitkänmatkan-multien tunnistus</b>: GPX:n maakuntatieto (state) säilyy julkaisumaakuntana — jos se eroaa koordinaattien kunnasta, kyseessä on valekoordinaatti ja löytö merkitään maakuntatasolle korjattavaksi (ei enää vääriä kuntaosumia). Tuontiraportti listaa ne korjausvalikoineen. Löytöhaut-sivulla uusi näkyvä huomautus rajoituksesta, ja Muut maat -näkymän kunta-määrityksiin lisätty "Lisää GC-koodi" -toiminto jolla minkä tahansa löydön voi siirtää oikeaan kuntaan pysyvästi.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.21</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Käsin määrityt kunnat -hallinta</b>: Muut maat -näkymän alalaitaan uusi osio joka listaa kaikki tekemäsi kunta-määritykset (esim. pitkänmatkan-multit). Voit korjata väärän valinnan pudotusvalikosta tai poistaa määrityksen — muutokset ovat pysyviä ja jokainen GPX-tuonti noudattaa niitä automaattisesti.</li>
             </ul>

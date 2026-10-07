@@ -6,6 +6,8 @@ import { toast } from "./ui.js";
 
 // Maanimet jotka reititetään Suomeen — näille voi tehdä käsin kunta-määrityksen
 const FI_COUNTRY_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa']);
+// Maakuntanimet (GPX-tuonnin pitkänmatkan-multien maakuntatason korit, esim. 'Varsinais-Suomi')
+const MAAKUNTA_NAMES = new Set(Object.keys(maakuntienKunnat));
 const FI_KUNTA_LIST = [...new Set(Object.values(maakuntienKunnat).flat())].sort((a, b) => a.localeCompare(b, 'fi'));
 const FI_KUNTA_OPTIONS = FI_KUNTA_LIST.map(k => `<option value="${k}">${k}</option>`).join('');
 const kuntaOptions = sel => FI_KUNTA_LIST.map(k => `<option value="${k}"${k === sel ? ' selected' : ''}>${k}</option>`).join('');
@@ -197,7 +199,8 @@ export const loadOtherCountries = async (db, user, content) => {
 
         const otherRows = entries.map(e => {
             // Suomeksi merkityt mutta kuntaa puuttuvat löydöt voi merkitä käsin kuntaan
-            const fixable = FI_COUNTRY_ALIASES.has(e.name) && e.ids.length;
+            // (FI-aliakset + maakuntatason korit, esim. pitkänmatkan-multien 'Varsinais-Suomi')
+            const fixable = (FI_COUNTRY_ALIASES.has(e.name) || MAAKUNTA_NAMES.has(e.name)) && e.ids.length;
             const fixBlock = fixable ? `
                 <details style="margin-top:8px;">
                     <summary style="font-size:0.8em; color:var(--warning-color);">Kuntaa ei tunnistettu — merkitse käsin:</summary>
@@ -227,9 +230,9 @@ export const loadOtherCountries = async (db, user, content) => {
             </details>`;
         }).join('');
 
-        // Käsin määrityt kunnat (stats.fixes) — pysyvät, korjattavissa
+        // Käsin määrityt kunnat (stats.fixes) — pysyvät, korjattavissa + uuden lisäys
         const fixEntries = Object.entries(fixes).sort((a, b) => a[0].localeCompare(b[0]));
-        const fixesBlock = fixEntries.length ? `
+        const fixesBlock = `
             <details style="margin-top:16px; border-top:1px solid rgba(255,255,255,0.12); padding-top:10px;">
                 <summary style="cursor:pointer; font-weight:600;">✏️ Käsin määrityt kunnat (${fixEntries.length})</summary>
                 <p style="font-size:0.78em; opacity:0.7; margin:8px 0 4px;">Määritykset ovat pysyviä — jokainen GPX-tuonti käyttää niitä automaattisesti. Korjaa kunta pudotusvalikosta tai poista määritys kokonaan; poistettu löytö luokitellaan uudelleen seuraavassa tuonnissa.</p>
@@ -239,7 +242,13 @@ export const loadOtherCountries = async (db, user, content) => {
                         <select class="fix-kunta-edit" data-code="${code}" style="flex:1; margin:0; padding:6px;">${kuntaOptions(kunta)}</select>
                         <button class="btn btn-sm fix-remove" data-code="${code}" title="Poista määritys">✕</button>
                     </div>`).join('')}
-            </details>` : '';
+                <div style="display:flex; gap:8px; align-items:center; margin:${fixEntries.length ? '12px' : '6px'} 0 4px; font-size:0.85em; ${fixEntries.length ? 'border-top:1px dashed rgba(255,255,255,0.15); padding-top:10px;' : ''}">
+                    <input type="text" class="fix-new-code" placeholder="GC-koodi" autocomplete="off" style="width:96px; margin:0; padding:6px; text-transform:uppercase;">
+                    <select class="fix-new-kunta" style="flex:1; margin:0; padding:6px;"><option value="">→ valitse kunta…</option>${FI_KUNTA_OPTIONS}</select>
+                    <button class="btn btn-sm fix-add" title="Lisää määritys">Lisää</button>
+                </div>
+                <p style="font-size:0.72em; opacity:0.55; margin:2px 0 0;">Vinkki: "Lisää"-toiminnolla voi siirtää myös väärään kuntaan kirjatun löydön (esim. pitkänmatkan-multin loppupisteen kunta) oikeaan kuntaan — vaikka se ei näkyisi listassa.</p>
+            </details>`;
 
         const upd = [otherSnap, seSnap, noSnap, eeSnap, statsSnap]
             .map(s => s.exists() ? s.data().updatedAt : null)
@@ -388,6 +397,23 @@ export const loadOtherCountries = async (db, user, content) => {
                 }
             };
         });
+        const addBtn = content.querySelector('button.fix-add');
+        if (addBtn) addBtn.onclick = async () => {
+            const code = (content.querySelector('.fix-new-code').value || '').trim().toUpperCase();
+            const kunta = content.querySelector('.fix-new-kunta').value;
+            if (!/^GC[A-Z0-9]+$/i.test(code)) { toast('Anna kelvollinen GC-koodi', 'err'); return; }
+            if (!kunta) { toast('Valitse kunta', 'err'); return; }
+            addBtn.disabled = true;
+            try {
+                await assignFindToFinnishMunicipality(db, user.uid, { code, kunta });
+                toast(`${code} merkitty kuntaan ${kunta}`, 'ok');
+                loadOtherCountries(db, user, content);
+            } catch (err) {
+                console.error('Kunta-määrityksen lisäys:', err);
+                addBtn.disabled = false;
+                toast('Merkintä epäonnistui: ' + err.message, 'err');
+            }
+        };
     } catch (e) {
         console.error(e);
         content.innerHTML = `<div class="card"><h1>Muut maat</h1><p style="color:var(--c-red);">Lataus epäonnistui.</p><p style="font-size:0.8em; opacity:0.65;">${e.message || e}</p></div>`;
