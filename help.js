@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.16</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.17</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Kuntakattavuus diagnostiikka</b> — "tunnistamattomat sijainnit" listaa nyt ryhmiteltynä maittain KAIKEN sijaintiarvon joka ei ole tunnettu kunta (FI/SE/NO/EE). Aiemmin Åland/legacy-arvot jäivät näkymättä koska niiden maaksi oli kirjattu Ahvenanmaa, ei Suomi.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.16</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Kuntakattavuus-haku</b> — uusi löytöhaku: kaikki 308 kuntaa maakunnittain chippeinä (vihreä = löydetty lukumärineen), ja "tunnistamattomat sijainnit" -lista joka paljastaa nimivariaatiot ja vanhat tuonnit. <b>Nimikorjaukset</b>: Pedersören kunta → Pedersöre ja Mariehamn → Maarianhamina nyt kunta/mappauksissa tuonnissa, löytökartassa ja löytöhaussa.</li>
             </ul>

@@ -47,6 +47,9 @@ for (const [mk, ks] of Object.entries(maakuntienKunnat))
   for (const k of ks) KUNTA_TO_MAAKUNTA[canonLoc(k)] = mk;
 // stats.municipalities[k].r — kunta->maakunta siten kuin löytökartta sen näkee
 let locRegionStats = {};
+// Kaikki tunnetut kunta-sijainnit (FI + SE/NO/EE-municipality-avaimet) — kattavuus-
+// diagnostiikassa erotellaan "tuntematon loc" vs "muun maan kunta" vs "maanimi"
+let knownKuntaLocs = new Set();
 // Löydön maakunta: 1) maakuntienKunnat, 2) Åland/legacy-loc, 3) stats-docin r-kenttä
 const locRegion = loc => {
   const cl = canonLoc(loc);
@@ -61,7 +64,7 @@ let findsCache = null;
 let findsCacheUpdatedAt = null;
 // Kutsutaan kun findsdata/talousdata muuttuu (GPX-tuonti, kunta-määritykset,
 // maakarttojen tallennukset) — muuten haut näyttäisivät vanhaa dataa istunnossa.
-export function invalidateFindsCache() { findsCache = null; findsCacheUpdatedAt = null; locRegionStats = {}; }
+export function invalidateFindsCache() { findsCache = null; findsCacheUpdatedAt = null; locRegionStats = {}; knownKuntaLocs = new Set(); }
 // Viimeisin findsdata-päivitys (Firestore Timestamp | null) — näytetään näkymän ylälaidassa
 export function getFindsUpdatedAt() { return findsCacheUpdatedAt; }
 export async function loadFinds(db, uid) {
@@ -86,6 +89,13 @@ export async function loadFinds(db, uid) {
   locRegionStats = {};
   for (const [k, e] of Object.entries(statsSnap.data()?.municipalities || {}))
     if (e?.r && e.r !== 'Muu') locRegionStats[canonLoc(k)] = e.r;
+  // Tunnetut kunta-sijainnit: FI municipalities + SE/NO/EE municipality-avaimet
+  knownKuntaLocs = new Set();
+  for (const snap of [statsSnap, seSnap, noSnap, eeSnap])
+    for (const k of Object.keys(snap.data()?.municipalities || {})) knownKuntaLocs.add(k);
+  for (const ks of Object.values(maakuntienKunnat)) for (const k of ks) knownKuntaLocs.add(k);
+  knownKuntaLocs.add('Mariehamn');
+  knownKuntaLocs.add('Pedersören kunta');
   for (const c of Object.keys(otherSnap.data()?.countries || {})) locToCountry[c] = countryNameFi(c);
   const FI_LOC_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa', 'Suomi']);
   const resolveCountry = loc =>
@@ -731,12 +741,13 @@ const FINDS_QUERIES = [
     filters: [],
     run(finds) {
       const counts = {};
-      const unmapped = {};
+      const unmapped = {}; // country -> { loc: n }
       for (const f of finds) {
         const cl = canonLoc(f.loc);
         if (KUNTA_TO_MAAKUNTA[cl]) { counts[cl] = (counts[cl] || 0) + 1; continue; }
-        if (f.country === 'Suomi' || ALAND_REGION_LOCS.includes(cl))
-          unmapped[f.loc || '(tyhjä)'] = (unmapped[f.loc || '(tyhjä)'] || 0) + 1;
+        if (knownKuntaLocs.has(f.loc)) continue; // ulkomaiden kunta, ok
+        const c = f.country || 'Tuntematon';
+        (unmapped[c] = unmapped[c] || {})[f.loc || '(tyhjä)'] = (unmapped[c][f.loc || '(tyhjä)'] || 0) + 1;
       }
       const found = Object.keys(counts).length;
       const regHtml = Object.entries(maakuntienKunnat).map(([mk, ks]) => {
@@ -749,13 +760,17 @@ const FINDS_QUERIES = [
               : `<span class="type-chip miss">${k}</span>`;
           }).join('')}</div></details>`;
       }).join('');
-      const unList = Object.entries(unmapped).sort((a, b) => b[1] - a[1]);
-      const unTotal = unList.reduce((a, [, n]) => a + n, 0);
-      const unHtml = unList.length
-        ? `<details style="margin-top:10px;" open><summary style="font-size:0.85em; cursor:pointer; color:var(--c-peach);">⚠ ${unList.length} tunnistamatonta sijaintia (${unTotal} löytöä)</summary>
-            <div class="type-coverage" style="margin:8px 0;">${unList.map(([l, n]) =>
-              `<span class="type-chip" style="border-color:var(--c-peach); color:var(--c-peach);">${l} ${n}</span>`).join('')}</div>
-            <p style="font-size:0.75em; opacity:0.65; margin:4px 0 0;">Nämä löydöt eivät liity maakunnan kuntaan — yleensä nimivariaatio tai vanha tuonti. Kunta päivittyy GPX-uudelleentuonnilla.</p></details>`
+      const unCountries = Object.entries(unmapped)
+        .map(([c, locs]) => [c, Object.entries(locs).sort((a, b) => b[1] - a[1])])
+        .sort((a, b) => b[1].reduce((s, [, n]) => s + n, 0) - a[1].reduce((s, [, n]) => s + n, 0));
+      const unTotal = unCountries.reduce((s, [, locs]) => s + locs.reduce((x, [, n]) => x + n, 0), 0);
+      const unHtml = unCountries.length
+        ? `<details style="margin-top:10px;" open><summary style="font-size:0.85em; cursor:pointer; color:var(--c-peach);">⚠ ${unTotal} löytöä ei-kunta-sijainneilla (maittain)</summary>
+            ${unCountries.map(([c, locs]) => `
+              <div style="margin-top:8px;"><b style="font-size:0.8em; color:var(--c-peach);">${c} (${locs.reduce((s, [, n]) => s + n, 0)})</b>
+              <div class="type-coverage" style="margin:4px 0;">${locs.map(([l, n]) =>
+                `<span class="type-chip" style="border-color:var(--c-peach); color:var(--c-peach);">${l} ${n}</span>`).join('')}</div></div>`).join('')}
+            <p style="font-size:0.75em; opacity:0.65; margin:6px 0 0;">Nämä löydöt eivät liity maakunnan kuntaan — maanimet ("Muut maat") ovat normaaleja, mutta suomalaiseen maakuntaan kuuluvat arvot (esim. Aland Islands, Mariehamn) korjaantuvat GPX-uudelleentuonnilla.</p></details>`
         : '';
       return [
         { title: `Kunnat ${found}/308 löydettynä`, html: regHtml + unHtml }
