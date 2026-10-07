@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.15</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.16</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Kuntakattavuus-haku</b> — uusi löytöhaku: kaikki 308 kuntaa maakunnittain chippeinä (vihreä = löydetty lukumärineen), ja "tunnistamattomat sijainnit" -lista joka paljastaa nimivariaatiot ja vanhat tuonnit. <b>Nimikorjaukset</b>: Pedersören kunta → Pedersöre ja Mariehamn → Maarianhamina nyt kunta/mappauksissa tuonnissa, löytökartassa ja löytöhaussa.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.15</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Maakuntahaun tarkennus</b>: maakunnan valinta rajaa Paikkakunta-kentän ehdotukset ko. maakunnan kuntiin, kenttä tukee <b>useita kuntia pilkulla</b> ("Lahti, Hollola") kuten kuvageneraattorissa — sama moni-kunta-logiikka toimii kaikissa hauissa. <b>Ahvenanmaa-korjaus</b>: maakuntahaku tunnistaa nyt myös vanhan tuonnin sijainnit ("Aland Islands", "Åland") ja ruotsinkieliset rinnakkaisnimet (Mariehamn → Maarianhamina); löydöt ilman kuntaa listataan erikseen huomautuksena. Paikkakunta-kenttä sai teeman mukaisen tummaa muotoilua.</li>
             </ul>
