@@ -30,6 +30,18 @@ const WEEKDAYS_FI = [['Maanantai', 1], ['Tiistai', 2], ['Keskiviikko', 3], ['Tor
 
 const emptyState = (text) => `<div class="empty-state"><span class="empty-icon">🔍</span><p>${text}</p></div>`;
 
+// Kunta-nimien normalisointi: ruotsinkieliset rinnakkaisnimet + Åland/legacy-loc:t.
+// maakuntienKunnat käyttää ruotsinkielisiä virallisnimiä (Maarianhamina, Brändö...),
+// kun taas GPX-aineisto voi antaa 'Mariehamn' tai maatason 'Aland Islands'.
+const LOC_ALIAS = { 'mariehamn': 'maarianhamina' };
+const ALAND_REGION_LOCS = ['aland islands', 'åland islands', 'åland', 'ahvenanmaa'];
+const canonLoc = l => LOC_ALIAS[(l || '').trim().toLowerCase()] || (l || '').trim().toLowerCase();
+const regionLocSet = region => {
+  const s = new Set((maakuntienKunnat[region] || []).map(canonLoc));
+  if (region === 'Ahvenanmaa') ALAND_REGION_LOCS.forEach(l => s.add(l));
+  return s;
+};
+
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
 let findsCache = null;
@@ -93,16 +105,16 @@ function applyFilters(finds, { types = null, attr = null, countries = null, loc 
   const typeSet = types && types.length ? new Set(types.map(Number)) : null;
   const attrId = attr ? +attr : null;
   const countrySet = countries && countries.length ? new Set(countries) : null;
-  const locL = loc ? loc.trim().toLowerCase() : null;
-  const regionSet = region && maakuntienKunnat[region] ? new Set(maakuntienKunnat[region]) : null;
+  const locSet = loc ? new Set(loc.split(',').map(s => canonLoc(s)).filter(Boolean)) : null;
+  const regionSet = region ? (s => s.size ? s : null)(regionLocSet(region)) : null;
   const yp = yearP ? +yearP : null;
-  if (!typeSet && !attrId && !countrySet && !locL && !regionSet && !yp && !ym && !dateFrom && !dateTo) return finds;
+  if (!typeSet && !attrId && !countrySet && !locSet && !regionSet && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!countrySet || countrySet.has(f.country)) &&
-    (!locL || (f.loc || '').toLowerCase() === locL) &&
-    (!regionSet || regionSet.has(f.loc)) &&
+    (!locSet || locSet.has(canonLoc(f.loc))) &&
+    (!regionSet || regionSet.has(canonLoc(f.loc))) &&
     (!yp || +f.day.slice(0, 4) === yp) &&
     (!ym || f.day.slice(0, 7) === ym) &&
     (!dateFrom || (f.day.length >= 10 && f.day >= dateFrom)) &&
@@ -172,13 +184,13 @@ function dtMatrix(finds) {
 function kuntaCoverage(region, hits) {
   const kunnat = maakuntienKunnat[region] || [];
   const counts = {};
-  for (const f of hits) counts[f.loc] = (counts[f.loc] || 0) + 1;
-  const found = kunnat.filter(k => counts[k]).length;
+  for (const f of hits) { const l = canonLoc(f.loc); if (l) counts[l] = (counts[l] || 0) + 1; }
+  const found = kunnat.filter(k => counts[canonLoc(k)]).length;
   return {
     found, total: kunnat.length,
     html: `<div class="type-coverage">${kunnat.map(k =>
-      counts[k]
-        ? `<span class="type-chip" style="border-color:var(--c-green); color:var(--c-green); background:#a6e3a122;">${k} ${counts[k]}</span>`
+      counts[canonLoc(k)]
+        ? `<span class="type-chip" style="border-color:var(--c-green); color:var(--c-green); background:#a6e3a122;">${k} ${counts[canonLoc(k)]}</span>`
         : `<span class="type-chip miss">${k}</span>`).join('')}</div>`
   };
 }
@@ -650,8 +662,7 @@ const FINDS_QUERIES = [
     input: 'loc',
     filters: ['types', 'attr', 'period'],
     run(finds, input) {
-      const loc = (input.loc || '').trim().toLowerCase();
-      const hits = applyFilters(finds.filter(f => (f.loc || '').toLowerCase() === loc), input);
+      const hits = applyFilters(finds, input);
       const cov = typeCoverage(hits);
       const mx = dtMatrix(hits);
       return [
@@ -669,13 +680,16 @@ const FINDS_QUERIES = [
     input: 'region',
     filters: ['types', 'attr', 'loc', 'period'],
     run(finds, input) {
-      const kunnat = new Set(maakuntienKunnat[input.region] || []);
-      const hits = applyFilters(finds.filter(f => kunnat.has(f.loc)), input);
+      const kunnat = regionLocSet(input.region);
+      const hits = applyFilters(finds.filter(f => kunnat.has(canonLoc(f.loc))), input);
       const cov = typeCoverage(hits);
       const mx = dtMatrix(hits);
       const kun = kuntaCoverage(input.region, hits);
+      const kunSet = new Set((maakuntienKunnat[input.region] || []).map(canonLoc));
+      const kunattomat = hits.filter(f => !kunSet.has(canonLoc(f.loc))).length;
+      const kunNote = kunattomat ? `<p style="font-size:0.8em; color:var(--c-peach); margin:6px 0 0;">⚠ ${kunattomat} löytöä ilman kuntaa (vanha tuonti — kunta päivittyy GPX-uudelleentuonnilla).</p>` : '';
       return [
-        { title: `${input.region || '—'}: ${hits.length} löytöä${periodLabel(input)}`, html: kun.html },
+        { title: `${input.region || '—'}: ${hits.length} löytöä${periodLabel(input)}`, html: kun.html + kunNote },
         { title: `Kunnat ${kun.found}/${kun.total} — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
@@ -769,9 +783,9 @@ function renderInputs(query, inputDiv, finds) {
     html += `<div class="fq-grp"><label>Attribuutti</label>${accField('fqAttr', attrPairs(), '', '— Valitse attribuutti —')}</div>`;
   } else if (query.input === 'loc') {
     html += `<label>Kunta / paikkakunta:</label>
-      <input id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0;">
+      <input type="text" id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0;">
       ${locDataList('fqLocList')}
-      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
+      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Voit antaa useita pilkulla: Lahti, Hollola. Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
   } else if (query.input === 'region') {
     html += `<div class="fq-grp"><label>Maakunta</label>${accField('fqRegion', [['', '— Valitse maakunta —'], ...suomenMaakunnat.map(m => [m, m])], '')}</div>`;
   } else if (query.input === 'year') {
@@ -784,8 +798,9 @@ function renderInputs(query, inputDiv, finds) {
   // Jaettu paikkakunta-suodatin (geocache.fi-malli: vapaa tekstikenttä + datalist)
   if (query.filters?.includes('loc')) {
     html += `<div class="fq-grp"><label>Paikkakunta</label>
-      <input id="fqLocFilter" list="fqLocListF" placeholder="Kaikki paikkakunnat" autocomplete="off" style="margin-bottom:0;">
-      ${locDataList('fqLocListF')}</div>`;
+      <input type="text" id="fqLocFilter" list="fqLocListF" placeholder="Kaikki paikkakunnat" autocomplete="off" style="margin-bottom:0;">
+      ${locDataList('fqLocListF')}
+      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Voit antaa useita pilkulla: Lahti, Hollola</p></div>`;
   }
 
   // Jaettu maakunta-suodatin (geocache.fi-malli: mkunta)
@@ -831,6 +846,21 @@ function renderInputs(query, inputDiv, finds) {
   }
   inputDiv.innerHTML = html;
   wireAccordions(inputDiv);
+
+  // Maakuntavalinta rajaa Paikkakunta-datalistin ko. maakunnan kuntiin
+  const locListF = inputDiv.querySelector('#fqLocListF');
+  if (locListF) {
+    const upd = region => {
+      const ks = maakuntienKunnat[region] || [];
+      locListF.innerHTML = ks.length
+        ? ks.map(k => `<option value="${k}">`).join('')
+        : locs.map(([l]) => `<option value="${l}">`).join('');
+    };
+    for (const id of ['#fqRegion', '#fqRegionF']) {
+      const sel = inputDiv.querySelector(id);
+      if (sel) sel.addEventListener('change', () => upd(sel.value));
+    }
+  }
 
   // Päiväväli/vuosirajaus -lohko aukeaa Aikarajaus-valinnasta (kuten genTimeSelect generaattorissa)
   const rangeSel = inputDiv.querySelector('#fqRangeMode');

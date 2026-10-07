@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.14</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.15</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Maakuntahaun tarkennus</b>: maakunnan valinta rajaa Paikkakunta-kentän ehdotukset ko. maakunnan kuntiin, kenttä tukee <b>useita kuntia pilkulla</b> ("Lahti, Hollola") kuten kuvageneraattorissa — sama moni-kunta-logiikka toimii kaikissa hauissa. <b>Ahvenanmaa-korjaus</b>: maakuntahaku tunnistaa nyt myös vanhan tuonnin sijainnit ("Aland Islands", "Åland") ja ruotsinkieliset rinnakkaisnimet (Mariehamn → Maarianhamina); löydöt ilman kuntaa listataan erikseen huomautuksena. Paikkakunta-kenttä sai teeman mukaisen tummaa muotoilua.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.14</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Maakuntahaku</b> — uusi kysely Löytöhauissa: valitse maakunta ja näet kuntakattavuuden (esim. Päijät-Häme 8/10 kuntaa löydettynä), löydöt, tyypit, D/T-ruudukon ja vuosikalenterin. <b>Maakunta-suodatin</b> lisätty kaikkiin hajoihin (kuten geocache.fi:n mkunta-parametri). Aikarajaukseen lisättiin <b>"Tietty kuukausi"</b> -vaihtoehto (vuosi + kuukausi, kuten kuvageneraattorin year/month). Maakuntahakuun voi lisäksi rajata yksittäiseen kuntaan ja aikaväliin.</li>
             </ul>
