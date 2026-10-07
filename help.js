@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.18</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.19</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Muut maat -näkymän virheensieto</b>: näkymä ei enää kaadu null-maakirjauksiin tai puuttuviin aikaleimoihin — ja virhetilanteessa näytetään nyt oikea virhesanoma (aiemmin vain yleinen "Lataus epäonnistui").</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.18</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Åland-valekoordinaattikorjaus</b>: Åland-maaksi merkityt kätköt joiden koordinaatit ovat mantereella (myssyn/multin julkaisupiste) eivät enää mene väärään mannerkuntaan — ne merkitään maakuntatasolle (Maakuntahaku → Ahvenanmaa näyttää ne). Toteutuksessa korjaantuu myös mannerkuntien löytömäärät. Vaatii GPX-uudelleentuonnin.</li>
             </ul>

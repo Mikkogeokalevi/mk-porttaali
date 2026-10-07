@@ -164,7 +164,7 @@ export const loadOtherCountries = async (db, user, content) => {
         ].map(c => ({ ...c, count: countMunis(c.snap) })).filter(c => c.count > 0);
 
         const entries = Object.entries(countries)
-            .map(([name, e]) => ({ name, ids: e.ids || [], count: (e.ids || []).length || (e.s || []).reduce((a, b) => a + b, 0), types: (e.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
+            .map(([name, e]) => ({ name, ids: e?.ids || [], count: (e?.ids || []).length || (e?.s || []).reduce((a, b) => a + b, 0), types: (e?.s || []).map((v, i) => v > 0 ? i : -1).filter(i => i >= 0) }))
             .sort((a, b) => b.count - a.count);
 
         if (!entries.length && !mapCountries.length && !fiCount) {
@@ -228,7 +228,7 @@ export const loadOtherCountries = async (db, user, content) => {
 
         const upd = [otherSnap, seSnap, noSnap, eeSnap, statsSnap]
             .map(s => s.exists() ? s.data().updatedAt : null)
-            .filter(Boolean)
+            .filter(t => t && typeof t.toMillis === 'function')
             .reduce((a, b) => (a.toMillis() >= b.toMillis() ? a : b), null);
         const updateTime = formatUpdateDate(upd);
 
@@ -341,7 +341,7 @@ export const loadOtherCountries = async (db, user, content) => {
         });
     } catch (e) {
         console.error(e);
-        content.innerHTML = `<div class="card"><h1>Muut maat</h1><p>Lataus epäonnistui.</p></div>`;
+        content.innerHTML = `<div class="card"><h1>Muut maat</h1><p style="color:var(--c-red);">Lataus epäonnistui.</p><p style="font-size:0.8em; opacity:0.65;">${e.message || e}</p></div>`;
     }
 };
 
