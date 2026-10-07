@@ -33,7 +33,7 @@ const emptyState = (text) => `<div class="empty-state"><span class="empty-icon">
 // Kunta-nimien normalisointi: ruotsinkieliset rinnakkaisnimet + Åland/legacy-loc:t.
 // maakuntienKunnat käyttää ruotsinkielisiä virallisnimiä (Maarianhamina, Brändö...),
 // kun taas GPX-aineisto voi antaa 'Mariehamn' tai maatason 'Aland Islands'.
-const LOC_ALIAS = { 'mariehamn': 'maarianhamina' };
+const LOC_ALIAS = { 'mariehamn': 'maarianhamina', 'pedersören kunta': 'pedersöre' };
 const ALAND_REGION_LOCS = ['aland islands', 'åland islands', 'åland', 'ahvenanmaa'];
 const canonLoc = l => { const cl = (l || '').normalize('NFC').trim().toLowerCase(); return LOC_ALIAS[cl] || cl; };
 const regionLocSet = region => {
@@ -720,6 +720,45 @@ const FINDS_QUERIES = [
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä — valitse maakunta listasta.') }
+      ];
+    }
+  },
+  {
+    id: 'kattavuus',
+    title: 'Kuntakattavuus',
+    desc: 'Kaikki 308 kuntaa maakunnittain — löydetyt vihreinä lukumärineen, puuttuvat himmennettyinä. Näyttää myös sijaintiarvot joita ei tunnistettu maakunnan kunnaksi (esim. nimivariaatio tai vanha tuonti).',
+    input: 'none',
+    filters: [],
+    run(finds) {
+      const counts = {};
+      const unmapped = {};
+      for (const f of finds) {
+        const cl = canonLoc(f.loc);
+        if (KUNTA_TO_MAAKUNTA[cl]) { counts[cl] = (counts[cl] || 0) + 1; continue; }
+        if (f.country === 'Suomi' || ALAND_REGION_LOCS.includes(cl))
+          unmapped[f.loc || '(tyhjä)'] = (unmapped[f.loc || '(tyhjä)'] || 0) + 1;
+      }
+      const found = Object.keys(counts).length;
+      const regHtml = Object.entries(maakuntienKunnat).map(([mk, ks]) => {
+        const n = ks.filter(k => counts[canonLoc(k)]).length;
+        return `<details style="margin-top:4px;"><summary style="font-size:0.85em; cursor:pointer;">${mk} — ${n}/${ks.length}</summary>
+          <div class="type-coverage" style="margin:8px 0;">${ks.map(k => {
+            const c = counts[canonLoc(k)];
+            return c
+              ? `<span class="type-chip" style="border-color:var(--c-green); color:var(--c-green); background:#a6e3a122;">${k} ${c}</span>`
+              : `<span class="type-chip miss">${k}</span>`;
+          }).join('')}</div></details>`;
+      }).join('');
+      const unList = Object.entries(unmapped).sort((a, b) => b[1] - a[1]);
+      const unTotal = unList.reduce((a, [, n]) => a + n, 0);
+      const unHtml = unList.length
+        ? `<details style="margin-top:10px;" open><summary style="font-size:0.85em; cursor:pointer; color:var(--c-peach);">⚠ ${unList.length} tunnistamatonta sijaintia (${unTotal} löytöä)</summary>
+            <div class="type-coverage" style="margin:8px 0;">${unList.map(([l, n]) =>
+              `<span class="type-chip" style="border-color:var(--c-peach); color:var(--c-peach);">${l} ${n}</span>`).join('')}</div>
+            <p style="font-size:0.75em; opacity:0.65; margin:4px 0 0;">Nämä löydöt eivät liity maakunnan kuntaan — yleensä nimivariaatio tai vanha tuonti. Kunta päivittyy GPX-uudelleentuonnilla.</p></details>`
+        : '';
+      return [
+        { title: `Kunnat ${found}/308 löydettynä`, html: regHtml + unHtml }
       ];
     }
   },

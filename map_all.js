@@ -25,7 +25,9 @@ const ALAND_REGIONS = {
 // KUNTALIITOKSET (Vanha nimi -> Uusi nimi)
 // Karttapohja voi olla vanha, mutta tilastot ovat uusia.
 const MUNICIPALITY_MAPPING = {
-    "Pertunmaa": "Mäntyharju"
+    "Pertunmaa": "Mäntyharju",
+    "Pedersören kunta": "Pedersöre",
+    "Mariehamn": "Maarianhamina"
 };
 
 // Kätkötyypit ikoneineen

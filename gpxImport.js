@@ -46,7 +46,11 @@ export const GPX_TYPE_TO_INDEX = {
 const TYPE_COUNT = 14;
 
 // Kuntaliitoskorjaukset (GeoJSON-nimi -> maakuntienKunnat-nimi)
-const FI_MUNICIPALITY_FIX = { 'Pertunmaa': 'Mäntyharju' };
+const FI_MUNICIPALITY_FIX = {
+  'Pertunmaa': 'Mäntyharju',
+  'Pedersören kunta': 'Pedersöre',
+  'Mariehamn': 'Maarianhamina'
+};
 
 // Englanninkieliset maanimet -> suomi (yleisimmät; fallback = englanti)
 const COUNTRY_FI = {

@@ -22,7 +22,9 @@ const ALAND_REGIONS = {
 
 // KUNTALIITOKSET
 const MUNICIPALITY_MAPPING = {
-    "Pertunmaa": "Mäntyharju"
+    "Pertunmaa": "Mäntyharju",
+    "Pedersören kunta": "Pedersöre",
+    "Mariehamn": "Maarianhamina"
 };
 
 export const renderTripletMap = async (content, db, user, app) => {
