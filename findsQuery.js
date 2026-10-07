@@ -35,11 +35,24 @@ const emptyState = (text) => `<div class="empty-state"><span class="empty-icon">
 // kun taas GPX-aineisto voi antaa 'Mariehamn' tai maatason 'Aland Islands'.
 const LOC_ALIAS = { 'mariehamn': 'maarianhamina' };
 const ALAND_REGION_LOCS = ['aland islands', 'åland islands', 'åland', 'ahvenanmaa'];
-const canonLoc = l => LOC_ALIAS[(l || '').trim().toLowerCase()] || (l || '').trim().toLowerCase();
+const canonLoc = l => { const cl = (l || '').normalize('NFC').trim().toLowerCase(); return LOC_ALIAS[cl] || cl; };
 const regionLocSet = region => {
   const s = new Set((maakuntienKunnat[region] || []).map(canonLoc));
   if (region === 'Ahvenanmaa') ALAND_REGION_LOCS.forEach(l => s.add(l));
   return s;
+};
+// kunta (canonLoc) -> maakunta maakuntienKunnat-pohjalta
+const KUNTA_TO_MAAKUNTA = {};
+for (const [mk, ks] of Object.entries(maakuntienKunnat))
+  for (const k of ks) KUNTA_TO_MAAKUNTA[canonLoc(k)] = mk;
+// stats.municipalities[k].r — kunta->maakunta siten kuin löytökartta sen näkee
+let locRegionStats = {};
+// Löydön maakunta: 1) maakuntienKunnat, 2) Åland/legacy-loc, 3) stats-docin r-kenttä
+const locRegion = loc => {
+  const cl = canonLoc(loc);
+  if (KUNTA_TO_MAAKUNTA[cl]) return KUNTA_TO_MAAKUNTA[cl];
+  if (ALAND_REGION_LOCS.includes(cl)) return 'Ahvenanmaa';
+  return locRegionStats[cl] || null;
 };
 
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
@@ -48,7 +61,7 @@ let findsCache = null;
 let findsCacheUpdatedAt = null;
 // Kutsutaan kun findsdata/talousdata muuttuu (GPX-tuonti, kunta-määritykset,
 // maakarttojen tallennukset) — muuten haut näyttäisivät vanhaa dataa istunnossa.
-export function invalidateFindsCache() { findsCache = null; findsCacheUpdatedAt = null; }
+export function invalidateFindsCache() { findsCache = null; findsCacheUpdatedAt = null; locRegionStats = {}; }
 // Viimeisin findsdata-päivitys (Firestore Timestamp | null) — näytetään näkymän ylälaidassa
 export function getFindsUpdatedAt() { return findsCacheUpdatedAt; }
 export async function loadFinds(db, uid) {
@@ -68,6 +81,11 @@ export async function loadFinds(db, uid) {
   addLocs(noSnap.data(), 'municipalities', 'Norja');
   addLocs(eeSnap.data(), 'municipalities', 'Viro');
   addLocs(statsSnap.data(), 'municipalities', 'Suomi');
+  // kunta -> maakunta -kartta stats-docista (entry.r) — maakuntahaun fallback-osuma,
+  // sama lähde jolla löytökartta värittää kunnat
+  locRegionStats = {};
+  for (const [k, e] of Object.entries(statsSnap.data()?.municipalities || {}))
+    if (e?.r && e.r !== 'Muu') locRegionStats[canonLoc(k)] = e.r;
   for (const c of Object.keys(otherSnap.data()?.countries || {})) locToCountry[c] = countryNameFi(c);
   const FI_LOC_ALIASES = new Set(['Finland', 'Aland Islands', 'Åland Islands', 'Åland', 'Ahvenanmaa', 'Suomi']);
   const resolveCountry = loc =>
@@ -106,15 +124,14 @@ function applyFilters(finds, { types = null, attr = null, countries = null, loc 
   const attrId = attr ? +attr : null;
   const countrySet = countries && countries.length ? new Set(countries) : null;
   const locSet = loc ? new Set(loc.split(',').map(s => canonLoc(s)).filter(Boolean)) : null;
-  const regionSet = region ? (s => s.size ? s : null)(regionLocSet(region)) : null;
   const yp = yearP ? +yearP : null;
-  if (!typeSet && !attrId && !countrySet && !locSet && !regionSet && !yp && !ym && !dateFrom && !dateTo) return finds;
+  if (!typeSet && !attrId && !countrySet && !locSet && !region && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!countrySet || countrySet.has(f.country)) &&
     (!locSet || locSet.has(canonLoc(f.loc))) &&
-    (!regionSet || regionSet.has(canonLoc(f.loc))) &&
+    (!region || locRegion(f.loc) === region) &&
     (!yp || +f.day.slice(0, 4) === yp) &&
     (!ym || f.day.slice(0, 7) === ym) &&
     (!dateFrom || (f.day.length >= 10 && f.day >= dateFrom)) &&
@@ -680,16 +697,25 @@ const FINDS_QUERIES = [
     input: 'region',
     filters: ['types', 'attr', 'loc', 'period'],
     run(finds, input) {
-      const kunnat = regionLocSet(input.region);
-      const hits = applyFilters(finds.filter(f => kunnat.has(canonLoc(f.loc))), input);
+      const hits = applyFilters(finds.filter(f => locRegion(f.loc) === input.region), input);
       const cov = typeCoverage(hits);
       const mx = dtMatrix(hits);
       const kun = kuntaCoverage(input.region, hits);
       const kunSet = new Set((maakuntienKunnat[input.region] || []).map(canonLoc));
+      // Löydöt jotka lukeutuvat maakuntaan mutta joiden loc ei ole maakunnan kunta
+      // (vanha tuonti, maanimi tms.) — listataan arvot diagnosoitavaksi
+      const offLocs = [...new Set(hits.filter(f => !kunSet.has(canonLoc(f.loc))).map(f => f.loc || '(tyhjä)'))];
       const kunattomat = hits.filter(f => !kunSet.has(canonLoc(f.loc))).length;
-      const kunNote = kunattomat ? `<p style="font-size:0.8em; color:var(--c-peach); margin:6px 0 0;">⚠ ${kunattomat} löytöä ilman kuntaa (vanha tuonti — kunta päivittyy GPX-uudelleentuonnilla).</p>` : '';
+      const kunNote = kunattomat
+        ? `<p style="font-size:0.8em; color:var(--c-peach); margin:6px 0 0;">⚠ ${kunattomat} löytöä ilman maakunnan kuntaa (loc: ${offLocs.slice(0, 10).join(', ')}) — kunta päivittyy GPX-uudelleentuonnilla.</p>` : '';
+      // Diagnostiikka: jos 0 osumaa, näytä loc-arvot joita ei liitetty mihinkään maakuntaan
+      let diag = '';
+      if (!hits.length && input.region) {
+        const unmapped = [...new Set(finds.filter(f => !locRegion(f.loc)).map(f => f.loc || '(tyhjä)'))].slice(0, 15);
+        if (unmapped.length) diag = `<details style="margin-top:6px;"><summary style="font-size:0.8em; cursor:pointer;">Sijaintiarvoja ilman maakuntaa</summary><p style="font-size:0.8em; opacity:0.7; margin:4px 0 0;">${unmapped.join(', ')}</p></details>`;
+      }
       return [
-        { title: `${input.region || '—'}: ${hits.length} löytöä${periodLabel(input)}`, html: kun.html + kunNote },
+        { title: `${input.region || '—'}: ${hits.length} löytöä${periodLabel(input)}`, html: kun.html + kunNote + diag },
         { title: `Kunnat ${kun.found}/${kun.total} — tyyppejä ${cov.found}/${cov.total}`, html: cov.html },
         { title: `D/T ${mx.filled}/${mx.total}`, html: mx.html },
         { title: 'Vuosikalenteri', html: yearCalendar(hits) },
