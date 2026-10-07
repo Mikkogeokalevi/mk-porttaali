@@ -229,7 +229,7 @@ export const loadOtherCountries = async (db, user, content) => {
         const upd = [otherSnap, seSnap, noSnap, eeSnap, statsSnap]
             .map(s => s.exists() ? s.data().updatedAt : null)
             .filter(t => t && typeof t.toMillis === 'function')
-            .reduce((a, b) => (a.toMillis() >= b.toMillis() ? a : b), null);
+            .reduce((a, b) => (!a || a.toMillis() < b.toMillis() ? b : a), null);
         const updateTime = formatUpdateDate(upd);
 
         content.innerHTML = `
