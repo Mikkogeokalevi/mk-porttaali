@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.11</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.12</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>"Data päivitetty" -aikaleima</b> näkyy nyt myös Löytöhaut- ja Muut maat -näkymissä (kuten Löydöt maakunnittain -näkymässä). Löytötaulukoiden päivämäärät suomalaiseen muotoon <b>pp.kk.vvvv</b> — ja Pvm-sarakkeen sorttaus korjattu (saman vuoden päivät järjestyivät aiemmin virheellisesti).</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.11</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>29.9.2026:</strong> <b>Karttapopupit teemaan</b>: karttojen infokuplat ovat nyt tumman teeman mukaiset (myös Reissuapurissa). <b>Mobiilivalikko sulkeutuu</b> nyt myös valikon ulkopuolelle klikatessa ja ESC-näppäimellä. <b>Ei enää tarttuvaa hover-tilaa</b> kosketuslaitteilla — napautettu nappi ei jää "osoitetun" näköiseksi. <b>Reissuapuri</b>: disabloidut napit näkyvät nyt selkeästi, pienet ikoninapit ja checkboxit suurennettu kosketuskohteiksi, safe-area ja modaalin vieritysrajat kuntoon. <b>Lataus- ja tyhjätilat yhtenäistetty</b>: spinneri näkyy kaikissa näkymissä ja "ei löytynyt" -tekstit saivat visuaalisen ilmeen. Löytötaulukoiden otsakkeet toimivat nyt myös näppäimistöllä (Enter/välilyönti). Jakometatiedot (Open Graph) lisätty linkkien esikatseluun.</li>
             </ul>

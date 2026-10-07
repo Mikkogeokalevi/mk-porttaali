@@ -226,6 +226,12 @@ export const loadOtherCountries = async (db, user, content) => {
             </details>`;
         }).join('');
 
+        const upd = [otherSnap, seSnap, noSnap, eeSnap, statsSnap]
+            .map(s => s.exists() ? s.data().updatedAt : null)
+            .filter(Boolean)
+            .reduce((a, b) => (a.toMillis() >= b.toMillis() ? a : b), null);
+        const updateTime = formatUpdateDate(upd);
+
         content.innerHTML = `
         <div class="card">
             <div class="view-header"><h1>Muut maat</h1>
@@ -233,6 +239,7 @@ export const loadOtherCountries = async (db, user, content) => {
                 <button class="btn btn-sm" id="ocMapBtn" title="Maailmankartta löydetyistä maista">🗺️ Kartta</button>
                 <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button>
             </div></div>
+            <p style="font-size:0.85em; color:var(--success-color); margin-bottom:10px;">📅 Data päivitetty: <b>${updateTime}</b></p>
             <div id="ocMapWrap" style="display:none; margin:10px 0 14px;">
                 <div id="ocMap" style="height:340px; border-radius:10px; overflow:hidden;"></div>
                 <div style="font-size:0.8em; margin-top:6px;"><span style="color:#a6e3a1;">■</span> Löydetty maa &nbsp;<span style="color:#585b70;">■</span> Ei löytöjä</div>

@@ -32,9 +32,12 @@ const emptyState = (text) => `<div class="empty-state"><span class="empty-icon">
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
 let findsCache = null;
+let findsCacheUpdatedAt = null;
 // Kutsutaan kun findsdata/talousdata muuttuu (GPX-tuonti, kunta-määritykset,
 // maakarttojen tallennukset) — muuten haut näyttäisivät vanhaa dataa istunnossa.
-export function invalidateFindsCache() { findsCache = null; }
+export function invalidateFindsCache() { findsCache = null; findsCacheUpdatedAt = null; }
+// Viimeisin findsdata-päivitys (Firestore Timestamp | null) — näytetään näkymän ylälaidassa
+export function getFindsUpdatedAt() { return findsCacheUpdatedAt; }
 export async function loadFinds(db, uid) {
   if (findsCache) return findsCache;
   // loc-kentässä on kunta (FI/SE/NO/EE) tai maanimi (muut maat) — rakennetaan kunta->maa-kartta
@@ -58,7 +61,10 @@ export async function loadFinds(db, uid) {
     locToCountry[loc] || (FI_LOC_ALIASES.has(loc) ? 'Suomi' : countryNameFi(loc || 'Tuntematon'));
 
   const finds = [];
+  let maxTs = null;
   snap.forEach(d => {
+    const t = d.data().updatedAt;
+    if (t && (!maxTs || t.toMillis() > maxTs.toMillis())) maxTs = t;
     const data = d.data().finds || {};
     for (const [code, r] of Object.entries(data)) {
       const [type, day, D, T, loc, attrStr] = r;
@@ -70,7 +76,14 @@ export async function loadFinds(db, uid) {
     }
   });
   findsCache = finds;
+  findsCacheUpdatedAt = maxTs;
   return finds;
+}
+
+// fi-FI -aikaleima Timestamp/Date-objektille (sama muoto kuin stats.js:n "Data päivitetty")
+export function fmtTsFI(t) {
+  const d = t?.toDate ? t.toDate() : (t instanceof Date ? t : null);
+  return d ? d.toLocaleString('fi-FI', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Ei tietoa';
 }
 
 // ---------- Suodatus-apuri (tyyppi + attribuutti -filterit) ----------
@@ -153,6 +166,12 @@ function typeCoverage(finds) {
 }
 
 // Löytölista (uusimmat ensin), katkaistaan limit-kohdalla.
+// YYYY-MM-DD -> suomalainen pp.kk.vvvv-näyttömuoto (data-day pysyy ISO:na sorttausta varten)
+const fmtDayFI = d => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : (d || '—');
+};
+
 // Sarakkeet ovat sortattavia: th[data-k] -> rivin data-attribuutti; sorttaus hoidetaan DOM:ssa
 // yhdellä delegoidulla kuuntelijalla (alla), joten lista toimii kaikissa näkymissä.
 export function findsList(finds, limit = 300) {
@@ -161,7 +180,7 @@ export function findsList(finds, limit = 300) {
     `<tr${i >= limit ? ' class="fq-hidden"' : ''} data-code="${f.code}" data-type="${f.type}" data-day="${f.day}" data-d="${f.D || 0}" data-t="${f.T || 0}" data-loc="${f.loc || ''}">` +
     `<td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td>` +
     `<td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td>` +
-    `<td>${f.day || '—'}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
+    `<td>${fmtDayFI(f.day)}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
   const th = (k, label) => `<th data-k="${k}" data-label="${label}" title="Järjestä" tabindex="0" role="button" aria-sort="none">${label}</th>`;
   return `<div class="fq-scroll"><table class="finds-table"><thead><tr>${th('code', 'Koodi')}${th('type', 'Tyyppi')}${th('day', 'Pvm')}${th('d', 'D')}${th('t', 'T')}${th('loc', 'Sijainti')}</tr></thead><tbody>${rows}</tbody></table></div>` +
@@ -476,7 +495,7 @@ document.addEventListener('click', e => {
   const rows = [...tbody.rows];
   rows.sort((a, b) => {
     const x = a.dataset[k] || '', y = b.dataset[k] || '';
-    const nx = parseFloat(x), ny = parseFloat(y);
+    const nx = x === '' ? NaN : Number(x), ny = y === '' ? NaN : Number(y);
     return (!isNaN(nx) && !isNaN(ny)) ? (nx - ny) * dir : x.localeCompare(y, 'fi') * dir;
   });
   table.querySelectorAll('th[data-k]').forEach(h => { h.dataset.dir = ''; h.textContent = h.dataset.label; h.setAttribute('aria-sort', 'none'); });
@@ -793,6 +812,7 @@ export const renderFindsQueries = async (db, user, content) => {
   <div class="card">
       <div class="view-header"><h1>Löytöhaut</h1>
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
+      <p style="font-size:0.85em; color:var(--success-color); margin-bottom:8px;">📅 Data päivitetty: <b>${fmtTsFI(getFindsUpdatedAt())}</b></p>
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       ${(() => {
         const noDate = finds.filter(f => f.day.length < 10);
