@@ -887,8 +887,38 @@ const FINDS_QUERIES = [
         attribution: '&copy; OpenStreetMap', subdomains: 'abc', maxZoom: 19
       }).addTo(map);
       const foundLayers = [];
-      const hitStyle = { fillColor: '#a6e3a1', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.25)', fillOpacity: 0.55 };
-      const missStyle = { fillColor: '#313244', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.08)', fillOpacity: 0.12 };
+      // Vahva kontrasti vaaleaa OSM-pohjaa vasten
+      const hitStyle = { fillColor: '#7ac74f', weight: 1.5, opacity: 1, color: '#2e5d2e', fillOpacity: 0.65 };
+      const missStyle = { fillColor: '#313244', weight: 0.7, opacity: 1, color: 'rgba(60,60,80,0.35)', fillOpacity: 0.05 };
+      // Muut maat maatasona (maailma.geojson) — PIIRRETÄÄN ALIMMaksi ettei
+      // se syö kunta-kerrosten klikkauksia. Osumattomat maat ei-interaktiivisia.
+      if (worldGeo && Object.keys(byCountry).length) {
+        const locToEntry = {}; // geojson-nimi (canon) -> entry
+        for (const e of Object.values(byCountry)) {
+          locToEntry[canonLoc(e.geo)] = e;
+          locToEntry[canonLoc(e.name)] = e;
+        }
+        for (const [g, gs] of Object.entries(GEOJSON_TO_GROUNDSPEAK)) {
+          if (locToEntry[canonLoc(gs)]) locToEntry[canonLoc(g)] = locToEntry[canonLoc(gs)];
+        }
+        L.geoJSON(worldGeo, {
+          style: f => locToEntry[canonLoc(f.properties?.name)]
+            ? { fillColor: '#7ac74f', weight: 0.8, opacity: 1, color: '#2e5d2e', fillOpacity: 0.45 }
+            : { fillColor: '#313244', weight: 0.4, opacity: 1, color: 'rgba(60,60,80,0.2)', fillOpacity: 0.03 },
+          onEachFeature: (f, layer) => {
+            const e = locToEntry[canonLoc(f.properties?.name)];
+            if (!e) { layer.options.interactive = false; return; }
+            const ty = Object.entries(e.types).filter(([, n]) => n > 0)
+              .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
+            layer.bindPopup(`<div style="text-align:center; min-width:150px;">
+              <strong>${e.name}</strong>
+              <div style="font-size:0.8em; opacity:0.7;">maa (maatason löydöt)</div>
+              <hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b>
+              <div style="font-size:0.85em; margin-top:3px;">${ty}</div>
+            </div>`);
+          }
+        }).addTo(map);
+      }
       const muniLayer = (geo, nameFn, getEntry, subLabel) => {
         if (!geo) return;
         L.geoJSON(geo, {
@@ -917,34 +947,6 @@ const FINDS_QUERIES = [
         n => byMuni['Norja|' + canonLoc(n)], () => 'Norja');
       muniLayer(eeGeo, f => (f.properties || {}).ONIMI || f.properties?.name || f.properties?.Name,
         n => byMuni['Viro|' + canonLoc(n)], () => 'Viro');
-      // Muut maat maatasona (maailma.geojson) — väritetään jos löytöjä on
-      if (worldGeo && Object.keys(byCountry).length) {
-        const locToEntry = {}; // geojson-nimi (canon) -> entry
-        for (const e of Object.values(byCountry)) {
-          locToEntry[canonLoc(e.geo)] = e;
-          locToEntry[canonLoc(e.name)] = e;
-        }
-        for (const [g, gs] of Object.entries(GEOJSON_TO_GROUNDSPEAK)) {
-          if (locToEntry[canonLoc(gs)]) locToEntry[canonLoc(g)] = locToEntry[canonLoc(gs)];
-        }
-        L.geoJSON(worldGeo, {
-          style: f => locToEntry[canonLoc(f.properties?.name)]
-            ? { fillColor: '#a6e3a1', weight: 0.6, opacity: 1, color: 'rgba(255,255,255,0.2)', fillOpacity: 0.4 }
-            : { fillColor: '#313244', weight: 0.6, opacity: 1, color: 'rgba(255,255,255,0.05)', fillOpacity: 0.06 },
-          onEachFeature: (f, layer) => {
-            const e = locToEntry[canonLoc(f.properties?.name)];
-            if (!e) return;
-            const ty = Object.entries(e.types).filter(([, n]) => n > 0)
-              .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
-            layer.bindPopup(`<div style="text-align:center; min-width:150px;">
-              <strong>${e.name}</strong>
-              <div style="font-size:0.8em; opacity:0.7;">maa (maatason löydöt)</div>
-              <hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b>
-              <div style="font-size:0.85em; margin-top:3px;">${ty}</div>
-            </div>`);
-          }
-        }).addTo(map);
-      }
       if (foundLayers.length && foundLayers.length < 300) {
         map.fitBounds(L.featureGroup(foundLayers).getBounds().pad(0.08));
       }

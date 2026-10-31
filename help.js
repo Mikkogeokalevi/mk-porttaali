@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.26</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.27</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Kuntakartan korjaukset</b>: kuntien klikkaus toimii nyt (maailmankarttakerros söi klikkaukset — siirretty alimmaiseksi ja osumattomat maat eivät enää jää bittiin). Värit vahvennettu vaalealle OSM-pohjalle — löydetyt kunnat erottuvat selvästi.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.26</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Kuntakartta laajennettu</b>: samalle kartalle tulevat nyt myös Ruotsin, Norjan ja Viron kunnat (omat kuntarajat) sekä muut maat maatasona — uusi Maat-suodatin valitsee mitä näytetään. <b>Karttapohjat korjattu</b>: CARTO-ruudut alkoivat vaatia API-avainta (vesileimat) → kaikki sovelluksen kartat siirretty OpenStreetMap-ruutuihin.</li>
             </ul>
