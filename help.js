@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.29</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.30</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Piilottaja-suodatin</b>: GPX:n placed_by-tieto (kätkön piilottaja) tallennetaan nyt löytödataan ja sitä voi käyttää suodattimena melkein kaikissa löytöhaussa — Paikkakunta, Maakunta, Kuntakartta, Monihaku, D/T- ja attribuuttihaut jne. Kentässä on datalist-ehdotukset (esim. "Miittiakat"). <b>Vaatii GPX-uudelleentuonnin</b> — vanhoissa merkinnöissä ei ole piilottajaa.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.29</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Kuntakartan maa-klikkaukset + zoomaus</b>: maatason löydetyt maat (Latvia, Kreikka, Islanti…) reagoivat klikkaukseen samoin kuin kunnat — löytölista aukeaa kartan alle. Kartta zoomaa nyt myös maatason löydettyihin kohteisiin, ei vain kuntiin.</li>
             </ul>

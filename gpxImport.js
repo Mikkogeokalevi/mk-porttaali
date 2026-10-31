@@ -233,6 +233,9 @@ export function parseGpxPoints(text, nickname = '') {
     // state = julkaisumaakunta: geocaching.com säilyttää sen alkuperäisenä vaikka
     // header-koordinaatit siirrettäisiin loppupisteeseen (pitkänmatkan multit)
     const state = extractFirst(block, /<groundspeak:state>([^<]*)<\/groundspeak:state>/);
+    // Piilottajan nimi (placed_by ensisijainen, owner varalla) — piilottaja-hakua varten
+    const owner = extractFirst(block, /<groundspeak:placed_by>([^<]*)<\/groundspeak:placed_by>/)
+      || extractFirst(block, /<groundspeak:owner[^>]*>([^<]*)<\/groundspeak:owner>/);
     let type = extractFirst(block, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
     if (!type) {
       const plain = extractFirst(block, /<type>([^<]*)<\/type>/);
@@ -293,7 +296,7 @@ export function parseGpxPoints(text, nickname = '') {
       day = ownFind || ownOther;
     }
 
-    points.push({ lat, lon, code, time: day, noOwnLog: !(ownFind || ownOther), country, state, type, difficulty, terrain, attrs });
+    points.push({ lat, lon, code, time: day, noOwnLog: !(ownFind || ownOther), country, state, type, difficulty, terrain, attrs, owner });
   }
   return points;
 }
@@ -632,7 +635,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
         report.finland.seen.add(loc);
       } else report.duplicates++;
       // findsdata kirjataan aina (myös duplikaatit) — täydentää mahdolliset aiemmin puuttuneet kirjaukset
-      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(','), p.owner || '']);
     } else if (bucket === 'foreign') {
       codeLoc[p.code] = 'co:' + country + ':' + loc;
       const docData = countryDocs[country];
@@ -640,7 +643,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       if (addFindTo(entry, p.code, typeIdx)) {
         report.countries[country] = (report.countries[country] || 0) + 1;
       } else report.duplicates++;
-      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(',')]);
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, loc, p.attrs.join(','), p.owner || '']);
     } else {
       // Muut maat
       const cname = otherName || country || 'Tuntematon';
@@ -649,7 +652,7 @@ export async function importFindsFile(file, { db, uid, nickname = '', onStatus =
       if (addFindTo(entry, p.code, typeIdx)) {
         report.other[cname] = (report.other[cname] || 0) + 1;
       } else report.duplicates++;
-      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(',')]);
+      queueFind(p.code, [typeIdx, day, p.difficulty, p.terrain, cname, p.attrs.join(','), p.owner || '']);
     }
   }
 

@@ -148,9 +148,9 @@ export async function loadFinds(db, uid) {
     if (t && (!maxTs || t.toMillis() > maxTs.toMillis())) maxTs = t;
     const data = d.data().finds || {};
     for (const [code, r] of Object.entries(data)) {
-      const [type, day, D, T, loc, attrStr] = r;
+      const [type, day, D, T, loc, attrStr, owner] = r;
       finds.push({
-        code, type: +type, day: day || '', D: +D || 0, T: +T || 0, loc: loc || '',
+        code, type: +type, day: day || '', D: +D || 0, T: +T || 0, loc: loc || '', owner: (owner || '').trim(),
         country: resolveCountry(loc),
         attrs: attrStr ? String(attrStr).split(',').map(Number).filter(n => n) : []
       });
@@ -169,19 +169,21 @@ export function fmtTsFI(t) {
 
 // ---------- Suodatus-apuri (tyyppi + attribuutti -filterit) ----------
 
-function applyFilters(finds, { types = null, attr = null, attrs = null, countries = null, loc = null, region = null, yearP = null, ym = null, dateFrom = null, dateTo = null } = {}) {
+function applyFilters(finds, { types = null, attr = null, attrs = null, countries = null, loc = null, region = null, owner = null, yearP = null, ym = null, dateFrom = null, dateTo = null } = {}) {
   const typeSet = types && types.length ? new Set(types.map(Number)) : null;
   const attrId = attr ? +attr : null;
   const attrsArr = attrs && attrs.length ? attrs.map(Number) : null; // AND: kaikki valitut vaaditaan
   const countrySet = countries && countries.length ? new Set(countries) : null;
   const locSet = loc ? new Set(loc.split(',').map(s => canonLoc(s)).filter(Boolean)) : null;
+  const ownerL = owner ? owner.trim().toLowerCase() : null;
   const yp = yearP ? +yearP : null;
-  if (!typeSet && !attrId && !attrsArr && !countrySet && !locSet && !region && !yp && !ym && !dateFrom && !dateTo) return finds;
+  if (!typeSet && !attrId && !attrsArr && !countrySet && !locSet && !region && !ownerL && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!attrsArr || attrsArr.every(a => f.attrs.includes(a))) &&
     (!countrySet || countrySet.has(f.country)) &&
+    (!ownerL || (f.owner || '').toLowerCase() === ownerL) &&
     (!locSet || locSet.has(canonLoc(f.loc))) &&
     (!region || locRegion(f.loc) === region) &&
     (!yp || +f.day.slice(0, 4) === yp) &&
@@ -630,7 +632,7 @@ const FINDS_QUERIES = [
     title: 'Kalenteripäivähaku',
     desc: 'Yksittäinen päivä tai päiväväli (pp.kk.–pp.kk., voi ylittää vuodenvaihteen) kaikkina vuosina tai valittuna vuosina — puuttuvat tyypit ja D/T-kattavuus.',
     input: 'day',
-    filters: ['types', 'attr', 'countries', 'loc', 'region'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'owner'],
     run(finds, input) {
       const { month, day } = input;
       const m2 = input.month2 || month, d2 = input.day2 || day;
@@ -660,7 +662,7 @@ const FINDS_QUERIES = [
     title: 'Kuukauden D/T-taulukko',
     desc: 'D/T-ruudukko valitulta kuukaudelta kaikkina vuosina.',
     input: 'month',
-    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
       const { month } = input;
       const mm = String(month).padStart(2, '0');
@@ -677,7 +679,7 @@ const FINDS_QUERIES = [
     title: 'Viikonpäivän D/T-taulukko',
     desc: 'D/T-ruudukko valitulta viikonpäivältä (esim. kaikki lauantai-löydöt).',
     input: 'weekday',
-    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
       const wd = +input.weekday;
       const hits = applyFilters(finds.filter(f => {
@@ -698,7 +700,7 @@ const FINDS_QUERIES = [
     title: 'Koko D/T-matriisi',
     desc: 'Kaikkien löytöjen D/T-ruudukko — suodata vapaasti tyypeillä ja attribuuteilla.',
     input: null,
-    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds, input);
       const mx = dtMatrix(hits);
@@ -713,7 +715,7 @@ const FINDS_QUERIES = [
     title: 'Attribuuttihaku',
     desc: 'Löydöt joilla valittu attribuutti (esim. kiipeily, lumikengät, yökätköily).',
     input: 'attr',
-    filters: ['types', 'countries', 'loc', 'region', 'period'],
+    filters: ['types', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
       const id = +input.attr;
       const hits = applyFilters(finds.filter(f => f.attrs.includes(id)), input);
@@ -729,7 +731,7 @@ const FINDS_QUERIES = [
     title: 'Paikkakuntahaku',
     desc: 'Mitä kätköjä olen hakenut tietystä kunnasta tai paikkakunnasta — kirjoita nimi ja valitse listasta. Voit rajata tulokset tietylle vuodelle tai vapaalle aikavälille.',
     input: 'loc',
-    filters: ['types', 'attr', 'period'],
+    filters: ['types', 'attr', 'period', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds, input);
       const cov = typeCoverage(hits);
@@ -747,7 +749,7 @@ const FINDS_QUERIES = [
     title: 'Maakuntahaku',
     desc: 'Mitä kätköjä olen hakenut maakunnasta — valitse maakunta listasta. Voit rajata tulokset kunnalla, vuodella tai vapaalla aikavälillä.',
     input: 'region',
-    filters: ['types', 'attr', 'loc', 'period'],
+    filters: ['types', 'attr', 'loc', 'period', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => locRegion(f.loc) === input.region), input);
       const cov = typeCoverage(hits);
@@ -824,7 +826,7 @@ const FINDS_QUERIES = [
     title: 'Kuntakartta',
     desc: 'Kuntakartta suodatettuna — valitse esim. kätkötyypit (letterit), attribuutit (monta = kaikki vaaditaan), paikkakunta/maakunta, maat ja aikarajaus. Kartta värittää kunnat joissa suodatusta vastaavia löytöjä on — myös Ruotsin, Norjan ja Viron kunnat sekä muut maat maatasona. Napauta kuntaa nähdäksesi määrät.',
     input: 'none',
-    filters: ['types', 'attrs', 'loc', 'region', 'period', 'countries'],
+    filters: ['types', 'attrs', 'loc', 'region', 'period', 'countries', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds, input);
       const byKunta = {};   // FI: canon -> {name, mk, n, types}
@@ -974,7 +976,7 @@ const FINDS_QUERIES = [
     title: 'Vuosikalenteri',
     desc: 'Kalenteriruudukko valitulta vuodelta: kuukaudet x päivät, värin voimakkuus = löytömäärä.',
     input: 'year',
-    filters: ['types', 'attr', 'countries', 'loc', 'region'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => !input.year || +f.day.slice(0, 4) === +input.year), input);
       const yrLabel = input.year ? String(input.year) : 'kaikki vuodet';
@@ -989,7 +991,7 @@ const FINDS_QUERIES = [
     title: 'Monihaku',
     desc: 'Yhdistä vapaasti kuukaudet, viikonpäivät, paikkakunta ja aikarajaus + tyypit/maat/attribuutit. Tuloksena tyypit, D/T-ruudukko, vuosikalenteri, löytöpäiväjakauma ja lista.',
     input: 'custom',
-    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period'],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
       const hits = applyFilters(finds.filter(f => {
         if (f.day.length < 10) return false;
@@ -1078,6 +1080,15 @@ function renderInputs(query, inputDiv, finds) {
   // Jaettu maakunta-suodatin (geocache.fi-malli: mkunta)
   if (query.filters?.includes('region')) {
     html += `<div class="fq-grp"><label>Maakunta</label>${accField('fqRegionF', [['', 'Kaikki maakunnat'], ...suomenMaakunnat.map(m => [m, m])], '')}</div>`;
+  }
+
+  // Jaettu piilottaja-suodatin (GPX:n placed_by — datalist-ehdotukset)
+  if (query.filters?.includes('owner')) {
+    const owners = [...new Set(finds.map(f => f.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fi'));
+    html += `<div class="fq-grp"><label>Piilottaja</label>
+      <input type="text" id="fqOwner" list="fqOwnerList" placeholder="Kaikki piilottajat" autocomplete="off" style="margin-bottom:0;">
+      <datalist id="fqOwnerList">${owners.map(o => `<option value="${o}">`).join('')}</datalist>
+      ${owners.length ? '' : `<p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Piilottajat tallentuvat vasta seuraavan GPX-tuonnin jälkeen.</p>`}</div>`;
   }
 
   // Jaettu aikarajaus (geocache.fi-malli: Kaikki ajat / Tietty vuosi / Tietty kuukausi / Vapaa aikaväli)
@@ -1302,6 +1313,7 @@ export const renderFindsQueries = async (db, user, content) => {
       dateTo: sel('fqDateTo')?.value || null,
       attr: sel('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: sel('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
+      owner: sel('fqOwner')?.value || null,
       types, countries, attrs
     };
     // Yhdistä: attrFilter toimii samana suodattimena kuin attr muissa haussa
