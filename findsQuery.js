@@ -64,6 +64,24 @@ const locRegion = loc => {
   return locRegionStats[cl] || null;
 };
 
+// ---------- Kuntakartta-haun GeoJSON-apurit ----------
+// Kuntarajat haetaan vain kerran per istunto (välimuistitettu promise)
+let _kuntaGeoPromise = null;
+function loadKuntaGeo() {
+  if (!_kuntaGeoPromise) {
+    _kuntaGeoPromise = fetch('./kuntarajat_100k.geojson')
+      .then(r => { if (!r.ok) throw new Error('GeoJSON ' + r.status); return r.json(); });
+  }
+  return _kuntaGeoPromise;
+}
+// GeoJSON-feature -> kunta-nimi (samat kuntaliitoskorjaukset kuin kartoissa)
+const GEO_KUNTA_FIX = { 'Pertunmaa': 'Mäntyharju', 'Pedersören kunta': 'Pedersöre', 'Mariehamn': 'Maarianhamina' };
+const geoKuntaName = f => {
+  const p = f.properties || {};
+  const n = p.Name || p.name || p.NAMEFIN || p.nimi || '';
+  return GEO_KUNTA_FIX[n] || n;
+};
+
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
 let findsCache = null;
@@ -136,16 +154,18 @@ export function fmtTsFI(t) {
 
 // ---------- Suodatus-apuri (tyyppi + attribuutti -filterit) ----------
 
-function applyFilters(finds, { types = null, attr = null, countries = null, loc = null, region = null, yearP = null, ym = null, dateFrom = null, dateTo = null } = {}) {
+function applyFilters(finds, { types = null, attr = null, attrs = null, countries = null, loc = null, region = null, yearP = null, ym = null, dateFrom = null, dateTo = null } = {}) {
   const typeSet = types && types.length ? new Set(types.map(Number)) : null;
   const attrId = attr ? +attr : null;
+  const attrsArr = attrs && attrs.length ? attrs.map(Number) : null; // AND: kaikki valitut vaaditaan
   const countrySet = countries && countries.length ? new Set(countries) : null;
   const locSet = loc ? new Set(loc.split(',').map(s => canonLoc(s)).filter(Boolean)) : null;
   const yp = yearP ? +yearP : null;
-  if (!typeSet && !attrId && !countrySet && !locSet && !region && !yp && !ym && !dateFrom && !dateTo) return finds;
+  if (!typeSet && !attrId && !attrsArr && !countrySet && !locSet && !region && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
     (!typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
+    (!attrsArr || attrsArr.every(a => f.attrs.includes(a))) &&
     (!countrySet || countrySet.has(f.country)) &&
     (!locSet || locSet.has(canonLoc(f.loc))) &&
     (!region || locRegion(f.loc) === region) &&
@@ -785,6 +805,78 @@ const FINDS_QUERIES = [
     }
   },
   {
+    id: 'kuntakartta',
+    title: 'Kuntakartta',
+    desc: 'Suomen kuntakartta suodatettuna — valitse esim. kätkötyypit (letterit), attribuutit (monta = kaikki vaaditaan), paikkakunta/maakunta ja aikarajaus. Kartta värittää vain kunnat joissa suodatusta vastaavia löytöjä on — napauta kuntaa nähdäksesi määrät.',
+    input: 'none',
+    filters: ['types', 'attrs', 'loc', 'region', 'period'],
+    run(finds, input) {
+      const hits = applyFilters(finds.filter(f => KUNTA_TO_MAAKUNTA[canonLoc(f.loc)]), input);
+      const byKunta = {}; // canon -> {name, n, types}
+      for (const f of hits) {
+        const cl = canonLoc(f.loc);
+        const e = byKunta[cl] || (byKunta[cl] = { name: f.loc, n: 0, types: {} });
+        e.n++;
+        e.types[f.type] = (e.types[f.type] || 0) + 1;
+      }
+      this._kuntaMap = byKunta;
+      const rows = Object.values(byKunta).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'fi'));
+      const kuntaRows = rows.map(e => {
+        const mk = KUNTA_TO_MAAKUNTA[canonLoc(e.name)] || '';
+        const ty = Object.entries(e.types).filter(([, n]) => n > 0)
+          .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
+        return `<tr><td><b>${e.name}</b></td><td style="opacity:0.65; font-size:0.85em;">${mk}</td><td><b>${e.n}</b></td><td style="font-size:0.8em;">${ty}</td></tr>`;
+      }).join('');
+      return [
+        { title: `Kuntakartta — ${rows.length} kuntaa, ${hits.length} löytöä${periodLabel(input)}`,
+          html: `<div id="fqKuntaMap" style="height:min(62vh,480px); border-radius:10px; overflow:hidden; background:#11111b;"></div>
+            <div style="font-size:0.8em; margin-top:6px;"><span style="color:#a6e3a1;">■</span> Suodatusta vastaavia löytöjä &nbsp;<span style="color:#585b70;">■</span> Ei osumia</div>` },
+        { title: `Kunnat (${rows.length})`, html: rows.length
+          ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Kunta</th><th>Maakunta</th><th>Löydöt</th><th>Tyypit</th></tr></thead><tbody>${kuntaRows}</tbody></table></div>`
+          : emptyState('Ei löytöjä suodatuksella.') },
+        { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä suodatuksella.') }
+      ];
+    },
+    // Kutsutaan tulosten innerHTML-renderöinnin jälkeen — kartta käynnistetään vasta kun div on DOM:ssa
+    async mount(resultDiv) {
+      const el = resultDiv.querySelector('#fqKuntaMap');
+      const byKunta = this._kuntaMap;
+      if (!el || !byKunta) return;
+      let geo;
+      try { geo = await loadKuntaGeo(); }
+      catch { el.innerHTML = '<p style="padding:15px; font-size:0.85em;">Kuntarajoja ei saatu ladattua.</p>'; return; }
+      const map = L.map(el, { preferCanvas: true, zoomControl: false }).setView([65.0, 26.0], 5);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OSM &amp; CARTO', subdomains: 'abcd', maxZoom: 19
+      }).addTo(map);
+      const foundLayers = [];
+      L.geoJSON(geo, {
+        style: f => byKunta[canonLoc(geoKuntaName(f))]
+          ? { fillColor: '#a6e3a1', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.25)', fillOpacity: 0.55 }
+          : { fillColor: '#313244', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.08)', fillOpacity: 0.12 },
+        onEachFeature: (f, layer) => {
+          const name = geoKuntaName(f);
+          const e = byKunta[canonLoc(name)];
+          if (e) foundLayers.push(layer);
+          const mk = KUNTA_TO_MAAKUNTA[canonLoc(name)] || '';
+          const ty = e ? Object.entries(e.types).filter(([, n]) => n > 0)
+            .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ') : '';
+          layer.bindPopup(`<div style="text-align:center; min-width:150px;">
+            <strong>${name}</strong>
+            <div style="font-size:0.8em; opacity:0.7;">${mk}</div>
+            ${e
+              ? `<hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b><div style="font-size:0.85em; margin-top:3px;">${ty}</div>`
+              : '<div style="color:#f38ba8; margin-top:5px;">Ei osumia suodatuksella</div>'}
+          </div>`);
+        }
+      }).addTo(map);
+      if (foundLayers.length && foundLayers.length < 300) {
+        map.fitBounds(L.featureGroup(foundLayers).getBounds().pad(0.08));
+      }
+    }
+  },
+  {
     id: 'year-cal',
     title: 'Vuosikalenteri',
     desc: 'Kalenteriruudukko valitulta vuodelta: kuukaudet x päivät, värin voimakkuus = löytömäärä.',
@@ -931,6 +1023,14 @@ function renderInputs(query, inputDiv, finds) {
   if (query.filters?.includes('attr')) {
     html += `<div class="fq-grp"><label>Attribuuttisuodatin</label>${accField('fqAttrFilter', [['', 'Kaikki attribuutit'], ...attrPairs()], '')}</div>`;
   }
+  if (query.filters?.includes('attrs')) {
+    html += `<details style="margin-top:6px;">
+      <summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Attribuutit (valitut vaaditaan kaikki — esim. Letteri + Esteetön)</summary>
+      <div class="type-coverage" id="fqAttrs" style="margin-top:6px; max-height:200px; overflow-y:auto;">${attrPairs().map(([id, n]) =>
+        `<span class="type-chip fq-attr" data-a="${id}" data-color="#89b4fa" style="border-color:#89b4fa; color:#89b4fa; cursor:pointer;">${n}</span>`).join('')}</div>
+      ${minis('fqAttrs')}
+    </details>`;
+  }
   inputDiv.innerHTML = html;
   wireAccordions(inputDiv);
 
@@ -985,13 +1085,13 @@ function renderInputs(query, inputDiv, finds) {
     ch.style.background = on ? ch.dataset.color + '22' : 'transparent';
     ch.style.opacity = on ? '1' : '0.4';
   };
-  inputDiv.querySelectorAll('.fq-type, .fq-country').forEach(ch => {
+  inputDiv.querySelectorAll('.fq-type, .fq-country, .fq-attr').forEach(ch => {
     ch.onclick = () => setChip(ch, !ch.classList.contains('fq-on'));
   });
   inputDiv.querySelectorAll('.fq-minisel').forEach(b => {
     b.onclick = () => {
       const on = b.dataset.on === '1';
-      inputDiv.querySelectorAll(`#${b.dataset.t} .fq-type, #${b.dataset.t} .fq-country`).forEach(ch => setChip(ch, on));
+      inputDiv.querySelectorAll(`#${b.dataset.t} .fq-type, #${b.dataset.t} .fq-country, #${b.dataset.t} .fq-attr`).forEach(ch => setChip(ch, on));
     };
   });
 }
@@ -1077,6 +1177,11 @@ export const renderFindsQueries = async (db, user, content) => {
     const countries = countryChips.length
       ? [...countryChips].filter(ch => ch.classList.contains('fq-on')).map(ch => ch.dataset.c)
       : null;
+    // Valitut attribuuttichipit (AND-logiikka applyFiltersissa)
+    const attrChips = inputDiv.querySelectorAll('.fq-attr');
+    const attrs = attrChips.length
+      ? [...attrChips].filter(ch => ch.classList.contains('fq-on')).map(ch => +ch.dataset.a)
+      : null;
     const sel = id => document.getElementById(id);
     const gv = id => +sel(id)?.value || null;
     // 'day'-haun asti/vuosikentät luetaan vain kun "Päiväväli / vuosirajaus" on valittuna
@@ -1104,7 +1209,7 @@ export const renderFindsQueries = async (db, user, content) => {
       dateTo: sel('fqDateTo')?.value || null,
       attr: sel('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: sel('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
-      types, countries
+      types, countries, attrs
     };
     // Yhdistä: attrFilter toimii samana suodattimena kuin attr muissa haussa
     if (input.attrFilter && !input.attr) input.attr = input.attrFilter;
@@ -1122,6 +1227,7 @@ export const renderFindsQueries = async (db, user, content) => {
       resultDiv.innerHTML = sections.map(s =>
         `<div class="panel" style="padding:12px 14px; margin-top:10px;">
            <h3 style="margin:0 0 8px; font-size:0.95em;">${s.title}</h3>${s.html}</div>`).join('');
+      if (q.mount) q.mount(resultDiv); // esim. kuntakartan Leaflet-init tulosdiviin
     } catch (e) {
       console.error('Löytöhaku:', e);
       resultDiv.innerHTML = `<p style="color:var(--c-red);">Haku epäonnistui.</p>`;

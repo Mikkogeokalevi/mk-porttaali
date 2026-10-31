@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.24</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.25</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>7.10.2026:</strong> <b>Uusi haku: Kuntakartta</b> — löytöhaut-sivulle tuli interaktiivinen Suomen kuntakartta joka värjää vain ne kunnat joissa on suodatusta vastaavia löytöjä. Suodattimina kätkötyypit (esim. pelkät letterit), useampi attribuutti kerrallaan (AND), paikkakunta, maakunta ja aikarajaus. Napauta kuntaa → näet lukumäärät tyypeittäin. Mukana myös kuntalistaus ja löytölista.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.24</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>7.10.2026:</strong> <b>Kunta-määritysten jatkokorjaus</b>: Muut maat -näkymässä avoinna ollut maa/maakunta-rivi ja sen "merkitse käsin" -valikko avautuvat automaattisesti uudelleen määrityksen jälkeen — monta korjausta peräkkäin ilman että valikkoa tarvitse avata joka välissä. Sama pätee määrityslistan muokkauksiin, poistoihin ja lisäyksiin.</li>
             </ul>
