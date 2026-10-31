@@ -1,0 +1,35 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "findsdata",
+      "fieldPath": "finds",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "stats",
+      "fieldPath": "municipalities",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "other_countries",
+      "fieldPath": "countries",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "sweden",
+      "fieldPath": "municipalities",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "norway",
+      "fieldPath": "municipalities",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "estonia",
+      "fieldPath": "municipalities",
+      "indexes": []
+    }
+  ]
+}
