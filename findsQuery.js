@@ -81,6 +81,21 @@ const geoKuntaName = f => {
   const n = p.Name || p.name || p.NAMEFIN || p.nimi || '';
   return GEO_KUNTA_FIX[n] || n;
 };
+// maailma.geojson properties.name -> Groundspeak-maanimi (kuntakartan "muut maat"
+// -värittämistä varten; sama lista kuin stats.js:n GEO_ALIASES mutta käänteisenä)
+const GEOJSON_TO_GROUNDSPEAK = {
+  'United States of America': 'United States', 'Republic of Serbia': 'Serbia',
+  'The Bahamas': 'Bahamas', 'Macedonia': 'North Macedonia', 'Czech Republic': 'Czechia',
+  'East Timor': 'Timor-Leste', 'Swaziland': 'Eswatini', 'Ivory Coast': "Côte d'Ivoire",
+  'Democratic Republic of the Congo': 'Democratic Republic of Congo',
+  'Republic of the Congo': 'Republic of Congo', 'West Bank': 'Palestine',
+  'Myanmar': 'Myanmar (Burma)', 'United Republic of Tanzania': 'Tanzania',
+  'Kyrgyzstan': 'Kyrgyz Republic', 'Brunei': 'Brunei Darussalam',
+  'Laos': "Lao People's Democratic Republic", 'Vietnam': 'Viet Nam',
+  'Iran': 'Iran (Islamic Republic of)', 'Russia': 'Russian Federation',
+  'Bolivia': 'Bolivia (Plurinational State of)', 'Venezuela': 'Venezuela (Bolivarian Republic of)',
+  'Syria': 'Syrian Arab Republic', 'Moldova': 'Republic of Moldova'
+};
 
 // ---------- Datan lataus (välimuistitettu istunnon ajaksi) ----------
 
@@ -807,32 +822,46 @@ const FINDS_QUERIES = [
   {
     id: 'kuntakartta',
     title: 'Kuntakartta',
-    desc: 'Suomen kuntakartta suodatettuna — valitse esim. kätkötyypit (letterit), attribuutit (monta = kaikki vaaditaan), paikkakunta/maakunta ja aikarajaus. Kartta värittää vain kunnat joissa suodatusta vastaavia löytöjä on — napauta kuntaa nähdäksesi määrät.',
+    desc: 'Kuntakartta suodatettuna — valitse esim. kätkötyypit (letterit), attribuutit (monta = kaikki vaaditaan), paikkakunta/maakunta, maat ja aikarajaus. Kartta värittää kunnat joissa suodatusta vastaavia löytöjä on — myös Ruotsin, Norjan ja Viron kunnat sekä muut maat maatasona. Napauta kuntaa nähdäksesi määrät.',
     input: 'none',
-    filters: ['types', 'attrs', 'loc', 'region', 'period'],
+    filters: ['types', 'attrs', 'loc', 'region', 'period', 'countries'],
     run(finds, input) {
-      const hits = applyFilters(finds.filter(f => KUNTA_TO_MAAKUNTA[canonLoc(f.loc)]), input);
-      const byKunta = {}; // canon -> {name, n, types}
+      const hits = applyFilters(finds, input);
+      const byKunta = {};   // FI: canon -> {name, mk, n, types}
+      const byMuni = {};    // SE/NO/EE: 'Ruotsi|luleå' -> {name, mk, n, types}
+      const byCountry = {}; // muut maat (maataso): 'Latvia' -> {name, mk:'maa', geo, n, types}
       for (const f of hits) {
         const cl = canonLoc(f.loc);
-        const e = byKunta[cl] || (byKunta[cl] = { name: f.loc, n: 0, types: {} });
+        let e;
+        if (KUNTA_TO_MAAKUNTA[cl]) {
+          e = byKunta[cl] || (byKunta[cl] = { name: f.loc, mk: KUNTA_TO_MAAKUNTA[cl], n: 0, types: {} });
+        } else if (f.country === 'Ruotsi' || f.country === 'Norja' || f.country === 'Viro') {
+          const k = f.country + '|' + cl;
+          e = byMuni[k] || (byMuni[k] = { name: f.loc, mk: f.country, n: 0, types: {} });
+        } else {
+          const k = f.country || 'Tuntematon';
+          e = byCountry[k] || (byCountry[k] = { name: k, mk: 'maa', geo: f.loc, n: 0, types: {} });
+        }
         e.n++;
         e.types[f.type] = (e.types[f.type] || 0) + 1;
       }
-      this._kuntaMap = byKunta;
-      const rows = Object.values(byKunta).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'fi'));
+      this._kuntaMap = { byKunta, byMuni, byCountry };
+      const rows = [...Object.values(byKunta), ...Object.values(byMuni), ...Object.values(byCountry)]
+        .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'fi'));
       const kuntaRows = rows.map(e => {
-        const mk = KUNTA_TO_MAAKUNTA[canonLoc(e.name)] || '';
         const ty = Object.entries(e.types).filter(([, n]) => n > 0)
           .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
-        return `<tr><td><b>${e.name}</b></td><td style="opacity:0.65; font-size:0.85em;">${mk}</td><td><b>${e.n}</b></td><td style="font-size:0.8em;">${ty}</td></tr>`;
+        return `<tr><td><b>${e.name}</b></td><td style="opacity:0.65; font-size:0.85em;">${e.mk}</td><td><b>${e.n}</b></td><td style="font-size:0.8em;">${ty}</td></tr>`;
       }).join('');
+      const nKunta = Object.keys(byKunta).length, nMuni = Object.keys(byMuni).length, nMaa = Object.keys(byCountry).length;
+      const scopeTxt = [nKunta ? `${nKunta} suom.kuntaa` : '', nMuni ? `${nMuni} ulkomaan kuntaa` : '', nMaa ? `${nMaa} maata` : '']
+        .filter(Boolean).join(' + ');
       return [
-        { title: `Kuntakartta — ${rows.length} kuntaa, ${hits.length} löytöä${periodLabel(input)}`,
+        { title: `Kuntakartta — ${scopeTxt || 'ei osumia'}, ${hits.length} löytöä${periodLabel(input)}`,
           html: `<div id="fqKuntaMap" style="height:min(62vh,480px); border-radius:10px; overflow:hidden; background:#11111b;"></div>
             <div style="font-size:0.8em; margin-top:6px;"><span style="color:#a6e3a1;">■</span> Suodatusta vastaavia löytöjä &nbsp;<span style="color:#585b70;">■</span> Ei osumia</div>` },
-        { title: `Kunnat (${rows.length})`, html: rows.length
-          ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Kunta</th><th>Maakunta</th><th>Löydöt</th><th>Tyypit</th></tr></thead><tbody>${kuntaRows}</tbody></table></div>`
+        { title: `Sijainnit (${rows.length})`, html: rows.length
+          ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Kunta / maa</th><th>Alue</th><th>Löydöt</th><th>Tyypit</th></tr></thead><tbody>${kuntaRows}</tbody></table></div>`
           : emptyState('Ei löytöjä suodatuksella.') },
         { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä suodatuksella.') }
       ];
@@ -840,37 +869,82 @@ const FINDS_QUERIES = [
     // Kutsutaan tulosten innerHTML-renderöinnin jälkeen — kartta käynnistetään vasta kun div on DOM:ssa
     async mount(resultDiv) {
       const el = resultDiv.querySelector('#fqKuntaMap');
-      const byKunta = this._kuntaMap;
-      if (!el || !byKunta) return;
-      let geo;
-      try { geo = await loadKuntaGeo(); }
-      catch { el.innerHTML = '<p style="padding:15px; font-size:0.85em;">Kuntarajoja ei saatu ladattua.</p>'; return; }
+      const data = this._kuntaMap;
+      if (!el || !data) return;
+      const { byKunta, byMuni, byCountry } = data;
+      const safeGeo = url => fetch(url).then(r => r.ok ? r.json() : null).catch(() => null);
+      let fiGeo, seGeo, noGeo, eeGeo, worldGeo;
+      try {
+        [fiGeo, seGeo, noGeo, eeGeo, worldGeo] = await Promise.all([
+          loadKuntaGeo(), safeGeo('./sverige_kommuner.geojson'), safeGeo('./norge_kommuner.geojson'),
+          safeGeo('./viro_vald.geojson'), safeGeo('./maailma.geojson')
+        ]);
+      } catch { el.innerHTML = '<p style="padding:15px; font-size:0.85em;">Kuntarajoja ei saatu ladattua.</p>'; return; }
+      if (!fiGeo) { el.innerHTML = '<p style="padding:15px; font-size:0.85em;">Kuntarajoja ei saatu ladattua.</p>'; return; }
       const map = L.map(el, { preferCanvas: true, zoomControl: false }).setView([65.0, 26.0], 5);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OSM &amp; CARTO', subdomains: 'abcd', maxZoom: 19
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', subdomains: 'abc', maxZoom: 19
       }).addTo(map);
       const foundLayers = [];
-      L.geoJSON(geo, {
-        style: f => byKunta[canonLoc(geoKuntaName(f))]
-          ? { fillColor: '#a6e3a1', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.25)', fillOpacity: 0.55 }
-          : { fillColor: '#313244', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.08)', fillOpacity: 0.12 },
-        onEachFeature: (f, layer) => {
-          const name = geoKuntaName(f);
-          const e = byKunta[canonLoc(name)];
-          if (e) foundLayers.push(layer);
-          const mk = KUNTA_TO_MAAKUNTA[canonLoc(name)] || '';
-          const ty = e ? Object.entries(e.types).filter(([, n]) => n > 0)
-            .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ') : '';
-          layer.bindPopup(`<div style="text-align:center; min-width:150px;">
-            <strong>${name}</strong>
-            <div style="font-size:0.8em; opacity:0.7;">${mk}</div>
-            ${e
-              ? `<hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b><div style="font-size:0.85em; margin-top:3px;">${ty}</div>`
-              : '<div style="color:#f38ba8; margin-top:5px;">Ei osumia suodatuksella</div>'}
-          </div>`);
+      const hitStyle = { fillColor: '#a6e3a1', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.25)', fillOpacity: 0.55 };
+      const missStyle = { fillColor: '#313244', weight: 1, opacity: 1, color: 'rgba(255,255,255,0.08)', fillOpacity: 0.12 };
+      const muniLayer = (geo, nameFn, getEntry, subLabel) => {
+        if (!geo) return;
+        L.geoJSON(geo, {
+          style: f => getEntry(nameFn(f)) ? hitStyle : missStyle,
+          onEachFeature: (f, layer) => {
+            const name = nameFn(f);
+            const e = getEntry(name);
+            if (e) foundLayers.push(layer);
+            const ty = e ? Object.entries(e.types).filter(([, n]) => n > 0)
+              .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ') : '';
+            layer.bindPopup(`<div style="text-align:center; min-width:150px;">
+              <strong>${name}</strong>
+              <div style="font-size:0.8em; opacity:0.7;">${subLabel(name)}</div>
+              ${e
+                ? `<hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b><div style="font-size:0.85em; margin-top:3px;">${ty}</div>`
+                : '<div style="color:#f38ba8; margin-top:5px;">Ei osumia suodatuksella</div>'}
+            </div>`);
+          }
+        }).addTo(map);
+      };
+      muniLayer(fiGeo, geoKuntaName,
+        n => byKunta[canonLoc(n)], n => KUNTA_TO_MAAKUNTA[canonLoc(n)] || 'Suomi');
+      muniLayer(seGeo, f => (f.properties || {}).kom_namn || f.properties?.name || f.properties?.Name,
+        n => byMuni['Ruotsi|' + canonLoc(n)], () => 'Ruotsi');
+      muniLayer(noGeo, f => (f.properties || {}).kommunenavn || f.properties?.name || f.properties?.Name,
+        n => byMuni['Norja|' + canonLoc(n)], () => 'Norja');
+      muniLayer(eeGeo, f => (f.properties || {}).ONIMI || f.properties?.name || f.properties?.Name,
+        n => byMuni['Viro|' + canonLoc(n)], () => 'Viro');
+      // Muut maat maatasona (maailma.geojson) — väritetään jos löytöjä on
+      if (worldGeo && Object.keys(byCountry).length) {
+        const locToEntry = {}; // geojson-nimi (canon) -> entry
+        for (const e of Object.values(byCountry)) {
+          locToEntry[canonLoc(e.geo)] = e;
+          locToEntry[canonLoc(e.name)] = e;
         }
-      }).addTo(map);
+        for (const [g, gs] of Object.entries(GEOJSON_TO_GROUNDSPEAK)) {
+          if (locToEntry[canonLoc(gs)]) locToEntry[canonLoc(g)] = locToEntry[canonLoc(gs)];
+        }
+        L.geoJSON(worldGeo, {
+          style: f => locToEntry[canonLoc(f.properties?.name)]
+            ? { fillColor: '#a6e3a1', weight: 0.6, opacity: 1, color: 'rgba(255,255,255,0.2)', fillOpacity: 0.4 }
+            : { fillColor: '#313244', weight: 0.6, opacity: 1, color: 'rgba(255,255,255,0.05)', fillOpacity: 0.06 },
+          onEachFeature: (f, layer) => {
+            const e = locToEntry[canonLoc(f.properties?.name)];
+            if (!e) return;
+            const ty = Object.entries(e.types).filter(([, n]) => n > 0)
+              .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
+            layer.bindPopup(`<div style="text-align:center; min-width:150px;">
+              <strong>${e.name}</strong>
+              <div style="font-size:0.8em; opacity:0.7;">maa (maatason löydöt)</div>
+              <hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b>
+              <div style="font-size:0.85em; margin-top:3px;">${ty}</div>
+            </div>`);
+          }
+        }).addTo(map);
+      }
       if (foundLayers.length && foundLayers.length < 300) {
         map.fitBounds(L.featureGroup(foundLayers).getBounds().pad(0.08));
       }

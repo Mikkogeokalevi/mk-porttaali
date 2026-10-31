@@ -300,8 +300,8 @@ export const loadOtherCountries = async (db, user, content, reopen = null) => {
 
                 const map = L.map('ocMap', { zoomControl: false }).setView([40, 15], 2);
                 L.control.zoom({ position: 'bottomright' }).addTo(map);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OSM &amp; CARTO', subdomains: 'abcd', maxZoom: 10, minZoom: 2
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap', subdomains: 'abc', maxZoom: 10, minZoom: 2
                 }).addTo(map);
                 const layer = L.geoJSON(geo, {
                     style: f => found.has(canon(f.properties.name))

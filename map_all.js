@@ -133,9 +133,9 @@ export const renderAllFindsMap = async (content, db, user, app) => {
     const map = L.map('map', { preferCanvas: true, zoomControl: false }).setView([65.0, 26.0], 5);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OSM & CARTO',
-        subdomains: 'abcd',
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        subdomains: 'abc',
         maxZoom: 19
     }).addTo(map);
 

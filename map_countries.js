@@ -377,9 +377,9 @@ async function renderCountryMap(content, db, user, app, config) {
   const map = L.map(`${config.id}Map`, { preferCanvas: true, zoomControl: false }).setView(config.center, config.zoom);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OSM & CARTO',
-    subdomains: 'abcd',
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    subdomains: 'abc',
     maxZoom: 19
   }).addTo(map);
 
