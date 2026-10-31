@@ -834,16 +834,17 @@ const FINDS_QUERIES = [
         const cl = canonLoc(f.loc);
         let e;
         if (KUNTA_TO_MAAKUNTA[cl]) {
-          e = byKunta[cl] || (byKunta[cl] = { name: f.loc, mk: KUNTA_TO_MAAKUNTA[cl], n: 0, types: {} });
+          e = byKunta[cl] || (byKunta[cl] = { name: f.loc, mk: KUNTA_TO_MAAKUNTA[cl], n: 0, types: {}, finds: [] });
         } else if (f.country === 'Ruotsi' || f.country === 'Norja' || f.country === 'Viro') {
           const k = f.country + '|' + cl;
-          e = byMuni[k] || (byMuni[k] = { name: f.loc, mk: f.country, n: 0, types: {} });
+          e = byMuni[k] || (byMuni[k] = { name: f.loc, mk: f.country, n: 0, types: {}, finds: [] });
         } else {
           const k = f.country || 'Tuntematon';
-          e = byCountry[k] || (byCountry[k] = { name: k, mk: 'maa', geo: f.loc, n: 0, types: {} });
+          e = byCountry[k] || (byCountry[k] = { name: k, mk: 'maa', geo: f.loc, n: 0, types: {}, finds: [] });
         }
         e.n++;
         e.types[f.type] = (e.types[f.type] || 0) + 1;
+        e.finds.push(f); // karttaklikkauksen löytölistaa varten
       }
       this._kuntaMap = { byKunta, byMuni, byCountry };
       const rows = [...Object.values(byKunta), ...Object.values(byMuni), ...Object.values(byCountry)]
@@ -859,7 +860,8 @@ const FINDS_QUERIES = [
       return [
         { title: `Kuntakartta — ${scopeTxt || 'ei osumia'}, ${hits.length} löytöä${periodLabel(input)}`,
           html: `<div id="fqKuntaMap" style="height:min(62vh,480px); border-radius:10px; overflow:hidden; background:#11111b;"></div>
-            <div style="font-size:0.8em; margin-top:6px;"><span style="color:#a6e3a1;">■</span> Suodatusta vastaavia löytöjä &nbsp;<span style="color:#585b70;">■</span> Ei osumia</div>` },
+            <div style="font-size:0.8em; margin-top:6px;"><span style="color:#7ac74f;">■</span> Suodatusta vastaavia löytöjä &nbsp;<span style="color:#585b70;">■</span> Ei osumia &nbsp;·&nbsp; klikkaa kuntaa → löytölista aukeaa alle</div>
+            <div id="fqKuntaSel"></div>` },
         { title: `Sijainnit (${rows.length})`, html: rows.length
           ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Kunta / maa</th><th>Alue</th><th>Löydöt</th><th>Tyypit</th></tr></thead><tbody>${kuntaRows}</tbody></table></div>`
           : emptyState('Ei löytöjä suodatuksella.') },
@@ -887,6 +889,18 @@ const FINDS_QUERIES = [
         attribution: '&copy; OpenStreetMap', subdomains: 'abc', maxZoom: 19
       }).addTo(map);
       const foundLayers = [];
+      // Kuntaklikkaus -> löytölista kartan alle (findsList = sortattava taulukko)
+      const selEl = resultDiv.querySelector('#fqKuntaSel');
+      const showSel = (e, title) => {
+        if (!selEl) return;
+        selEl.innerHTML = e && e.finds && e.finds.length
+          ? `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin:10px 0 4px;">
+               <b style="font-size:0.95em;">${title}: ${e.finds.length} löytöä</b>
+               <button type="button" class="btn btn-sm" id="fqKuntaClear">Tyhjennä</button></div>` + findsList(e.finds)
+          : `<p style="margin:8px 0 0; font-size:0.85em; opacity:0.7;">${title}: ei osumia suodatuksella.</p>`;
+        selEl.querySelector('#fqKuntaClear')?.addEventListener('click', () => { selEl.innerHTML = ''; });
+        selEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
       // Vahva kontrasti vaaleaa OSM-pohjaa vasten
       const hitStyle = { fillColor: '#7ac74f', weight: 1.5, opacity: 1, color: '#2e5d2e', fillOpacity: 0.65 };
       const missStyle = { fillColor: '#313244', weight: 0.7, opacity: 1, color: 'rgba(60,60,80,0.35)', fillOpacity: 0.05 };
@@ -908,6 +922,7 @@ const FINDS_QUERIES = [
           onEachFeature: (f, layer) => {
             const e = locToEntry[canonLoc(f.properties?.name)];
             if (!e) { layer.options.interactive = false; return; }
+            foundLayers.push(layer); // zoomaa myös maatason löydettyihin maihin
             const ty = Object.entries(e.types).filter(([, n]) => n > 0)
               .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
             layer.bindPopup(`<div style="text-align:center; min-width:150px;">
@@ -916,6 +931,7 @@ const FINDS_QUERIES = [
               <hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b>
               <div style="font-size:0.85em; margin-top:3px;">${ty}</div>
             </div>`);
+            layer.on('click', () => showSel(e, e.name));
           }
         }).addTo(map);
       }
@@ -936,6 +952,7 @@ const FINDS_QUERIES = [
                 ? `<hr style="margin:5px 0; border-top:1px solid #555;"><b>${e.n} löytöä</b><div style="font-size:0.85em; margin-top:3px;">${ty}</div>`
                 : '<div style="color:#f38ba8; margin-top:5px;">Ei osumia suodatuksella</div>'}
             </div>`);
+            layer.on('click', () => showSel(e || null, name));
           }
         }).addTo(map);
       };
