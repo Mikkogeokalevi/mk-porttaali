@@ -11,73 +11,77 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.28</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.29</h3>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kuntakartan löytölista</b>: kunnan tai maan klikkaus kartalla näyttää sen löydöt suoraan kartan alla sortattavana taulukkona (Piteå → 68 mysseä listattuna). Tyhjennä-nappi sulkee listan.</li>
+                <li><strong>1.11.2026:</strong> <b>Kuntakartan maa-klikkaukset + zoomaus</b>: maatason löydetyt maat (Latvia, Kreikka, Islanti…) reagoivat klikkaukseen samoin kuin kunnat — löytölista aukeaa kartan alle. Kartta zoomaa nyt myös maatason löydettyihin kohteisiin, ei vain kuntiin.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.28</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Kuntakartan löytölista</b>: kunnan tai maan klikkaus kartalla näyttää sen löydöt suoraan kartan alla sortattavana taulukkona (Piteå → 68 mysseä listattuna). Tyhjennä-nappi sulkee listan.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.27</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kuntakartan korjaukset</b>: kuntien klikkaus toimii nyt (maailmankarttakerros söi klikkaukset — siirretty alimmaiseksi ja osumattomat maat eivät enää jää bittiin). Värit vahvennettu vaalealle OSM-pohjalle — löydetyt kunnat erottuvat selvästi.</li>
+                <li><strong>31.10.2026:</strong> <b>Kuntakartan korjaukset</b>: kuntien klikkaus toimii nyt (maailmankarttakerros söi klikkaukset — siirretty alimmaiseksi ja osumattomat maat eivät enää jää bittiin). Värit vahvennettu vaalealle OSM-pohjalle — löydetyt kunnat erottuvat selvästi.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.26</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kuntakartta laajennettu</b>: samalle kartalle tulevat nyt myös Ruotsin, Norjan ja Viron kunnat (omat kuntarajat) sekä muut maat maatasona — uusi Maat-suodatin valitsee mitä näytetään. <b>Karttapohjat korjattu</b>: CARTO-ruudut alkoivat vaatia API-avainta (vesileimat) → kaikki sovelluksen kartat siirretty OpenStreetMap-ruutuihin.</li>
+                <li><strong>31.10.2026:</strong> <b>Kuntakartta laajennettu</b>: samalle kartalle tulevat nyt myös Ruotsin, Norjan ja Viron kunnat (omat kuntarajat) sekä muut maat maatasona — uusi Maat-suodatin valitsee mitä näytetään. <b>Karttapohjat korjattu</b>: CARTO-ruudut alkoivat vaatia API-avainta (vesileimat) → kaikki sovelluksen kartat siirretty OpenStreetMap-ruutuihin.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.25</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Uusi haku: Kuntakartta</b> — löytöhaut-sivulle tuli interaktiivinen Suomen kuntakartta joka värjää vain ne kunnat joissa on suodatusta vastaavia löytöjä. Suodattimina kätkötyypit (esim. pelkät letterit), useampi attribuutti kerrallaan (AND), paikkakunta, maakunta ja aikarajaus. Napauta kuntaa → näet lukumäärät tyypeittäin. Mukana myös kuntalistaus ja löytölista.</li>
+                <li><strong>31.10.2026:</strong> <b>Uusi haku: Kuntakartta</b> — löytöhaut-sivulle tuli interaktiivinen Suomen kuntakartta joka värjää vain ne kunnat joissa on suodatusta vastaavia löytöjä. Suodattimina kätkötyypit (esim. pelkät letterit), useampi attribuutti kerrallaan (AND), paikkakunta, maakunta ja aikarajaus. Napauta kuntaa → näet lukumäärät tyypeittäin. Mukana myös kuntalistaus ja löytölista.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.24</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kunta-määritysten jatkokorjaus</b>: Muut maat -näkymässä avoinna ollut maa/maakunta-rivi ja sen "merkitse käsin" -valikko avautuvat automaattisesti uudelleen määrityksen jälkeen — monta korjausta peräkkäin ilman että valikkoa tarvitse avata joka välissä. Sama pätee määrityslistan muokkauksiin, poistoihin ja lisäyksiin.</li>
+                <li><strong>31.10.2026:</strong> <b>Kunta-määritysten jatkokorjaus</b>: Muut maat -näkymässä avoinna ollut maa/maakunta-rivi ja sen "merkitse käsin" -valikko avautuvat automaattisesti uudelleen määrityksen jälkeen — monta korjausta peräkkäin ilman että valikkoa tarvitse avata joka välissä. Sama pätee määrityslistan muokkauksiin, poistoihin ja lisäyksiin.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.23</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>geocache.fi-linkit korjauslistoihin</b>: pitkänmatkan-multien, osumattomien ja käsin määritysten GC-koodit ovat nyt linkkejä geocache.fi:n kätkösivulle — sieltä näet suoraan .fi:n kunta-määrityksen (esim. "Lappeenranta (Etelä-Karjala)") ja voit valita saman kunnan pudotusvalikosta.</li>
+                <li><strong>31.10.2026:</strong> <b>geocache.fi-linkit korjauslistoihin</b>: pitkänmatkan-multien, osumattomien ja käsin määritysten GC-koodit ovat nyt linkkejä geocache.fi:n kätkösivulle — sieltä näet suoraan .fi:n kunta-määrityksen (esim. "Lappeenranta (Etelä-Karjala)") ja voit valita saman kunnan pudotusvalikosta.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.22</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Pitkänmatkan-multien tunnistus</b>: GPX:n maakuntatieto (state) säilyy julkaisumaakuntana — jos se eroaa koordinaattien kunnasta, kyseessä on valekoordinaatti ja löytö merkitään maakuntatasolle korjattavaksi (ei enää vääriä kuntaosumia). Tuontiraportti listaa ne korjausvalikoineen. Löytöhaut-sivulla uusi näkyvä huomautus rajoituksesta, ja Muut maat -näkymän kunta-määrityksiin lisätty "Lisää GC-koodi" -toiminto jolla minkä tahansa löydön voi siirtää oikeaan kuntaan pysyvästi.</li>
+                <li><strong>31.10.2026:</strong> <b>Pitkänmatkan-multien tunnistus</b>: GPX:n maakuntatieto (state) säilyy julkaisumaakuntana — jos se eroaa koordinaattien kunnasta, kyseessä on valekoordinaatti ja löytö merkitään maakuntatasolle korjattavaksi (ei enää vääriä kuntaosumia). Tuontiraportti listaa ne korjausvalikoineen. Löytöhaut-sivulla uusi näkyvä huomautus rajoituksesta, ja Muut maat -näkymän kunta-määrityksiin lisätty "Lisää GC-koodi" -toiminto jolla minkä tahansa löydön voi siirtää oikeaan kuntaan pysyvästi.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.21</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Käsin määrityt kunnat -hallinta</b>: Muut maat -näkymän alalaitaan uusi osio joka listaa kaikki tekemäsi kunta-määritykset (esim. pitkänmatkan-multit). Voit korjata väärän valinnan pudotusvalikosta tai poistaa määrityksen — muutokset ovat pysyviä ja jokainen GPX-tuonti noudattaa niitä automaattisesti.</li>
+                <li><strong>31.10.2026:</strong> <b>Käsin määrityt kunnat -hallinta</b>: Muut maat -näkymän alalaitaan uusi osio joka listaa kaikki tekemäsi kunta-määritykset (esim. pitkänmatkan-multit). Voit korjata väärän valinnan pudotusvalikosta tai poistaa määrityksen — muutokset ovat pysyviä ja jokainen GPX-tuonti noudattaa niitä automaattisesti.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.20</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Muut maat -kaatuminen korjattu</b>: "Data päivitetty" -aikaleiman laskenta kaatoi näkymän (null.toMillis-bugi versiosta 2.18.12 asti). Näkymä toimii nyt — mukaan lukien Ahvenanmaa-rivi jossa voi myös merkitä pitkänmatkan-multien oikeat kunnat.</li>
+                <li><strong>31.10.2026:</strong> <b>Muut maat -kaatuminen korjattu</b>: "Data päivitetty" -aikaleiman laskenta kaatoi näkymän (null.toMillis-bugi versiosta 2.18.12 asti). Näkymä toimii nyt — mukaan lukien Ahvenanmaa-rivi jossa voi myös merkitä pitkänmatkan-multien oikeat kunnat.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.19</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Muut maat -näkymän virheensieto</b>: näkymä ei enää kaadu null-maakirjauksiin tai puuttuviin aikaleimoihin — ja virhetilanteessa näytetään nyt oikea virhesanoma (aiemmin vain yleinen "Lataus epäonnistui").</li>
+                <li><strong>31.10.2026:</strong> <b>Muut maat -näkymän virheensieto</b>: näkymä ei enää kaadu null-maakirjauksiin tai puuttuviin aikaleimoihin — ja virhetilanteessa näytetään nyt oikea virhesanoma (aiemmin vain yleinen "Lataus epäonnistui").</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.18</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Åland-valekoordinaattikorjaus</b>: Åland-maaksi merkityt kätköt joiden koordinaatit ovat mantereella (myssyn/multin julkaisupiste) eivät enää mene väärään mannerkuntaan — ne merkitään maakuntatasolle (Maakuntahaku → Ahvenanmaa näyttää ne). Toteutuksessa korjaantuu myös mannerkuntien löytömäärät. Vaatii GPX-uudelleentuonnin.</li>
+                <li><strong>31.10.2026:</strong> <b>Åland-valekoordinaattikorjaus</b>: Åland-maaksi merkityt kätköt joiden koordinaatit ovat mantereella (myssyn/multin julkaisupiste) eivät enää mene väärään mannerkuntaan — ne merkitään maakuntatasolle (Maakuntahaku → Ahvenanmaa näyttää ne). Toteutuksessa korjaantuu myös mannerkuntien löytömäärät. Vaatii GPX-uudelleentuonnin.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.17</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kuntakattavuus diagnostiikka</b> — "tunnistamattomat sijainnit" listaa nyt ryhmiteltynä maittain KAIKEN sijaintiarvon joka ei ole tunnettu kunta (FI/SE/NO/EE). Aiemmin Åland/legacy-arvot jäivät näkymättä koska niiden maaksi oli kirjattu Ahvenanmaa, ei Suomi.</li>
+                <li><strong>31.10.2026:</strong> <b>Kuntakattavuus diagnostiikka</b> — "tunnistamattomat sijainnit" listaa nyt ryhmiteltynä maittain KAIKEN sijaintiarvon joka ei ole tunnettu kunta (FI/SE/NO/EE). Aiemmin Åland/legacy-arvot jäivät näkymättä koska niiden maaksi oli kirjattu Ahvenanmaa, ei Suomi.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.16</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Kuntakattavuus-haku</b> — uusi löytöhaku: kaikki 308 kuntaa maakunnittain chippeinä (vihreä = löydetty lukumärineen), ja "tunnistamattomat sijainnit" -lista joka paljastaa nimivariaatiot ja vanhat tuonnit. <b>Nimikorjaukset</b>: Pedersören kunta → Pedersöre ja Mariehamn → Maarianhamina nyt kunta/mappauksissa tuonnissa, löytökartassa ja löytöhaussa.</li>
+                <li><strong>31.10.2026:</strong> <b>Kuntakattavuus-haku</b> — uusi löytöhaku: kaikki 308 kuntaa maakunnittain chippeinä (vihreä = löydetty lukumärineen), ja "tunnistamattomat sijainnit" -lista joka paljastaa nimivariaatiot ja vanhat tuonnit. <b>Nimikorjaukset</b>: Pedersören kunta → Pedersöre ja Mariehamn → Maarianhamina nyt kunta/mappauksissa tuonnissa, löytökartassa ja löytöhaussa.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.15</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Maakuntahaun tarkennus</b>: maakunnan valinta rajaa Paikkakunta-kentän ehdotukset ko. maakunnan kuntiin, kenttä tukee <b>useita kuntia pilkulla</b> ("Lahti, Hollola") kuten kuvageneraattorissa — sama moni-kunta-logiikka toimii kaikissa hauissa. <b>Ahvenanmaa-korjaus</b>: maakuntahaku tunnistaa nyt myös vanhan tuonnin sijainnit ("Aland Islands", "Åland") ja ruotsinkieliset rinnakkaisnimet (Mariehamn → Maarianhamina); löydöt ilman kuntaa listataan erikseen huomautuksena. Paikkakunta-kenttä sai teeman mukaisen tummaa muotoilua.</li>
+                <li><strong>31.10.2026:</strong> <b>Maakuntahaun tarkennus</b>: maakunnan valinta rajaa Paikkakunta-kentän ehdotukset ko. maakunnan kuntiin, kenttä tukee <b>useita kuntia pilkulla</b> ("Lahti, Hollola") kuten kuvageneraattorissa — sama moni-kunta-logiikka toimii kaikissa hauissa. <b>Ahvenanmaa-korjaus</b>: maakuntahaku tunnistaa nyt myös vanhan tuonnin sijainnit ("Aland Islands", "Åland") ja ruotsinkieliset rinnakkaisnimet (Mariehamn → Maarianhamina); löydöt ilman kuntaa listataan erikseen huomautuksena. Paikkakunta-kenttä sai teeman mukaisen tummaa muotoilua.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.14</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Maakuntahaku</b> — uusi kysely Löytöhauissa: valitse maakunta ja näet kuntakattavuuden (esim. Päijät-Häme 8/10 kuntaa löydettynä), löydöt, tyypit, D/T-ruudukon ja vuosikalenterin. <b>Maakunta-suodatin</b> lisätty kaikkiin hajoihin (kuten geocache.fi:n mkunta-parametri). Aikarajaukseen lisättiin <b>"Tietty kuukausi"</b> -vaihtoehto (vuosi + kuukausi, kuten kuvageneraattorin year/month). Maakuntahakuun voi lisäksi rajata yksittäiseen kuntaan ja aikaväliin.</li>
+                <li><strong>31.10.2026:</strong> <b>Maakuntahaku</b> — uusi kysely Löytöhauissa: valitse maakunta ja näet kuntakattavuuden (esim. Päijät-Häme 8/10 kuntaa löydettynä), löydöt, tyypit, D/T-ruudukon ja vuosikalenterin. <b>Maakunta-suodatin</b> lisätty kaikkiin hajoihin (kuten geocache.fi:n mkunta-parametri). Aikarajaukseen lisättiin <b>"Tietty kuukausi"</b> -vaihtoehto (vuosi + kuukausi, kuten kuvageneraattorin year/month). Maakuntahakuun voi lisäksi rajata yksittäiseen kuntaan ja aikaväliin.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.13</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>Hakujen aikarajaus</b> (geocache.fi-malli): "Kaikki ajat / Tietty vuosi / Vapaa aikaväli" (pvm-kentät) nyt saatavilla Paikkakuntahaussa, Monihaussa, kuukausi-/viikonpäivä-D/T-haussa, attribuuttihaussa ja koko D/T-matriisissa. <b>Paikkakuntasuodatin</b> lisätty Monihakuun ja kaikkiin muihin hajoihin — esim. "mitä löysin Lahdesta juhannuksena". Monihakun erilliset vuosi-alkaen/asti -kentät korvautuivat yhtenäisellä aikarajauksella.</li>
+                <li><strong>31.10.2026:</strong> <b>Hakujen aikarajaus</b> (geocache.fi-malli): "Kaikki ajat / Tietty vuosi / Vapaa aikaväli" (pvm-kentät) nyt saatavilla Paikkakuntahaussa, Monihaussa, kuukausi-/viikonpäivä-D/T-haussa, attribuuttihaussa ja koko D/T-matriisissa. <b>Paikkakuntasuodatin</b> lisätty Monihakuun ja kaikkiin muihin hajoihin — esim. "mitä löysin Lahdesta juhannuksena". Monihakun erilliset vuosi-alkaen/asti -kentät korvautuivat yhtenäisellä aikarajauksella.</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.12</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
-                <li><strong>7.10.2026:</strong> <b>"Data päivitetty" -aikaleima</b> näkyy nyt myös Löytöhaut- ja Muut maat -näkymissä (kuten Löydöt maakunnittain -näkymässä). Löytötaulukoiden päivämäärät suomalaiseen muotoon <b>pp.kk.vvvv</b> — ja Pvm-sarakkeen sorttaus korjattu (saman vuoden päivät järjestyivät aiemmin virheellisesti).</li>
+                <li><strong>31.10.2026:</strong> <b>"Data päivitetty" -aikaleima</b> näkyy nyt myös Löytöhaut- ja Muut maat -näkymissä (kuten Löydöt maakunnittain -näkymässä). Löytötaulukoiden päivämäärät suomalaiseen muotoon <b>pp.kk.vvvv</b> — ja Pvm-sarakkeen sorttaus korjattu (saman vuoden päivät järjestyivät aiemmin virheellisesti).</li>
             </ul>
             <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.11</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
