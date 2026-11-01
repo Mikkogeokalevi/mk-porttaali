@@ -1130,6 +1130,37 @@ const FINDS_QUERIES = [
     }
   },
   {
+    id: 'paivaloydot',
+    title: 'Päivälöydöt',
+    desc: 'Geocache.fi:n päivälöytötilasto — klikkaa riviä nähdäksesi tarkat päivät.',
+    input: null,
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      if (!hits.length) return [{ title: 'Päivälöydöt', html: emptyState('Ei löytöjä.') }];
+      const perDay = {};
+      hits.forEach(f => (perDay[f.day] = perDay[f.day] || []).push(f));
+      const hist = {};
+      Object.entries(perDay).forEach(([d, fs]) => (hist[fs.length] = hist[fs.length] || []).push(d));
+      const totalDays = Object.keys(perDay).length;
+      const maxBucket = Math.max(...Object.values(hist).map(d => d.length));
+      const wdName = d => (WEEKDAYS_FI.find(w => w[1] === wdOf(d)) || ['?'])[0].slice(0, 2);
+      const rows = Object.entries(hist).sort((a, b) => b[0] - a[0]).map(([n, days]) => {
+        const srt = days.slice().sort();
+        const dayList = srt.map(d => `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä</div>`).join('');
+        return `<details style="border-bottom:1px solid rgba(255,255,255,0.08);">
+          <summary style="display:grid;grid-template-columns:76px 1fr 84px;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent;">
+            <span style="font-weight:700;">${n} löytöä</span>
+            <span><span style="display:block;background:var(--c-green);height:10px;width:${Math.max(2, days.length / maxBucket * 100)}%;border-radius:2px;"></span><span style="opacity:0.65;font-size:0.8em;">${days.length} pv — ${(days.length / totalDays * 100).toFixed(1)} %</span></span>
+            <span style="opacity:0.7;font-size:0.8em;text-align:right;">ek. ${srt[0]}</span>
+          </summary>
+          <div style="padding:0 8px 10px;">${dayList}</div>
+        </details>`;
+      }).join('');
+      return [{ title: `${totalDays} löytöpäivää — ${hits.length} löytöä`, html: rows }];
+    }
+  },
+  {
     id: 'maakalenteri',
     title: 'Maat × kuukaudet',
     desc: 'Missä maissa löytöjä on syntynyt kussakin kuussa — kansainvälinen sesonki.',

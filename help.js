@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.34</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.35</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Päivälöydöt-haku</b>: geocache.fi:n päivälöytötilasto parannettuna — jokainen löytömäärärivi (1 löytö, 2 löytöä…) on <b>klikattava</b> ja paljastaa tarkat päivät viikonpäivineen. .fi:ssä näkyy vain ensimmäinen päivä per määrä — täällä kaikki. Tukee kaikkia suodattimia.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.34</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Piilottaja-tieto korjattu</b>: käytetään nyt GPX:n <code>&lt;owner&gt;</code>-kenttää (todellinen omistajatili, yksi tunnus per kätkö) eikä <code>&lt;placed_by&gt;</code>-tekstiä joka voi sisältää useita nimiä ("eukka, missävallu"). Piilottaja-haut tarkentuvat — <b>vaatii GPX-uudelleentuonnin</b> jotta arvot päivittyvät.</li>
             </ul>
