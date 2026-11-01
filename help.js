@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.42</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.43</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>LAB-tuonti: samannimisten päätösmodaali</b> — kun tuonnissa on samana päivänä samannimisiä labeja, avautuu erillinen näkymä jossa jokaisen ryhmän kohdalla voi valita "Pidä 1, poista N" tai "Poista kaikki". Varoitustekstistä pääsee avaamaan näkymän myös jälkikäteen.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.42</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>LAB-tuonti: samannimiset sallitaan</b> — samalla päivällä useammat samannimiset labit tallentuvat kaikki (eri kätköjä). Duplikaattisuoja estää edelleen saman tiedoston uudelleenliittämisen. Tuonnin lopussa näytetään huomautus samannimisistä — käyttäjä päättää poistaako ylimääräiset 📋-listasta.</li>
             </ul>

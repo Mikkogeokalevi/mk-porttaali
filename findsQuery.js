@@ -1541,7 +1541,8 @@ export const renderFindsQueries = async (db, user, content) => {
       <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
       ${(() => {
         const noDate = finds.filter(f => f.day.length < 10);
-        const noType = finds.filter(f => f.type < 0 || f.type >= TYPE_NAMES.length);
+        // LAB-pseudo-löydöillä (f.lab) on tahallaan type:-1 — eivät kuulu tuntemattomiin
+        const noType = finds.filter(f => !f.lab && (f.type < 0 || f.type >= TYPE_NAMES.length));
         if (!noDate.length && !noType.length) return '';
         const listHtml = arr => `<details style="margin-top:6px;"><summary style="font-size:0.8em; cursor:pointer;">Näytä koodit</summary>
           <div class="type-coverage" style="margin-top:6px;">${arr.map(f =>

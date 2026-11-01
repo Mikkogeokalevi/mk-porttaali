@@ -475,6 +475,51 @@ export const renderSettingsView = (content, db, user, app) => {
                 catch (err) { toast('Poisto epäonnistui: ' + err.message, 'err'); }
                 renderLabList();
             });
+            // Samannimisten päätösmodaali — listaa dup-ryhmät, päätä "pidä 1" tai "poista kaikki"
+            const openLabDupModal = () => {
+                const dupes = [];
+                for (const [d, ns] of Object.entries(labMap)) {
+                    const cnt = {};
+                    ns.forEach(n => cnt[n] = (cnt[n] || 0) + 1);
+                    for (const [n, c] of Object.entries(cnt)) if (c > 1) dupes.push([d, n, c]);
+                }
+                let m = document.getElementById('labDupModal');
+                if (!m) {
+                    m = document.createElement('div');
+                    m.id = 'labDupModal';
+                    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px;';
+                    document.body.appendChild(m);
+                }
+                if (!dupes.length) { m.style.display = 'none'; document.body.classList.remove('modal-open'); toast('Ei samannimisiä samalla päivällä', 'ok'); return; }
+                m.innerHTML = `<div class="panel" style="width:100%;max-width:460px;max-height:80vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+                    <div style="padding:14px 16px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.1);">⚠️ Samannimisiä samalla päivällä</div>
+                    <div style="flex:1;overflow-y:auto;padding:4px 10px;-webkit-overflow-scrolling:touch;">
+                        ${dupes.map(([d, n, c]) => `<div style="padding:10px 4px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <div style="margin-bottom:6px;"><b>${d}</b> — ${String(n).replace(/</g, '&lt;')} <span style="opacity:0.7;">×${c}</span></div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="btn btn-sm lab-dup-keep1" data-d="${d}" data-n="${encodeURIComponent(n)}" style="margin:0;flex:1;">Pidä 1, poista ${c - 1}</button>
+                                <button class="btn btn-sm lab-dup-delall" data-d="${d}" data-n="${encodeURIComponent(n)}" style="margin:0;flex:1;color:#f38ba8;">Poista kaikki ${c}</button>
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                    <div style="padding:10px;"><button class="btn" id="labDupClose" style="width:100%;margin:0;">Sulje — pidä kaikki</button></div>
+                </div>`;
+                const close = () => { m.style.display = 'none'; document.body.classList.remove('modal-open'); };
+                m.querySelector('#labDupClose').onclick = close;
+                m.onclick = e => { if (e.target === m) close(); };
+                const apply = async (d, n, keepOne) => {
+                    labMap[d] = keepOne ? [n, ...labMap[d].filter(x => x !== n)] : labMap[d].filter(x => x !== n);
+                    if (!labMap[d].length) delete labMap[d];
+                    try { await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() }); } catch (err) { toast('Tallennus epäonnistui: ' + err.message, 'err'); }
+                    renderLabList();
+                    openLabDupModal(); // päivitä tai sulje jos ei enää dupeja
+                };
+                m.querySelectorAll('.lab-dup-keep1').forEach(b => b.onclick = () => apply(b.dataset.d, decodeURIComponent(b.dataset.n), true));
+                m.querySelectorAll('.lab-dup-delall').forEach(b => b.onclick = () => apply(b.dataset.d, decodeURIComponent(b.dataset.n), false));
+                m.style.display = 'flex';
+                document.body.classList.add('modal-open');
+            };
+            labStatus.addEventListener('click', e => { if (e.target.closest('#labDupLink')) openLabDupModal(); });
             labAddBtn.onclick = async () => {
                 const lines = labPaste.value.split('\n').map(s => s.trim()).filter(Boolean);
                 if (!lines.length) { labStatus.textContent = 'Liitä ensin rivejä laatikkoon.'; return; }
@@ -501,14 +546,15 @@ export const renderSettingsView = (content, db, user, app) => {
                     (labMap[day] = labMap[day] || []).push(name);
                     added++;
                 }
-                // Samana päivänä useita samannimisiä — näytetään huomautuksena, käyttäjä päättää säilyykö vai ei
+                // Samana päivänä useita samannimisiä — varoitetaan JA avataan päätös-modaali
                 const dupes = Object.entries(batchCnt).filter(([, c]) => c > 1);
                 try {
                     if (added) await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() });
                     labPaste.value = '';
                     labStatus.innerHTML = `✅ Lisätty ${added} LAB-löytöä${skipped ? ` (${skipped} ohitettu — jo tallennettu)` : ''} — yhteensä ${labTotal()}.`
-                        + (dupes.length ? `<br><span style="color:#f9e2af;">⚠️ Samalla päivällä useita samannimisiä: ${dupes.map(([k, c]) => `${k.split('|')[1].replace(/</g, '&lt;')} ×${c} (${k.split('|')[0]})`).join(', ')} — jos kyseessä on tuontivirhe, poista ylimääräinen 📋-listasta.</span>` : '');
+                        + (dupes.length ? `<br><span id="labDupLink" style="color:#f9e2af; cursor:pointer; text-decoration:underline;">⚠️ ${dupes.length} samannimistä ryhmää samalla päivällä — napauta tarkastellaksesi</span>` : '');
                     renderLabList();
+                    if (dupes.length) openLabDupModal();
                 } catch (err) {
                     labStatus.textContent = '❌ ' + err.message;
                 }
