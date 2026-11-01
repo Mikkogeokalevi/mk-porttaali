@@ -11,7 +11,15 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.52</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.54</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Pisin putki: Tyypit-sarake</b> — jokaisen putkirivin loppuun lisätty putken aikana löytyneiden kätkötyyppien jakauma väreinä (esim. "Tradi 300 · Multi 50 · LAB 12").</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.53</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Kuntakartta: LAB-rivi</b> — LAB-löydöt eivät enää ilmesty "Tuntematon"-rivillä tuntemattomana maana vaan omalla selkeällä <b>LAB / Adventure Lab</b> -rivillä sijainnitaulukossa, violettina tyyppinä. Ne eivät väritä karttaa (ei sijaintia) mutta löytölista avautuu rivistä.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.52</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>LAB-löydöt tilastoissa yhtenäisesti</b>: löytölistoissa näkyvät 🧪-merkillä ja nimellä (ei enää rikkinäistä LAB-linkkiä), D/T-keskiarvo jättää ne pois (ei D/T-arvoja), Eka &amp; vika -ryhmittelyssä ne muodostavat oman "LAB"-ryhmän, D/T-matriisit ohittavat ne jo aiemmin. Päivämääräpohjaisiin tilastoihin (Päivälöydöt, kalenterit, putket) ne lasketaan normaalisti.</li>
             </ul>

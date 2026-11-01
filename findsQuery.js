@@ -848,7 +848,9 @@ const FINDS_QUERIES = [
       for (const f of hits) {
         const cl = canonLoc(f.loc);
         let e;
-        if (KUNTA_TO_MAAKUNTA[cl]) {
+        if (f.lab) {
+          e = byCountry.LAB || (byCountry.LAB = { name: 'LAB', mk: 'Adventure Lab', geo: '', n: 0, types: {}, finds: [] });
+        } else if (KUNTA_TO_MAAKUNTA[cl]) {
           e = byKunta[cl] || (byKunta[cl] = { name: f.loc, mk: KUNTA_TO_MAAKUNTA[cl], n: 0, types: {}, finds: [] });
         } else if (f.country === 'Ruotsi' || f.country === 'Norja' || f.country === 'Viro') {
           const k = f.country + '|' + cl;
@@ -866,7 +868,7 @@ const FINDS_QUERIES = [
         .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'fi'));
       const kuntaRows = rows.map(e => {
         const ty = Object.entries(e.types).filter(([, n]) => n > 0)
-          .map(([i, n]) => `<span style="color:${TYPE_COLORS[i] || '#888'};">${TYPE_NAMES[i] || '?'} ${n}</span>`).join(' · ');
+          .map(([i, n]) => `<span style="color:${+i < 0 ? '#b45cf0' : (TYPE_COLORS[i] || '#888')};">${+i < 0 ? 'LAB' : (TYPE_NAMES[i] || '?')} ${n}</span>`).join(' · ');
         return `<tr><td><b>${e.name}</b></td><td style="opacity:0.65; font-size:0.85em;">${e.mk}</td><td><b>${e.n}</b></td><td style="font-size:0.8em;">${ty}</td></tr>`;
       }).join('');
       const nKunta = Object.keys(byKunta).length, nMuni = Object.keys(byMuni).length, nMaa = Object.keys(byCountry).length;
@@ -1068,9 +1070,16 @@ const FINDS_QUERIES = [
         const g = Math.round((new Date(days[i]) - new Date(days[i - 1])) / 864e5) - 1;
         if (g > gap[2]) gap = [days[i - 1], days[i], g];
       }
-      const top = runs.slice(0, 10).map(([a, b, l], i) => `<tr><td>${i + 1}</td><td>${a}</td><td>${b}</td><td style="font-weight:600;">${l} pv</td></tr>`).join('');
+      const top = runs.slice(0, 10).map(([a, b, l], i) => {
+        // Putken aikana löytyneet tyypit (myös LAB) jakaumana
+        const tc = {};
+        hits.forEach(f => { if (f.day >= a && f.day <= b) tc[f.type] = (tc[f.type] || 0) + 1; });
+        const ty = Object.entries(tc).sort((x, y) => y[1] - x[1])
+          .map(([t, n]) => `<span style="color:${+t < 0 ? '#b45cf0' : (TYPE_COLORS[t] || '#888')};">${+t < 0 ? 'LAB' : (TYPE_NAMES[t] || '?')} ${n}</span>`).join(' · ');
+        return `<tr><td>${i + 1}</td><td>${a}</td><td>${b}</td><td style="font-weight:600;">${l} pv</td><td style="font-size:0.8em;">${ty}</td></tr>`;
+      }).join('');
       return [
-        { title: `Pisin putki: ${runs[0][2]} päivää (${runs[0][0]} – ${runs[0][1]})`, html: `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>#</th><th>Alkaa</th><th>Päättyy</th><th>Pituus</th></tr></thead><tbody>${top}</tbody></table></div>` },
+        { title: `Pisin putki: ${runs[0][2]} päivää (${runs[0][0]} – ${runs[0][1]})`, html: `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>#</th><th>Alkaa</th><th>Päättyy</th><th>Pituus</th><th>Tyypit</th></tr></thead><tbody>${top}</tbody></table></div>` },
         { title: 'Pisin löytötako', html: `<p style="margin:0;">${gap[0]} → ${gap[1]} — <b>${gap[2]} päivää</b> ilman löytöjä.</p>` }
       ];
     }
