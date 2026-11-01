@@ -307,7 +307,7 @@ export function findsList(finds, limit = 300) {
   const sorted = [...finds].sort((a, b) => (a.day < b.day ? 1 : -1));
   const rows = sorted.map((f, i) =>
     `<tr${i >= limit ? ' class="fq-hidden"' : ''} data-code="${f.code}" data-type="${f.type}" data-day="${f.day}" data-d="${f.D || 0}" data-t="${f.T || 0}" data-loc="${f.loc || ''}">` +
-    `<td><a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a></td>` +
+    `<td>${f.lab ? `<span style="color:#b45cf0; font-weight:600;" title="Adventure Lab">🧪 ${esc(f.lab)}</span>` : `<a href="https://www.geocaching.com/geocache/${f.code}" target="_blank" rel="noopener" style="color:var(--c-blue); font-weight:700; text-decoration:none;">${f.code}</a>`}</td>` +
     `<td style="color:${TYPE_COLORS[f.type] || 'inherit'};">${TYPE_NAMES[f.type] || '?'}</td>` +
     `<td>${fmtDayFI(f.day)}</td><td>${f.D || '—'}</td><td>${f.T || '—'}</td><td>${f.loc || '—'}</td></tr>`
   ).join('');
@@ -1100,7 +1100,8 @@ const FINDS_QUERIES = [
     grpOpts: [['vuosi', 'Vuosi'], ['kunta', 'Kunta'], ['maakunta', 'Maakunta / maa'], ['tyyppi', 'Kätkötyyppi']],
     filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
     run(finds, input) {
-      const hits = applyFilters(finds, input);
+      // LAB-löydöt jätetään pois — niillä ei ole D/T-arvoja, vääristäisivät keskiarvon
+      const hits = applyFilters(finds, input).filter(f => !f.lab);
       const g = {};
       for (const f of hits) {
         const k = grpLabel(f, input.grp === 'tyyppi' ? 'tyyppi' : input.grp);
@@ -1439,6 +1440,7 @@ function renderInputs(query, inputDiv, finds) {
 
 // Ryhmittelyavain ryhmiteltäviä hakuja varten (Eka & vika, D/T-keskiarvo)
 function grpLabel(f, grp) {
+  if (f.lab && grp !== 'vuosi') return 'LAB';
   if (grp === 'kunta') return canonLoc(f.loc) || f.loc || '—';
   if (grp === 'maakunta') return locRegion(f.loc) || countryNameFi(f.country) || '—';
   if (grp === 'tyyppi') return TYPE_NAMES[f.type] || '?';
