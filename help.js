@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.50</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.51</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Vuodet × tyypit: Lab-sarake</b> — LAB-löydöt näkyvät nyt omassa sarakkeessaan violettina (kuten geocache.fi:n tilastossa). Vuoden summa on edelleen kokonaislukumäärä labeineen — nyt näkyy myös eriteltynä.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.50</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Löytöpäivien aikavyöhykevalinta</b>: GPX-tuonnin asetuksiin "Suomen aika" -vaihtoehto — löytöpäivät lasketaan Europe/Helsinki-ajalla PT:n sijaan. <b>Vaatii GPX-uudelleentuonnin.</b></li>
             </ul>

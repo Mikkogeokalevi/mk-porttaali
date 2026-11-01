@@ -1147,24 +1147,28 @@ const FINDS_QUERIES = [
     run(finds, input) {
       const hits = applyFilters(finds, input);
       if (!hits.length) return [{ title: 'Vuodet × tyypit', html: emptyState('Ei löytöjä.') }];
-      const cell = {}, yTot = {}, tTot = {};
+      const cell = {}, yTot = {}, tTot = {}, labCnt = {};
       hits.forEach(f => {
         const y = f.day.slice(0, 4);
+        if (f.lab) { labCnt[y] = (labCnt[y] || 0) + 1; yTot[y] = (yTot[y] || 0) + 1; tTot.lab = (tTot.lab || 0) + 1; return; }
         (cell[y] = cell[y] || {})[f.type] = (cell[y][f.type] || 0) + 1;
         yTot[y] = (yTot[y] || 0) + 1; tTot[f.type] = (tTot[f.type] || 0) + 1;
       });
       const years = Object.keys(yTot).sort();
       const total = hits.length;
       const usedTypes = TYPE_NAMES.map((_, i) => i).filter(i => tTot[i]);
+      const hasLab = !!tTot.lab;
       const pct = (n, of) => `<br><small style="opacity:0.6;">${(n / of * 100).toFixed(1)} %</small>`;
-      const head = `<tr><th>Vuosi</th>${usedTypes.map(i => `<th style="color:${TYPE_COLORS[i]};">${TYPE_NAMES[i]}</th>`).join('')}<th>Yht.</th></tr>`;
+      const head = `<tr><th>Vuosi</th>${usedTypes.map(i => `<th style="color:${TYPE_COLORS[i]};">${TYPE_NAMES[i]}</th>`).join('')}${hasLab ? '<th style="color:#b45cf0;">Lab</th>' : ''}<th>Yht.</th></tr>`;
       const body = years.map(y =>
         `<tr><td style="font-weight:700;">${y}<br><small style="opacity:0.6;">${yTot[y]} löytöä</small></td>` +
         usedTypes.map(i => `<td>${cell[y][i] ? `<b>${cell[y][i]}</b>${pct(cell[y][i], yTot[y])}` : '<span style="opacity:0.25;">–</span>'}</td>`).join('') +
+        (hasLab ? `<td>${labCnt[y] ? `<b>${labCnt[y]}</b>${pct(labCnt[y], yTot[y])}` : '<span style="opacity:0.25;">–</span>'}</td>` : '') +
         `<td style="font-weight:700;">${yTot[y]}${pct(yTot[y], total)}</td></tr>`
       ).join('');
       const tot = `<tr style="border-top:2px solid rgba(255,255,255,0.2);"><td style="font-weight:700;">Yht.</td>` +
         usedTypes.map(i => `<td style="font-weight:700;">${tTot[i]}${pct(tTot[i], total)}</td>`).join('') +
+        (hasLab ? `<td style="font-weight:700;">${tTot.lab}${pct(tTot.lab, total)}</td>` : '') +
         `<td style="font-weight:700;">${total}</td></tr>`;
       return [{ title: `${years.length} vuotta × ${usedTypes.length} tyyppiä — ${total} löytöä`, html: `<div class="fq-scroll"><table class="finds-table" style="font-size:0.85em;"><thead>${head}</thead><tbody>${body}${tot}</tbody></table></div>` }];
     }
