@@ -1187,13 +1187,13 @@ const FINDS_QUERIES = [
         prevN = nNum;
         const srt = days.slice().sort();
         const dayList = srt.map(d => `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä</div>`).join('');
-        return gap + `<details class="fq-pd">
-          <summary style="display:grid;grid-template-columns:70px 1fr 78px;gap:6px;align-items:center;-webkit-tap-highlight-color:transparent;">
-            <span style="font-weight:700;">${n} löytöä</span>
-            <span><span style="display:block;background:var(--c-green);height:10px;width:${Math.max(2, days.length / maxBucket * 100)}%;border-radius:2px;"></span><span style="opacity:0.65;font-size:0.8em;">${days.length} pv — ${(days.length / totalDays * 100).toFixed(1)} %</span></span>
-            <span style="opacity:0.7;font-size:0.8em;text-align:right;">ek. ${srt[0]}</span>
+        return gap + `<details style="margin:0;background:none;border:none;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <summary style="display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:0.88em;font-weight:400;white-space:nowrap;overflow:hidden;-webkit-tap-highlight-color:transparent;">
+            <span style="flex:none;width:58px;font-weight:700;">${n} löytöä</span>
+            <span style="flex:1;min-width:0;text-align:right;opacity:0.7;font-size:0.82em;">${days.length} pv — ${(days.length / totalDays * 100).toFixed(1)} %</span>
+            <span style="flex:none;opacity:0.55;font-size:0.78em;">${srt[0]}</span>
           </summary>
-          <div style="padding:0 8px 10px;">${dayList}</div>
+          <div style="padding:0 8px 8px;">${dayList}</div>
         </details>`;
       }).join('');
       const sortBtn = `<div style="text-align:right;margin-bottom:4px;"><button class="btn btn-sm fq-pd-sort" data-dir="desc" style="margin:0;padding:4px 10px;font-size:0.8em;">▲ pienin ensin</button></div>`;
