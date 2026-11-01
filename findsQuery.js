@@ -1176,10 +1176,18 @@ const FINDS_QUERIES = [
       const totalDays = Object.keys(perDay).length;
       const maxBucket = Math.max(...Object.values(hist).map(d => d.length));
       const wdName = d => (WEEKDAYS_FI.find(w => w[1] === wdOf(d)) || ['?'])[0].slice(0, 2);
-      const rows = Object.entries(hist).sort((a, b) => b[0] - a[0]).map(([n, days]) => {
+      const gapRow = (from, to) => `<div style="display:grid;grid-template-columns:70px 1fr 78px;gap:6px;padding:1px 4px;opacity:0.35;font-size:0.85em;">
+        <span style="text-align:center;">⋮</span><span style="font-size:0.8em;align-self:center;">${to === from ? to : `${to}–${from}`} puuttuu</span><span></span></div>`;
+      const entries = Object.entries(hist).sort((a, b) => b[0] - a[0]);
+      let prevN = null;
+      const rows = entries.map(([n, days]) => {
+        const nNum = +n;
+        let gap = '';
+        if (prevN !== null && prevN - nNum > 1) gap = gapRow(prevN - 1, nNum + 1);
+        prevN = nNum;
         const srt = days.slice().sort();
         const dayList = srt.map(d => `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä</div>`).join('');
-        return `<details class="fq-pd">
+        return gap + `<details class="fq-pd">
           <summary style="display:grid;grid-template-columns:70px 1fr 78px;gap:6px;align-items:center;-webkit-tap-highlight-color:transparent;">
             <span style="font-weight:700;">${n} löytöä</span>
             <span><span style="display:block;background:var(--c-green);height:10px;width:${Math.max(2, days.length / maxBucket * 100)}%;border-radius:2px;"></span><span style="opacity:0.65;font-size:0.8em;">${days.length} pv — ${(days.length / totalDays * 100).toFixed(1)} %</span></span>
@@ -1188,7 +1196,8 @@ const FINDS_QUERIES = [
           <div style="padding:0 8px 10px;">${dayList}</div>
         </details>`;
       }).join('');
-      return [{ title: `${totalDays} löytöpäivää — ${hits.length} löytöä`, html: rows }];
+      const sortBtn = `<div style="text-align:right;margin-bottom:4px;"><button class="btn btn-sm fq-pd-sort" data-dir="desc" style="margin:0;padding:4px 10px;font-size:0.8em;">▲ pienin ensin</button></div>`;
+      return [{ title: `${totalDays} löytöpäivää — ${hits.length} löytöä`, html: sortBtn + `<div class="fq-pd-list">${rows}</div>` }];
     }
   },
   {
@@ -1605,6 +1614,18 @@ export const renderFindsQueries = async (db, user, content) => {
     querySel.dispatchEvent(new Event('change'));
   }
   renderInputs(FINDS_QUERIES[+querySel.value] || FINDS_QUERIES[0], inputDiv, finds);
+
+  // Päivälöydöt-listan järjestyskytkin (suurin/pienin ensin) — kääntää rivit DOM:ssa
+  resultDiv.addEventListener('click', e => {
+    const b = e.target.closest('.fq-pd-sort');
+    if (!b) return;
+    const list = resultDiv.querySelector('.fq-pd-list');
+    if (!list) return;
+    [...list.children].reverse().forEach(el => list.appendChild(el));
+    const asc = b.dataset.dir !== 'asc';
+    b.dataset.dir = asc ? 'asc' : 'desc';
+    b.textContent = asc ? '▼ suurin ensin' : '▲ pienin ensin';
+  });
 
   document.getElementById('fqRun').onclick = () => {
     closeDtPopup();

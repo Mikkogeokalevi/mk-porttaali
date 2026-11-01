@@ -11,7 +11,15 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.37</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.39</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Päivälöydöt: järjestyskytkin</b> — tuloslistan yläreunassa on nyt "▲ pienin ensin" / "▼ suurin ensin" -nappi joka kääntää listan järjestyksen lennosta ilman uutta hakua.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.38</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Päivälöydöt: puuttuvat määrät näkyvät</b> — geocache.fi:n tapaan listassa näkyy nyt ohut "⋮ — 30 puuttuu" -välirivi kun jokin päiväkohtainen löytömäärä loikkaa (esim. 31 löytöä → 29 löytöä muttei koskaan 30). Himmennysteksti, ei vie tilaa.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.37</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Päivälöydöt-näkymä tiivistetty</b>: rivit eivät enää peri yleistä korttitilaustyyliä — ne ovat nyt tiiviitä taulukkorivejä (ei isoja laatikoita), joten pitkä lista vierittyy kevyesti mobiilissakin.</li>
             </ul>
