@@ -191,10 +191,11 @@ function applyFilters(finds, { types = null, attr = null, attrs = null, countrie
   const yp = yearP ? +yearP : null;
   if (!typeSet && !attrId && !attrsArr && !countrySet && !locSet && !region && !ownerL && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
-    (!typeSet || typeSet.has(f.type)) &&
+    // LAB-pseudo-löydöt (f.lab) ohittavat tyyppi- ja maasuodattimet — niillä ei ole näitä ominaisuuksia
+    (f.lab || !typeSet || typeSet.has(f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!attrsArr || attrsArr.every(a => f.attrs.includes(a))) &&
-    (!countrySet || countrySet.has(f.country)) &&
+    (f.lab || !countrySet || countrySet.has(f.country)) &&
     (!ownerL || (f.owner || '').toLowerCase() === ownerL) &&
     (!locSet || locSet.has(canonLoc(f.loc))) &&
     (!region || locRegion(f.loc) === region) &&
