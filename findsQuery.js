@@ -1194,7 +1194,10 @@ const FINDS_QUERIES = [
         if (prevN !== null && prevN - nNum > 1) gap = gapRow(prevN - 1, nNum + 1);
         prevN = nNum;
         const srt = days.slice().sort();
-        const dayList = srt.map(d => `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä</div>`).join('');
+        const dayList = srt.map(d => {
+          const labs = perDay[d].filter(f => f.lab).length;
+          return `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä${labs ? ` <span style="opacity:0.6;">(josta LAB: ${labs})</span>` : ''}</div>`;
+        }).join('');
         return gap + `<details style="margin:0;background:none;border:none;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);">
           <summary style="display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:0.88em;font-weight:400;white-space:nowrap;overflow:hidden;-webkit-tap-highlight-color:transparent;">
             <span style="flex:none;width:58px;font-weight:700;">${n} löytöä</span>

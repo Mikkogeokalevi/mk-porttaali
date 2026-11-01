@@ -525,6 +525,7 @@ export const renderSettingsView = (content, db, user, app) => {
                 if (!lines.length) { labStatus.textContent = 'Liitä ensin rivejä laatikkoon.'; return; }
                 labAddBtn.disabled = true;
                 let added = 0, skipped = 0;
+                const unparsed = [];
                 // Duplikaattisuoja vain JO tallennettuja vastaan — samalla tuontierällä
                 // samannimiset samalta päivältä sallitaan (eri kätköjä), mutta ne raportoidaan
                 const existing = new Set();
@@ -532,14 +533,14 @@ export const renderSettingsView = (content, db, user, app) => {
                 const batchCnt = {};
                 for (const line of lines) {
                     const day = labDay(line);
-                    if (!day) continue;
+                    if (!day) { unparsed.push(line); continue; }
                     const name = line
                         .replace(/^\s*\d+\s+(?=\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})/, '') // järjestysnumero ennen pvm:ää
                         .replace(/\d{4}-\d{2}-\d{2}/, '')
                         .replace(/\d{1,2}\.\d{1,2}\.\d{4}/, '')
                         .replace(/\s+\d+\s*$/, '')   // loppusarake (löytömäärä)
                         .trim();
-                    if (!name) continue;
+                    if (!name) { unparsed.push(line); continue; }
                     const key = day + '|' + name;
                     if (existing.has(key)) { skipped++; continue; }
                     batchCnt[key] = (batchCnt[key] || 0) + 1;
@@ -552,6 +553,7 @@ export const renderSettingsView = (content, db, user, app) => {
                     if (added) await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() });
                     labPaste.value = '';
                     labStatus.innerHTML = `✅ Lisätty ${added} LAB-löytöä${skipped ? ` (${skipped} ohitettu — jo tallennettu)` : ''} — yhteensä ${labTotal()}.`
+                        + (unparsed.length ? `<br><span style="color:#f38ba8;">❌ ${unparsed.length} riviä ei tunnistettu:</span><div style="font-size:0.8em;opacity:0.8;margin-top:2px;max-height:120px;overflow-y:auto;">${unparsed.slice(0, 20).map(l => `• ${l.replace(/</g, '&lt;')}`).join('<br>')}${unparsed.length > 20 ? `<br>… +${unparsed.length - 20} lisää` : ''}</div>` : '')
                         + (dupes.length ? `<br><span id="labDupLink" style="color:#f9e2af; cursor:pointer; text-decoration:underline;">⚠️ ${dupes.length} samannimistä ryhmää samalla päivällä — napauta tarkastellaksesi</span>` : '');
                     renderLabList();
                     if (dupes.length) openLabDupModal();
