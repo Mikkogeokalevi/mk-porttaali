@@ -197,12 +197,14 @@ function extractFirst(block, re) {
 // edelliseen päivään → muunnetaan aina PT-päiväksi, jotta kalenterit täsmäävät.
 // Ilman aikavyöhykemerkintää (vanhat GPX:t) arvo oletetaan jo PT-muodoksi.
 const PT_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
+const HEL_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Helsinki', year: 'numeric', month: '2-digit', day: '2-digit' });
 function gpxLogDayPT(s) {
   s = (s || '').trim();
   if (!s) return '';
   if (/Z$|[+-]\d{2}:?\d{2}$/.test(s)) {
     const d = new Date(s);
-    if (!isNaN(d)) return PT_FMT.format(d);
+    // Asetuksen mukainen vyöhyke: 'fi' = Suomen aika (geocache.fi-pariteetti), muuten PT
+    if (!isNaN(d)) return (localStorage.getItem('gpxDayTZ') === 'fi' ? HEL_FMT : PT_FMT).format(d);
   }
   return s.slice(0, 10);
 }

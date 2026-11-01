@@ -11,7 +11,15 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.43</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.50</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Löytöpäivien aikavyöhykevalinta</b>: GPX-tuonnin asetuksiin "Suomen aika" -vaihtoehto — löytöpäivät lasketaan Europe/Helsinki-ajalla PT:n sijaan. <b>Vaatii GPX-uudelleentuonnin.</b></li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.44–2.18.49</strong></div>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> LAB:t jätettiin pois "tuntemattomat tyypit" -varoituksesta; Päivälöydöt-listaan (josta LAB: N)-erittely + lab-nimet; LAB-tuonti raportoi tunnistamattomat rivit ääneen; otsikkoon LAB-erittely ja varoitus jos kytkin päällä mutta data puuttuu; <b>korjaus: labit ohittavat tyyppi- ja maasuodattimet</b> (karsiutuivat aiemmin joka haussa vaikka ☑ oli päällä).</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.43</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>LAB-tuonti: samannimisten päätösmodaali</b> — kun tuonnissa on samana päivänä samannimisiä labeja, avautuu erillinen näkymä jossa jokaisen ryhmän kohdalla voi valita "Pidä 1, poista N" tai "Poista kaikki". Varoitustekstistä pääsee avaamaan näkymän myös jälkikäteen.</li>
             </ul>

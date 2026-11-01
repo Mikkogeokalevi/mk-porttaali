@@ -81,6 +81,13 @@ export const renderSettingsView = (content, db, user, app) => {
                 </p>
                 <input type="file" id="gpxImportFile" accept=".gpx,.zip,.xml" style="display:none;">
                 <button class="btn btn-primary btn-block" type="button" id="gpxImportBtn">📁 Valitse GPX/ZIP-tiedosto</button>
+                <div style="display:flex; gap:8px; align-items:center; margin-top:8px; font-size:0.85em;">
+                    Löytöpäivät:
+                    <select id="gpxDayTZ" style="padding:6px; flex:1;">
+                        <option value="pt">geocaching.com (Pacific Time)</option>
+                        <option value="fi">Suomen aika — täsmää geocache.fi:hin</option>
+                    </select>
+                </div>
                 <div id="gpxImportStatus" style="margin-top:10px; font-size:0.85em; opacity:0.8;"></div>
                 <div id="gpxImportReport" style="margin-top:10px;"></div>
             </div>
@@ -336,6 +343,11 @@ export const renderSettingsView = (content, db, user, app) => {
         const gpxReport = document.getElementById('gpxImportReport');
         if (gpxBtn && gpxFile) {
             gpxBtn.onclick = () => gpxFile.click();
+            const tzSel = document.getElementById('gpxDayTZ');
+            if (tzSel) {
+                tzSel.value = localStorage.getItem('gpxDayTZ') || 'pt';
+                tzSel.onchange = () => localStorage.setItem('gpxDayTZ', tzSel.value);
+            }
             gpxFile.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
