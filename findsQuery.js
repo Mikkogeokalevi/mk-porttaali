@@ -1541,7 +1541,12 @@ export const renderFindsQueries = async (db, user, content) => {
           <button class="btn btn-sm" onclick="app.router('stats_other')" style="margin-top:4px;">✏️ Avaa kunta-määritykset</button>
         </div>`;
       })()}
-      <p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä GPX-tuotuun löytödataan (${finds.length} löytöä). Uusia hakuja lisätään helposti — kerro toiveesi!</p>
+      ${(() => {
+        const labN = finds.filter(f => f.lab).length;
+        const flagOn = localStorage.getItem('fqLabs') === '1';
+        if (flagOn && !labN) return `<p style="font-size:0.8em; color:var(--c-peach); margin-top:0;">⚠ LAB-kytkin päällä mutta LAB-dataa ei löytynyt — tarkista Asetukset → Tallennetut LAB-löydöt.</p>`;
+        return `<p style="font-size:0.85em; opacity:0.75; margin-top:0;">Kyselyjä löytödataan (${finds.length} löytöä${labN ? ` — josta ${labN} LAB` : ''}). Uusia hakuja lisätään helposti — kerro toiveesi!</p>`;
+      })()}
       ${(() => {
         const noDate = finds.filter(f => f.day.length < 10);
         // LAB-pseudo-löydöillä (f.lab) on tahallaan type:-1 — eivät kuulu tuntemattomiin
