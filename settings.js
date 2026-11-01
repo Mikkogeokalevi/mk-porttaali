@@ -479,7 +479,12 @@ export const renderSettingsView = (content, db, user, app) => {
                 const lines = labPaste.value.split('\n').map(s => s.trim()).filter(Boolean);
                 if (!lines.length) { labStatus.textContent = 'Liitä ensin rivejä laatikkoon.'; return; }
                 labAddBtn.disabled = true;
-                let added = 0;
+                let added = 0, skipped = 0;
+                // Duplikaattisuoja vain JO tallennettuja vastaan — samalla tuontierällä
+                // samannimiset samalta päivältä sallitaan (eri kätköjä), mutta ne raportoidaan
+                const existing = new Set();
+                for (const [d, ns] of Object.entries(labMap)) ns.forEach(n => existing.add(d + '|' + n));
+                const batchCnt = {};
                 for (const line of lines) {
                     const day = labDay(line);
                     if (!day) continue;
@@ -490,13 +495,19 @@ export const renderSettingsView = (content, db, user, app) => {
                         .replace(/\s+\d+\s*$/, '')   // loppusarake (löytömäärä)
                         .trim();
                     if (!name) continue;
-                    (labMap[day] = labMap[day] || []);
-                    if (!labMap[day].includes(name)) { labMap[day].push(name); added++; }
+                    const key = day + '|' + name;
+                    if (existing.has(key)) { skipped++; continue; }
+                    batchCnt[key] = (batchCnt[key] || 0) + 1;
+                    (labMap[day] = labMap[day] || []).push(name);
+                    added++;
                 }
+                // Samana päivänä useita samannimisiä — näytetään huomautuksena, käyttäjä päättää säilyykö vai ei
+                const dupes = Object.entries(batchCnt).filter(([, c]) => c > 1);
                 try {
                     if (added) await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() });
                     labPaste.value = '';
-                    labStatus.textContent = `✅ Lisätty ${added} LAB-löytöä${lines.length - added ? ` (${lines.length - added} ohitettu/duplikaatti)` : ''} — yhteensä ${labTotal()}.`;
+                    labStatus.innerHTML = `✅ Lisätty ${added} LAB-löytöä${skipped ? ` (${skipped} ohitettu — jo tallennettu)` : ''} — yhteensä ${labTotal()}.`
+                        + (dupes.length ? `<br><span style="color:#f9e2af;">⚠️ Samalla päivällä useita samannimisiä: ${dupes.map(([k, c]) => `${k.split('|')[1].replace(/</g, '&lt;')} ×${c} (${k.split('|')[0]})`).join(', ')} — jos kyseessä on tuontivirhe, poista ylimääräinen 📋-listasta.</span>` : '');
                     renderLabList();
                 } catch (err) {
                     labStatus.textContent = '❌ ' + err.message;
