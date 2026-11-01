@@ -191,8 +191,8 @@ function applyFilters(finds, { types = null, attr = null, attrs = null, countrie
   const yp = yearP ? +yearP : null;
   if (!typeSet && !attrId && !attrsArr && !countrySet && !locSet && !region && !ownerL && !yp && !ym && !dateFrom && !dateTo) return finds;
   return finds.filter(f =>
-    // LAB-pseudo-löydöt (f.lab) ohittavat tyyppi- ja maasuodattimet — niillä ei ole näitä ominaisuuksia
-    (f.lab || !typeSet || typeSet.has(f.type)) &&
+    // LAB on tyyppichipissä data-i=-1 → chip-valinta ohjaa labien mukanaoloa oikein
+    (!typeSet || typeSet.has(f.lab ? -1 : f.type)) &&
     (!attrId || f.attrs.includes(attrId)) &&
     (!attrsArr || attrsArr.every(a => f.attrs.includes(a))) &&
     (f.lab || !countrySet || countrySet.has(f.country)) &&
@@ -1358,7 +1358,8 @@ function renderInputs(query, inputDiv, finds) {
     html += `<details style="margin-top:6px;">
       <summary style="font-size:0.8em; color:var(--subtext-color); cursor:pointer;">Kätkötyypit (oletuksena kaikki valittuna)</summary>
       <div class="type-coverage" id="fqTypes" style="margin-top:6px;">${TYPE_NAMES.map((n, i) =>
-        `<span class="type-chip fq-type fq-on" data-i="${i}" data-color="${TYPE_COLORS[i]}" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]}; background:${TYPE_COLORS[i]}22; cursor:pointer;">${n}</span>`).join('')}</div>
+        `<span class="type-chip fq-type fq-on" data-i="${i}" data-color="${TYPE_COLORS[i]}" style="border-color:${TYPE_COLORS[i]}; color:${TYPE_COLORS[i]}; background:${TYPE_COLORS[i]}22; cursor:pointer;">${n}</span>`).join('')}${finds.some(f => f.lab)
+          ? `<span class="type-chip fq-type fq-on" data-i="-1" data-color="#b45cf0" style="border-color:#b45cf0; color:#b45cf0; background:#b45cf022; cursor:pointer;">LAB</span>` : ''}</div>
       ${minis('fqTypes')}
     </details>`;
   }
