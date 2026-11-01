@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.35</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.36</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Vuodet × tyypit -haku</b>: löytömäärät vuosittain ja kätkötyypeittäin prosentteineen — geocache.fi:n "Löytömäärät vuosittain ja tyypeittäin" -tilaston vastaava. Vuosikohtaiset ja tyyppikohtaiset yhteenvedot + kokonais-%:t, värikoodatut tyyppipäättööt. Tukee suodattimia, taulukko vierittyy vaakasuunnassa mobiilissa.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.35</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Päivälöydöt-haku</b>: geocache.fi:n päivälöytötilasto parannettuna — jokainen löytömäärärivi (1 löytö, 2 löytöä…) on <b>klikattava</b> ja paljastaa tarkat päivät viikonpäivineen. .fi:ssä näkyy vain ensimmäinen päivä per määrä — täällä kaikki. Tukee kaikkia suodattimia.</li>
             </ul>
