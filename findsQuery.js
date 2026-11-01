@@ -1195,8 +1195,8 @@ const FINDS_QUERIES = [
         prevN = nNum;
         const srt = days.slice().sort();
         const dayList = srt.map(d => {
-          const labs = perDay[d].filter(f => f.lab).length;
-          return `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä${labs ? ` <span style="opacity:0.6;">(josta LAB: ${labs})</span>` : ''}</div>`;
+          const labs = perDay[d].filter(f => f.lab).map(f => f.lab);
+          return `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä${labs.length ? ` <span style="opacity:0.6;">(josta LAB: ${labs.length})</span><div style="opacity:0.55;font-size:0.82em;padding-left:8px;">${labs.map(l => esc(l)).join(', ')}</div>` : ''}</div>`;
         }).join('');
         return gap + `<details style="margin:0;background:none;border:none;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);">
           <summary style="display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:0.88em;font-weight:400;white-space:nowrap;overflow:hidden;-webkit-tap-highlight-color:transparent;">
