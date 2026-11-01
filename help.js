@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.31</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.32</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Löytöhaut-käytettävyysparannukset</b>: ⚠️-varoituslaatikko näkyy vain kun korjattavia kunta-määrityksiä on (ei enää turhaa tilankulutusta). Sovellus muistaa viimeksi käytetyn haun — avautuu aina samaan hakuun kuin jäitkään. <b>⭐ Pikapohjat</b>: tallenna nykyinen haku + kaikki suodattimet nimetyksi pohjaksi ja palauta ne yhdellä klikkauksella (sama konsepti kuin Kuvageneraattorin pikapohjat). <b>⚙️ Kuntapoimija</b>: Paikkakunta-kentissä uusi valitsin — valitse maakunta → ruksi kunnat → "Lisää valitut", ei enää käsin kirjoitettavaa. Mobiiliystävällinen modaali.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.31</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Firestore-indeksivapautus</b>: isot löytödokumentit (findsdata/vuosi ym.) ylittivät 40 000 indeksientryn rajan ja tuonti kaatui virheeseen "too many index entries". Repossa on nyt <code>firestore.indexes.json</code> joka vapauttaa suuret löytömapit indeksoinnista — <b>vaatii kertaluonteisen aktivoinnin Firebase Consolessa tai <code>firebase deploy --only firestore:indexes</code></b>. Samalla estää saman rajan ylittymisen tulevaisuudessa myös kunta/maa-karttojen datassa.</li>
             </ul>

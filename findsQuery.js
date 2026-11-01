@@ -5,6 +5,10 @@
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { ATTR_EN, countryNameFi } from "./gpxImport.js";
 import { maakuntienKunnat, suomenMaakunnat } from "./data.js";
+import { toast } from "./ui.js";
+
+const esc = s => String(s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const parseArr = s => { try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; } };
 
 const TYPE_NAMES = ['Tradi', 'Multi', 'Webcam', 'Mysse', 'Letteri', 'Öörtti', 'Miitti', 'Virtu', 'Cito', 'Wherigo', 'Com.Cel', 'Mega', 'No Loc', 'Juhla'];
 // Tyyppikohtaiset värit (D/T-ruudukko + type-chips)
@@ -1057,7 +1061,10 @@ function renderInputs(query, inputDiv, finds) {
     html += `<div class="fq-grp"><label>Attribuutti</label>${accField('fqAttr', attrPairs(), '', '— Valitse attribuutti —')}</div>`;
   } else if (query.input === 'loc') {
     html += `<label>Kunta / paikkakunta:</label>
-      <input type="text" id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0;">
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="fqLoc" list="fqLocList" placeholder="Kirjoita kunta..." autocomplete="off" style="margin-bottom:0; flex:1;">
+        <button type="button" class="btn btn-sm fq-kunta-pick" data-target="fqLoc" title="Valitse kunnat listasta" style="margin:0; white-space:nowrap;">⚙️</button>
+      </div>
       ${locDataList('fqLocList')}
       <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Voit antaa useita pilkulla: Lahti, Hollola. Suosituimmat: ${locs.slice(0, 5).map(([l, n]) => `${l} (${n})`).join(', ')}</p>`;
   } else if (query.input === 'region') {
@@ -1072,9 +1079,12 @@ function renderInputs(query, inputDiv, finds) {
   // Jaettu paikkakunta-suodatin (geocache.fi-malli: vapaa tekstikenttä + datalist)
   if (query.filters?.includes('loc')) {
     html += `<div class="fq-grp"><label>Paikkakunta</label>
-      <input type="text" id="fqLocFilter" list="fqLocListF" placeholder="Kaikki paikkakunnat" autocomplete="off" style="margin-bottom:0;">
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="fqLocFilter" list="fqLocListF" placeholder="Kaikki paikkakunnat" autocomplete="off" style="margin-bottom:0; flex:1;">
+        <button type="button" class="btn btn-sm fq-kunta-pick" data-target="fqLocFilter" title="Valitse kunnat listasta" style="margin:0; white-space:nowrap;">⚙️</button>
+      </div>
       ${locDataList('fqLocListF')}
-      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Voit antaa useita pilkulla: Lahti, Hollola</p></div>`;
+      <p style="font-size:0.75em; opacity:0.6; margin:4px 0 0;">Voit antaa useita pilkulla: Lahti, Hollola — tai valitse ⚙️-napilla maakunta → kunnat.</p></div>`;
   }
 
   // Jaettu maakunta-suodatin (geocache.fi-malli: mkunta)
@@ -1200,6 +1210,65 @@ function renderInputs(query, inputDiv, finds) {
   });
 }
 
+// Kunta-poimija (generatorin malli): maakunta → ruksivalinnat → "Lisää valitut"
+let _fqKmTarget = null;
+function ensureFqKuntaModal() {
+  if (document.getElementById('fqKuntaModal')) return;
+  const m = document.createElement('div');
+  m.id = 'fqKuntaModal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px;';
+  m.innerHTML = `
+    <div class="panel" style="width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+      <div id="fqKmTitle" style="padding:14px 16px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.1);">Valitse maakunta</div>
+      <div id="fqKmBody" style="flex:1;overflow-y:auto;padding:6px 0;-webkit-overflow-scrolling:touch;"></div>
+      <div style="padding:10px;display:flex;gap:8px;border-top:1px solid rgba(255,255,255,0.1);">
+        <button class="btn" id="fqKmBack" style="flex:1;margin:0;display:none;">← Takaisin</button>
+        <button class="btn btn-primary" id="fqKmAdd" style="flex:1;margin:0;display:none;">Lisää valitut</button>
+        <button class="btn" id="fqKmClose" style="flex:1;margin:0;">Sulje</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  const body = m.querySelector('#fqKmBody'), title = m.querySelector('#fqKmTitle');
+  const back = m.querySelector('#fqKmBack'), add = m.querySelector('#fqKmAdd');
+  const close = () => { m.style.display = 'none'; document.body.classList.remove('modal-open'); };
+  const showRegions = () => {
+    title.textContent = 'Valitse maakunta';
+    back.style.display = add.style.display = 'none';
+    const regs = Object.keys(maakuntienKunnat).sort((a, b) => a.localeCompare(b, 'fi'));
+    body.innerHTML = regs.map(r => `<div class="fq-km-reg" data-r="${r}" style="padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:1.05em;cursor:pointer;">${r}</div>`).join('');
+  };
+  const showKunnat = reg => {
+    title.textContent = `Valitse kunnat (${reg})`;
+    back.style.display = add.style.display = '';
+    const cur = new Set((_fqKmTarget?.value || '').split(',').map(s => canonLoc(s.trim())).filter(Boolean));
+    const ks = (maakuntienKunnat[reg] || []).slice().sort((a, b) => a.localeCompare(b, 'fi'));
+    body.innerHTML = ks.map(k => `<label style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-size:1.02em;cursor:pointer;">
+      <input type="checkbox" class="fq-km-cb" value="${k}" ${cur.has(canonLoc(k)) ? 'checked' : ''} style="width:20px;height:20px;flex:none;">${k}</label>`).join('');
+  };
+  body.onclick = e => { const d = e.target.closest('.fq-km-reg'); if (d) showKunnat(d.dataset.r); };
+  back.onclick = showRegions;
+  m.querySelector('#fqKmClose').onclick = close;
+  m.addEventListener('click', e => { if (e.target === m) close(); });
+  add.onclick = () => {
+    const sel = [...body.querySelectorAll('.fq-km-cb:checked')].map(c => c.value);
+    if (_fqKmTarget && sel.length) {
+      const cur = (_fqKmTarget.value || '').split(',').map(s => s.trim()).filter(Boolean);
+      const curC = new Set(cur.map(canonLoc));
+      _fqKmTarget.value = cur.concat(sel.filter(k => !curC.has(canonLoc(k)))).join(', ');
+      _fqKmTarget.dispatchEvent(new Event('input'));
+    }
+    close();
+  };
+  document.body.addEventListener('click', e => {
+    const b = e.target.closest('.fq-kunta-pick');
+    if (!b) return;
+    _fqKmTarget = document.getElementById(b.dataset.target);
+    showRegions();
+    m.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  });
+}
+
 export const renderFindsQueries = async (db, user, content) => {
   content.innerHTML = `<div class="card"><h1>Löytöhaut</h1><div class="loading-wrap" style="margin-top:20px;"><div class="spinner"></div></div></div>`;
   let finds;
@@ -1229,14 +1298,13 @@ export const renderFindsQueries = async (db, user, content) => {
       ${(() => {
         // Löydöt joiden sijainti on vain maakuntatasoa (pitkänmatkan-multien
         // valekoordinaatit, Åland/Islanti-tunnisteiset yms.) — vaativat
-        // kunta-määrityksen Muut maat -näkymässä
+        // kunta-määrityksen Muut maat -näkymässä. Näytetään VAIN kun korjattavaa on.
         const regionLevel = finds.filter(f => locRegion(f.loc) && !KUNTA_TO_MAAKUNTA[canonLoc(f.loc)]).length;
+        if (!regionLevel) return '';
         return `<div class="panel" style="padding:12px 14px; margin:10px 0; border:2px solid var(--c-peach); background:rgba(249,226,175,0.07);">
           <b style="color:var(--c-peach); font-size:1.02em;">⚠️ Kuntasijaintien rajoitus: pitkänmatkan-multit, mysstit ja wherigot</b>
           <p style="margin:6px 0 4px; font-size:0.86em; line-height:1.55;">GPX-tiedosto sisältää kätkön <b>loppupisteen</b> koordinaatit — ei lähtöpistettä, jonka mukaan geocache.fi laskee kunnan. Jos lähtö ja loppu ovat eri kunnissa, löytö voi kirjautua väärään kuntaan. Tuonti tunnistaa maakuntatason erot automaattisesti (GPX:n maakuntatieto vs koordinaatit) ja siirtää ne maakuntatasolle.</p>
-          ${regionLevel
-            ? `<p style="margin:0 0 4px; font-size:0.86em;"><b style="color:var(--c-peach);">${regionLevel} löytöä</b> on tällä hetkellä vain maakuntatasolla — <b>korjaa kertaalleen</b>: Tilastot → Muut maat → "Käsin määrityt kunnat". Valinnat säilyvät pysyvästi jokaisessa tuonnissa.</p>`
-            : `<p style="margin:0 0 4px; font-size:0.86em; opacity:0.8;">Jos jokin löytö on väärässä kunnassa (esim. Orimattilasta alkava multi jonka purkki Lahdessa), korjaa se kertaalleen: Tilastot → Muut maat → "Käsin määrityt kunnat" → Lisää.</p>`}
+          <p style="margin:0 0 4px; font-size:0.86em;"><b style="color:var(--c-peach);">${regionLevel} löytöä</b> on tällä hetkellä vain maakuntatasolla — <b>korjaa kertaalleen</b>: Tilastot → Muut maat → "Käsin määrityt kunnat". Valinnat säilyvät pysyvästi jokaisessa tuonnissa.</p>
           <button class="btn btn-sm" onclick="app.router('stats_other')" style="margin-top:4px;">✏️ Avaa kunta-määritykset</button>
         </div>`;
       })()}
@@ -1258,6 +1326,13 @@ export const renderFindsQueries = async (db, user, content) => {
       ${accField('fqQuery', FINDS_QUERIES.map((q, i) => [i, q.title]), 0)}
       <div id="fqInput" style="margin-top:8px;"></div>
       <button class="btn btn-primary" id="fqRun" style="margin-top:6px;">Hae</button>
+      <div class="fq-grp" style="margin-top:10px;"><label>⭐ Pikapohjat</label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <select id="fqPreset" class="sel" style="flex:1; min-width:140px;"><option value="">— valitse pohja —</option></select>
+          <button id="fqPresetSave" class="btn btn-sm" style="margin:0;" title="Tallenna nykyinen haku ja suodattimet pohjaksi">💾 Tallenna</button>
+          <button id="fqPresetDel" class="btn btn-sm" style="margin:0;" title="Poista valittu pohja">🗑</button>
+        </div>
+      </div>
       <div id="fqResult" style="margin-top:15px;"></div>
   </div>`;
 
@@ -1266,8 +1341,60 @@ export const renderFindsQueries = async (db, user, content) => {
   const resultDiv = document.getElementById('fqResult');
 
   wireAccordions(content);
-  querySel.addEventListener('change', () => { closeDtPopup(); renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; });
-  renderInputs(FINDS_QUERIES[0], inputDiv, finds);
+  ensureFqKuntaModal();
+
+  // Pikapohjat — tallenna/hakee suodinasetukset localStorageen
+  const PRESET_KEY = 'fqPresets';
+  const presetSel = document.getElementById('fqPreset');
+  const refreshPresetSel = () => {
+    const ps = parseArr(localStorage.getItem(PRESET_KEY) || '[]');
+    presetSel.innerHTML = '<option value="">— valitse pohja —</option>' + ps.map((p, i) => `<option value="${i}">${esc(p.name)}</option>`).join('');
+  };
+  refreshPresetSel();
+  document.getElementById('fqPresetSave').onclick = () => {
+    const name = prompt('Pohjan nimi:', FINDS_QUERIES[+querySel.value].name);
+    if (!name) return;
+    const vals = {}, chips = [];
+    inputDiv.querySelectorAll('[id]').forEach(el => { if (el.value !== undefined && el.value) vals[el.id] = el.value; });
+    inputDiv.querySelectorAll('.fq-chip.fq-on').forEach(c => chips.push(c.id));
+    const ps = parseArr(localStorage.getItem(PRESET_KEY) || '[]');
+    const i = ps.findIndex(p => p.name === name);
+    const p = { name, q: +querySel.value, vals, chips };
+    if (i >= 0) ps[i] = p; else ps.push(p);
+    localStorage.setItem(PRESET_KEY, JSON.stringify(ps));
+    refreshPresetSel();
+    presetSel.value = String(i >= 0 ? i : ps.length - 1);
+    toast(`💾 Pohja "${name}" tallennettu`, 'ok');
+  };
+  document.getElementById('fqPresetDel').onclick = () => {
+    const i = +presetSel.value;
+    if (isNaN(i) || i < 0) return;
+    const ps = parseArr(localStorage.getItem(PRESET_KEY) || '[]');
+    ps.splice(i, 1);
+    localStorage.setItem(PRESET_KEY, JSON.stringify(ps));
+    refreshPresetSel();
+  };
+  presetSel.addEventListener('change', () => {
+    const ps = parseArr(localStorage.getItem(PRESET_KEY) || '[]');
+    const p = ps[+presetSel.value];
+    if (!p) return;
+    querySel.value = String(p.q);
+    querySel.dispatchEvent(new Event('change'));
+    Object.entries(p.vals || {}).forEach(([id, v]) => {
+      const el = inputDiv.querySelector('#' + id);
+      if (el) { el.value = v; el.dispatchEvent(new Event('change')); }
+    });
+    (p.chips || []).forEach(id => inputDiv.querySelector('#' + id)?.classList.add('fq-on'));
+  });
+
+  querySel.addEventListener('change', () => { closeDtPopup(); localStorage.setItem('fqLastQuery', querySel.value); renderInputs(FINDS_QUERIES[+querySel.value], inputDiv, finds); resultDiv.innerHTML = ''; });
+  // Palauta viimeksi käytetty haku (käyttäjän oma "oletusjärjestys")
+  const savedQ = +localStorage.getItem('fqLastQuery') || 0;
+  if (savedQ > 0 && savedQ < FINDS_QUERIES.length) {
+    querySel.value = String(savedQ);
+    querySel.dispatchEvent(new Event('change'));
+  }
+  renderInputs(FINDS_QUERIES[+querySel.value] || FINDS_QUERIES[0], inputDiv, finds);
 
   document.getElementById('fqRun').onclick = () => {
     closeDtPopup();
