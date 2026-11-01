@@ -113,13 +113,14 @@ export function getFindsUpdatedAt() { return findsCacheUpdatedAt; }
 export async function loadFinds(db, uid) {
   if (findsCache) return findsCache;
   // loc-kentässä on kunta (FI/SE/NO/EE) tai maanimi (muut maat) — rakennetaan kunta->maa-kartta
-  const [snap, statsSnap, seSnap, noSnap, eeSnap, otherSnap] = await Promise.all([
+  const [snap, statsSnap, seSnap, noSnap, eeSnap, otherSnap, labSnap] = await Promise.all([
     getDocs(collection(db, 'users', uid, 'findsdata')),
     getDoc(doc(db, 'stats', uid)),
     getDoc(doc(db, 'users', uid, 'sweden', 'finds')),
     getDoc(doc(db, 'users', uid, 'norway', 'finds')),
     getDoc(doc(db, 'users', uid, 'estonia', 'finds')),
-    getDoc(doc(db, 'users', uid, 'other_countries', 'finds'))
+    getDoc(doc(db, 'users', uid, 'other_countries', 'finds')),
+    getDoc(doc(db, 'users', uid, 'labdata', 'main'))
   ]);
   const locToCountry = {};
   const addLocs = (data, key, name) => { for (const k of Object.keys(data?.[key] || {})) locToCountry[k] = name; };
@@ -160,6 +161,13 @@ export async function loadFinds(db, uid) {
       });
     }
   });
+  // LAB-löydöt (Adventure Lab — ei tule GPX:ssä): pseudo-löydöt kun käyttäjä sallii ne asetuksessa.
+  // type -1 → eivät määriteltyjä tyyppilukuihin; loc/country/owner/attrs tyhjät → suodattimet ohittavat ne.
+  if (localStorage.getItem('fqLabs') === '1' && labSnap.exists()) {
+    for (const [day, names] of Object.entries(labSnap.data().finds || {}))
+      for (const name of names)
+        finds.push({ code: 'LAB', type: -1, day, D: 0, T: 0, loc: '', owner: '', country: '', attrs: [], lab: name });
+  }
   findsCache = finds;
   findsCacheUpdatedAt = maxTs;
   return finds;
@@ -1513,7 +1521,10 @@ export const renderFindsQueries = async (db, user, content) => {
   <div class="card">
       <div class="view-header"><h1>Löytöhaut</h1>
       <button class="btn btn-sm" onclick="app.router('stats')">⬅ Tilastot</button></div>
-      <p style="font-size:0.85em; color:var(--success-color); margin-bottom:8px;">📅 Data päivitetty: <b>${fmtTsFI(getFindsUpdatedAt())}</b></p>
+      <p style="font-size:0.85em; color:var(--success-color); margin-bottom:4px;">📅 Data päivitetty: <b>${fmtTsFI(getFindsUpdatedAt())}</b></p>
+      <label style="display:flex; align-items:center; gap:7px; font-size:0.85em; margin-bottom:8px; cursor:pointer;">
+        <input type="checkbox" id="fqLabsToggle" style="width:18px;height:18px;"> Sisällytä LAB-löydöt tilastoihin (Adventure Lab — tuodaan Asetuksista)
+      </label>
       ${(() => {
         // Löydöt joiden sijainti on vain maakuntatasoa (pitkänmatkan-multien
         // valekoordinaatit, Åland/Islanti-tunnisteiset yms.) — vaativat
@@ -1561,6 +1572,17 @@ export const renderFindsQueries = async (db, user, content) => {
 
   wireAccordions(content);
   ensureFqKuntaModal();
+
+  // LAB-löytöjen sallinta tilastoissa — muistetaan localStoragessa, vaikuttaa loadFinds:iin
+  const labToggle = document.getElementById('fqLabsToggle');
+  if (labToggle) {
+    labToggle.checked = localStorage.getItem('fqLabs') === '1';
+    labToggle.onchange = () => {
+      localStorage.setItem('fqLabs', labToggle.checked ? '1' : '0');
+      invalidateFindsCache();
+      renderFindsQueries(db, user, content);
+    };
+  }
 
   // Pikapohjat — tallenna/hakee suodinasetukset localStorageen
   const PRESET_KEY = 'fqPresets';

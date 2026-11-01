@@ -1,4 +1,4 @@
-import { doc, updateDoc, deleteDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { doc, getDoc, updateDoc, deleteDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { deleteUser } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import * as Auth from "./auth.js";
 import * as GpxImport from "./gpxImport.js";
@@ -83,6 +83,23 @@ export const renderSettingsView = (content, db, user, app) => {
                 <button class="btn btn-primary btn-block" type="button" id="gpxImportBtn">📁 Valitse GPX/ZIP-tiedosto</button>
                 <div id="gpxImportStatus" style="margin-top:10px; font-size:0.85em; opacity:0.8;"></div>
                 <div id="gpxImportReport" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="panel panel-success" style="margin-top:15px;">
+                <strong style="color:#a6e3a1;">🧪 LAB-löydöt (Adventure Lab)</strong>
+                <p style="margin:5px 0 8px 0; font-size:0.85em; opacity:0.9;">
+                    LAB-löydöt eivät tule My Finds -GPX:n mukana. Liitä lista geocache.fi:stä tai Project-GC:stä —
+                    rivejä muotoa <code>2019-09-27 Kätkön nimi</code> (järjestysnumero ja loppusarake ohitetaan automaattisesti).
+                    Ne lasketaan mukaan löytötilastoihin Löytöhaut-sivun "Sisällytä LAB-löydöt" -kytkimellä.
+                </p>
+                <textarea id="labPaste" rows="5" style="width:100%; margin-bottom:8px; font-size:0.85em;" placeholder="2019-09-27 Vesiurut - Musical fountain&#10;12.03.2007 Hermoja raastava LAB -kätkö"></textarea>
+                <button class="btn btn-primary btn-block" type="button" id="labAddBtn">➕ Lisää LAB-löydöt</button>
+                <div id="labStatus" style="margin-top:8px; font-size:0.85em; opacity:0.85;"></div>
+                <details id="labListDet" style="margin-top:10px;">
+                    <summary>📋 Tallennetut LAB-löydöt</summary>
+                    <div id="labList" style="padding:6px 2px;"></div>
+                    <button class="btn btn-sm" type="button" id="labClearBtn" style="margin:8px 2px; color:var(--c-red, #f38ba8);">🗑 Poista kaikki LAB-löydöt</button>
+                </details>
             </div>
             
             <details>
@@ -412,6 +429,86 @@ export const renderSettingsView = (content, db, user, app) => {
                     gpxBtn.disabled = false;
                     gpxFile.value = '';
                 }
+            };
+        }
+
+        // --- LAB-löytöjen copy/paste -tuonti (Adventure Lab — ei mukana GPX:ssä) ---
+        // Tallentuvat users/{uid}/labdata/main {finds:{day:[nimet]}} — lasketaan tilastoihin
+        // Löytöhaut-sivun "Sisällytä LAB-löydöt" -kytkimellä.
+        const labPaste = document.getElementById('labPaste');
+        const labAddBtn = document.getElementById('labAddBtn');
+        const labStatus = document.getElementById('labStatus');
+        const labListDet = document.getElementById('labListDet');
+        const labList = document.getElementById('labList');
+        const labClearBtn = document.getElementById('labClearBtn');
+        if (labAddBtn && labPaste) {
+            const labRef = doc(db, 'users', user.uid, 'labdata', 'main');
+            let labMap = {};
+            const labSummary = labListDet.querySelector('summary');
+            const labTotal = () => Object.values(labMap).reduce((s, a) => s + a.length, 0);
+            const updLabCount = () => { labSummary.textContent = `📋 Tallennetut LAB-löydöt (${labTotal()})`; };
+            const renderLabList = () => {
+                const days = Object.keys(labMap).sort().reverse();
+                if (!days.length) { labList.innerHTML = '<div style="opacity:0.6; padding:4px;">Ei tallennettuja LAB-löytöjä.</div>'; updLabCount(); return; }
+                labList.innerHTML = days.map(d =>
+                    `<details style="margin:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <summary style="padding:6px 2px;font-size:0.9em;">${d} — ${labMap[d].length} löytöä</summary>
+                        ${labMap[d].map((n, i) => `<div style="display:flex;gap:6px;align-items:center;padding:3px 10px;font-size:0.85em;">
+                            <span style="flex:1;min-width:0;overflow-wrap:break-word;">${String(n).replace(/</g, '&lt;')}</span>
+                            <button class="lab-del" data-d="${d}" data-i="${i}" style="background:none;border:none;color:#f38ba8;cursor:pointer;font-size:1.05em;padding:2px 6px;">✕</button></div>`).join('')}
+                    </details>`).join('');
+                updLabCount();
+            };
+            const labDay = line => {
+                const iso = line.match(/\d{4}-\d{2}-\d{2}/); if (iso) return iso[0];
+                const fi = line.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+                return fi ? `${fi[3]}-${fi[2].padStart(2, '0')}-${fi[1].padStart(2, '0')}` : null;
+            };
+            getDoc(labRef).then(s => { labMap = s.data()?.finds || {}; updLabCount(); }).catch(() => {});
+            labListDet.addEventListener('toggle', () => { if (labListDet.open && !labList.dataset.done) { renderLabList(); labList.dataset.done = '1'; } });
+            labList.addEventListener('click', async e => {
+                const b = e.target.closest('.lab-del');
+                if (!b) return;
+                (labMap[b.dataset.d] || []).splice(+b.dataset.i, 1);
+                if (!labMap[b.dataset.d]?.length) delete labMap[b.dataset.d];
+                try { await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() }); toast('LAB-löytö poistettu', 'ok'); }
+                catch (err) { toast('Poisto epäonnistui: ' + err.message, 'err'); }
+                renderLabList();
+            });
+            labAddBtn.onclick = async () => {
+                const lines = labPaste.value.split('\n').map(s => s.trim()).filter(Boolean);
+                if (!lines.length) { labStatus.textContent = 'Liitä ensin rivejä laatikkoon.'; return; }
+                labAddBtn.disabled = true;
+                let added = 0;
+                for (const line of lines) {
+                    const day = labDay(line);
+                    if (!day) continue;
+                    const name = line
+                        .replace(/^\s*\d+\s+(?=\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})/, '') // järjestysnumero ennen pvm:ää
+                        .replace(/\d{4}-\d{2}-\d{2}/, '')
+                        .replace(/\d{1,2}\.\d{1,2}\.\d{4}/, '')
+                        .replace(/\s+\d+\s*$/, '')   // loppusarake (löytömäärä)
+                        .trim();
+                    if (!name) continue;
+                    (labMap[day] = labMap[day] || []);
+                    if (!labMap[day].includes(name)) { labMap[day].push(name); added++; }
+                }
+                try {
+                    if (added) await setDoc(labRef, { finds: labMap, updatedAt: Timestamp.now() });
+                    labPaste.value = '';
+                    labStatus.textContent = `✅ Lisätty ${added} LAB-löytöä${lines.length - added ? ` (${lines.length - added} ohitettu/duplikaatti)` : ''} — yhteensä ${labTotal()}.`;
+                    renderLabList();
+                } catch (err) {
+                    labStatus.textContent = '❌ ' + err.message;
+                }
+                labAddBtn.disabled = false;
+            };
+            labClearBtn.onclick = async () => {
+                if (!confirm('Poistetaanko KAIKKI tallennetut LAB-löydöt?')) return;
+                labMap = {};
+                try { await setDoc(labRef, { finds: {}, updatedAt: Timestamp.now() }); toast('LAB-löydöt poistettu', 'ok'); }
+                catch (err) { toast('Poisto epäonnistui: ' + err.message, 'err'); }
+                renderLabList();
             };
         }
     }

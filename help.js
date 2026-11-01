@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.40</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.41</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>LAB-löytöjen tuonti</b>: Adventure Lab -löydöt eivät tule My Finds -GPX:ssä — nyt ne voi liittää copy/pastena Asetuksiin (geocache.fi / Project-GC -lista, muoto "2019-09-27 Kätkön nimi"). Tallennetut löydöt näkyvät hallittavana listana (per-päivä-ryhmitelty, yksittäinen ✕-poisto + "poista kaikki"). Löytöhaut-sivun <b>☑ Sisällytä LAB-löydöt</b> -kytkin laskee ne mukaan tilastoihin: Päivälöydöt, vuosikalenterit, D/T-jakaumat jne. — määrä näkyy löytöjen kokonaismäärässä. Kytkin muistetaan laitteella.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.40</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Päivälöydöt mobiilisti tiiviiksi</b>: rivit renderöidään nyt inline-tyyleillä (vanha välimuistitettu CSS ei enää ylikirjoita niitä) — jokainen rivi on yksi kompakti vaakarivi: määrä | päiväluku+% | ensimmäinen pvm. Ei enää isoja laatikoita eikä pitkää vieritystä.</li>
             </ul>
