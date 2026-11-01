@@ -1179,8 +1179,8 @@ const FINDS_QUERIES = [
       const rows = Object.entries(hist).sort((a, b) => b[0] - a[0]).map(([n, days]) => {
         const srt = days.slice().sort();
         const dayList = srt.map(d => `<div style="padding:4px 2px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9em;">${d} ${wdName(d)} — ${n} löytöä</div>`).join('');
-        return `<details style="border-bottom:1px solid rgba(255,255,255,0.08);">
-          <summary style="display:grid;grid-template-columns:76px 1fr 84px;gap:8px;align-items:center;padding:8px 4px;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent;">
+        return `<details class="fq-pd">
+          <summary style="display:grid;grid-template-columns:70px 1fr 78px;gap:6px;align-items:center;-webkit-tap-highlight-color:transparent;">
             <span style="font-weight:700;">${n} löytöä</span>
             <span><span style="display:block;background:var(--c-green);height:10px;width:${Math.max(2, days.length / maxBucket * 100)}%;border-radius:2px;"></span><span style="opacity:0.65;font-size:0.8em;">${days.length} pv — ${(days.length / totalDays * 100).toFixed(1)} %</span></span>
             <span style="opacity:0.7;font-size:0.8em;text-align:right;">ek. ${srt[0]}</span>

@@ -709,6 +709,13 @@ summary::before {
 details[open] > summary::before { transform: rotate(90deg); }
 summary:hover { color: var(--accent-color); }
 
+/* Päivälöydöt-haun kompaktit rivit — ylikirjoittaa yleisen details-korttitilyn */
+details.fq-pd { margin: 0; background: none; border: none; border-radius: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+details.fq-pd:last-child { border-bottom: none; }
+details.fq-pd[open] { background: rgba(0,0,0,0.12); }
+details.fq-pd > summary { padding: 7px 4px; font-weight: 400; }
+details.fq-pd > summary::before { margin-right: 6px; font-size: 0.75em; }
+
 /* ---------- MAAKUNTA/KUNTA -LISTAT ---------- */
 
 #regionListContainer {
