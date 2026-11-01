@@ -11,7 +11,11 @@ export const renderHelp = (content, app) => {
         </div>
 
         <div class="panel panel-success" style="margin-bottom:30px;">
-            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.33</h3>
+            <h3 style="margin-top:0; color:var(--c-green);">🚀 Uutta versiossa 2.18.34</h3>
+            <ul style="margin:0; padding-left:20px; line-height:1.6;">
+                <li><strong>1.11.2026:</strong> <b>Piilottaja-tieto korjattu</b>: käytetään nyt GPX:n <code>&lt;owner&gt;</code>-kenttää (todellinen omistajatili, yksi tunnus per kätkö) eikä <code>&lt;placed_by&gt;</code>-tekstiä joka voi sisältää useita nimiä ("eukka, missävallu"). Piilottaja-haut tarkentuvat — <b>vaatii GPX-uudelleentuonnin</b> jotta arvot päivittyvät.</li>
+            </ul>
+            <div style="margin-top:10px; opacity:0.65; font-size:0.8em;"><strong>2.18.33</strong></div>
             <ul style="margin:0; padding-left:20px; line-height:1.6;">
                 <li><strong>1.11.2026:</strong> <b>Kuusi uutta löytöhakua</b>: <b>Eka &amp; vika</b> (ensimmäinen/viimeisin löytö per kunta, maakunta tai vuosi), <b>Pisin putki</b> (peräkkäiset löytöpäivät + pisin löytötako), <b>Attribuuttijakso</b> (attribuuttien esiintymismäärät top-listana), <b>D/T-keskiarvo</b> (keskiarvot ryhmittäin: vuosi/kunta/maakunta/tyyppi), <b>Vuosivertailu</b> (kuukausimäärät eri vuosina rinnakkain) ja <b>Maat × kuukaudet</b> (missä maissa löydöt jakautuvat kuukausille). Kaikki tukevat yhteisiä suodattimia (tyypit, attribuutit, paikka, aika, piilottaja) ja ovat mobiiliystävällisiä vieritettävine taulukkoineen.</li>
             </ul>

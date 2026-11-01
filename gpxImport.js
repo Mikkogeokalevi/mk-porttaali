@@ -233,9 +233,10 @@ export function parseGpxPoints(text, nickname = '') {
     // state = julkaisumaakunta: geocaching.com säilyttää sen alkuperäisenä vaikka
     // header-koordinaatit siirrettäisiin loppupisteeseen (pitkänmatkan multit)
     const state = extractFirst(block, /<groundspeak:state>([^<]*)<\/groundspeak:state>/);
-    // Piilottajan nimi (placed_by ensisijainen, owner varalla) — piilottaja-hakua varten
-    const owner = extractFirst(block, /<groundspeak:placed_by>([^<]*)<\/groundspeak:placed_by>/)
-      || extractFirst(block, /<groundspeak:owner[^>]*>([^<]*)<\/groundspeak:owner>/);
+    // Piilottajan nimi: <owner> on todellinen omistajatili (yksi tunnus per kätkö),
+    // <placed_by> on vapaamuotoinen teksti ("eukka, missävallu") — käytetään owneria ensisijaisena
+    const owner = extractFirst(block, /<groundspeak:owner[^>]*>([^<]*)<\/groundspeak:owner>/)
+      || extractFirst(block, /<groundspeak:placed_by>([^<]*)<\/groundspeak:placed_by>/);
     let type = extractFirst(block, /<groundspeak:type>([^<]*)<\/groundspeak:type>/);
     if (!type) {
       const plain = extractFirst(block, /<type>([^<]*)<\/type>/);
