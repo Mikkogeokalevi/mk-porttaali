@@ -1012,6 +1012,144 @@ const FINDS_QUERIES = [
         { title: 'Löydöt', html: hits.length ? findsList(hits) : emptyState('Ei löytöjä.') }
       ];
     }
+  },
+  {
+    id: 'ekavika',
+    title: 'Eka & vika',
+    desc: 'Ensimmäinen ja viimeisin löytö per kunta, maakunta tai vuosi.',
+    input: 'grp',
+    grpOpts: [['kunta', 'Kunta'], ['maakunta', 'Maakunta / maa'], ['vuosi', 'Vuosi']],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const groups = {};
+      for (const f of hits) { const g = grpLabel(f, input.grp); (groups[g] = groups[g] || []).push(f); }
+      const rows = Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([g, fs]) => {
+        const srt = fs.slice().sort((a, b) => a.day.localeCompare(b.day));
+        const e = srt[0], v = srt[srt.length - 1];
+        return `<tr><td style="font-weight:600;">${esc(g)}</td><td>${fs.length}</td>
+          <td>${e.day}<br><a href="https://www.geocaching.com/geocache/${e.code}" target="_blank" rel="noopener" style="color:var(--c-blue);">${e.code}</a></td>
+          <td>${v.day}<br><a href="https://www.geocaching.com/geocache/${v.code}" target="_blank" rel="noopener" style="color:var(--c-blue);">${v.code}</a></td></tr>`;
+      }).join('');
+      return [
+        { title: `${Object.keys(groups).length} ryhmää — ${hits.length} löytöä`, html: rows ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Ryhmä</th><th>Löydöt</th><th>Ensimmäinen</th><th>Viimeisin</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyState('Ei löytöjä.') }
+      ];
+    }
+  },
+  {
+    id: 'putki',
+    title: 'Pisin putki',
+    desc: 'Pisin peräkkäisten päivien löytöputki ja pisin löytötaukosi.',
+    input: null,
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const days = [...new Set(hits.map(f => f.day))].sort();
+      if (!days.length) return [{ title: 'Putki', html: emptyState('Ei löytöjä.') }];
+      const nd = d => new Date(new Date(d + 'T00:00:00Z').getTime() + 864e5).toISOString().slice(0, 10);
+      const runs = []; let s = days[0], prev = days[0], n = 1;
+      for (let i = 1; i < days.length; i++) {
+        if (nd(prev) === days[i]) { n++; prev = days[i]; }
+        else { runs.push([s, prev, n]); s = prev = days[i]; n = 1; }
+      }
+      runs.push([s, prev, n]);
+      runs.sort((a, b) => b[2] - a[2]);
+      let gap = [days[0], days[0], 0];
+      for (let i = 1; i < days.length; i++) {
+        const g = Math.round((new Date(days[i]) - new Date(days[i - 1])) / 864e5) - 1;
+        if (g > gap[2]) gap = [days[i - 1], days[i], g];
+      }
+      const top = runs.slice(0, 10).map(([a, b, l], i) => `<tr><td>${i + 1}</td><td>${a}</td><td>${b}</td><td style="font-weight:600;">${l} pv</td></tr>`).join('');
+      return [
+        { title: `Pisin putki: ${runs[0][2]} päivää (${runs[0][0]} – ${runs[0][1]})`, html: `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>#</th><th>Alkaa</th><th>Päättyy</th><th>Pituus</th></tr></thead><tbody>${top}</tbody></table></div>` },
+        { title: 'Pisin löytötako', html: `<p style="margin:0;">${gap[0]} → ${gap[1]} — <b>${gap[2]} päivää</b> ilman löytöjä.</p>` }
+      ];
+    }
+  },
+  {
+    id: 'attrjako',
+    title: 'Attribuuttijakso',
+    desc: 'Kuinka monta kertaa kukin attribuutti esiintyy löydöissäsi — top-lista.',
+    input: null,
+    filters: ['types', 'countries', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const cnt = {};
+      hits.forEach(f => f.attrs.forEach(a => cnt[a] = (cnt[a] || 0) + 1));
+      const rows = Object.entries(cnt).sort((a, b) => b[1] - a[1])
+        .map(([a, n]) => `<tr><td>${esc(ATTR_EN[a] || a)}</td><td>${n}</td><td>${(n / hits.length * 100).toFixed(1)} %</td></tr>`).join('');
+      return [
+        { title: `${Object.keys(cnt).length} attribuuttia — ${hits.length} löytöä`, html: rows ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Attribuutti</th><th>Määrä</th><th>% löydöistä</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyState('Ei löytöjä.') }
+      ];
+    }
+  },
+  {
+    id: 'dtavg',
+    title: 'D/T-keskiarvo',
+    desc: 'Löytöjesi keskimääräinen vaikeus- ja maasto-arvosana ryhmittäin.',
+    input: 'grp',
+    grpOpts: [['vuosi', 'Vuosi'], ['kunta', 'Kunta'], ['maakunta', 'Maakunta / maa'], ['tyyppi', 'Kätkötyyppi']],
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const g = {};
+      for (const f of hits) {
+        const k = grpLabel(f, input.grp === 'tyyppi' ? 'tyyppi' : input.grp);
+        (g[k] = g[k] || { n: 0, d: 0, t: 0 }).n++; g[k].d += f.D || 0; g[k].t += f.T || 0;
+      }
+      const rows = Object.entries(g).sort((a, b) => b[1].n - a[1].n)
+        .map(([k, v]) => `<tr><td style="font-weight:600;">${esc(k)}</td><td>${v.n}</td><td>${(v.d / v.n).toFixed(2)}</td><td>${(v.t / v.n).toFixed(2)}</td></tr>`).join('');
+      const all = hits.length;
+      const sumD = hits.reduce((s, f) => s + (f.D || 0), 0), sumT = hits.reduce((s, f) => s + (f.T || 0), 0);
+      return [
+        { title: `Keskiarvot — D ${all ? (sumD / all).toFixed(2) : '–'} / T ${all ? (sumT / all).toFixed(2) : '–'}`, html: rows ? `<div class="fq-scroll"><table class="finds-table"><thead><tr><th>Ryhmä</th><th>Löydöt</th><th>Kesk. D</th><th>Kesk. T</th></tr></thead><tbody>${rows}</tbody></table></div>` : emptyState('Ei löytöjä.') }
+      ];
+    }
+  },
+  {
+    id: 'vuosivert',
+    title: 'Vuosivertailu',
+    desc: 'Kuukausittaiset löytömäärät eri vuosina rinnakkain — näet sesongit.',
+    input: null,
+    filters: ['types', 'attr', 'countries', 'loc', 'region', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const years = [...new Set(hits.map(f => f.day.slice(0, 4)))].sort();
+      if (!years.length) return [{ title: 'Vuosivertailu', html: emptyState('Ei löytöjä.') }];
+      const grid = {};
+      hits.forEach(f => { const m = +f.day.slice(5, 7), y = f.day.slice(0, 4); (grid[m] = grid[m] || {})[y] = (grid[m][y] || 0) + 1; });
+      const head = `<tr><th>Kk</th>${years.map(y => `<th>${y}</th>`).join('')}<th>Yht.</th></tr>`;
+      const body = MONTHS_SHORT.map((mn, i) => {
+        const r = grid[i + 1] || {}, tot = years.reduce((s, y) => s + (r[y] || 0), 0);
+        return `<tr><td style="font-weight:600;">${mn}</td>${years.map(y => `<td${r[y] ? ' style="font-weight:600;"' : ''}>${r[y] || ''}</td>`).join('')}<td style="font-weight:700;">${tot || ''}</td></tr>`;
+      }).join('');
+      const tot = `<tr style="border-top:2px solid rgba(255,255,255,0.2);"><td style="font-weight:700;">Yht.</td>${years.map(y => `<td style="font-weight:700;">${hits.filter(f => f.day.slice(0, 4) === y).length}</td>`).join('')}<td style="font-weight:700;">${hits.length}</td></tr>`;
+      return [
+        { title: `${years.length} vuotta — ${hits.length} löytöä`, html: `<div class="fq-scroll"><table class="finds-table"><thead>${head}</thead><tbody>${body}${tot}</tbody></table></div>` }
+      ];
+    }
+  },
+  {
+    id: 'maakalenteri',
+    title: 'Maat × kuukaudet',
+    desc: 'Missä maissa löytöjä on syntynyt kussakin kuussa — kansainvälinen sesonki.',
+    input: null,
+    filters: ['types', 'attr', 'loc', 'region', 'period', 'owner'],
+    run(finds, input) {
+      const hits = applyFilters(finds, input);
+      const cnt = {}, grid = {};
+      hits.forEach(f => {
+        const c = f.country || '—', m = +f.day.slice(5, 7);
+        cnt[c] = (cnt[c] || 0) + 1; (grid[c] = grid[c] || {})[m] = (grid[c][m] || 0) + 1;
+      });
+      const cs = Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([c]) => c);
+      if (!cs.length) return [{ title: 'Maat × kuukaudet', html: emptyState('Ei löytöjä.') }];
+      const head = `<tr><th>Maa</th>${MONTHS_SHORT.map(m => `<th>${m}</th>`).join('')}<th>Yht.</th></tr>`;
+      const body = cs.map(c => `<tr><td style="font-weight:600; white-space:nowrap;">${esc(countryNameFi(c))}</td>${MONTHS_SHORT.map((_, i) => `<td${grid[c][i + 1] ? ' style="font-weight:600;"' : ''}>${grid[c][i + 1] || ''}</td>`).join('')}<td style="font-weight:700;">${cnt[c]}</td></tr>`).join('');
+      return [
+        { title: `${cs.length} maata — ${hits.length} löytöä`, html: `<div class="fq-scroll"><table class="finds-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>` }
+      ];
+    }
   }
 ];
 
@@ -1053,6 +1191,8 @@ function renderInputs(query, inputDiv, finds) {
           <div class="fq-half"><label>Vuosi asti</label>${accField('fqYearTo', yrOptsAll, '')}</div>
         </div>
       </div>`;
+  } else if (query.input === 'grp') {
+    html += `<div class="fq-grp"><label>Ryhmittely</label>${accField('fqGrp', query.grpOpts, query.grpOpts[0][0])}</div>`;
   } else if (query.input === 'month') {
     html += `<div class="fq-grp"><label>Kuukausi</label>${accField('fqMonth', monOpts, 1)}</div>`;
   } else if (query.input === 'weekday') {
@@ -1208,6 +1348,14 @@ function renderInputs(query, inputDiv, finds) {
       inputDiv.querySelectorAll(`#${b.dataset.t} .fq-type, #${b.dataset.t} .fq-country, #${b.dataset.t} .fq-attr`).forEach(ch => setChip(ch, on));
     };
   });
+}
+
+// Ryhmittelyavain ryhmiteltäviä hakuja varten (Eka & vika, D/T-keskiarvo)
+function grpLabel(f, grp) {
+  if (grp === 'kunta') return canonLoc(f.loc) || f.loc || '—';
+  if (grp === 'maakunta') return locRegion(f.loc) || countryNameFi(f.country) || '—';
+  if (grp === 'tyyppi') return TYPE_NAMES[f.type] || '?';
+  return f.day.slice(0, 4); // vuosi
 }
 
 // Kunta-poimija (generatorin malli): maakunta → ruksivalinnat → "Lisää valitut"
@@ -1438,6 +1586,7 @@ export const renderFindsQueries = async (db, user, content) => {
       monthP: gv('fqMonthP'),
       dateFrom: sel('fqDateFrom')?.value || null,
       dateTo: sel('fqDateTo')?.value || null,
+      grp: sel('fqGrp')?.value || 'kunta',       // ryhmittely (Eka & vika / D/T-keskiarvo)
       attr: sel('fqAttr')?.value ?? null,          // attribuuttihaku (pakollinen)
       attrFilter: sel('fqAttrFilter')?.value || null, // valinnainen attribuuttisuodatin
       owner: sel('fqOwner')?.value || null,
